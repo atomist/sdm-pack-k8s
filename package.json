@@ -24,10 +24,13 @@
     "url": "https://github.com/atomist/sdm-pack-k8/issues"
   },
   "dependencies": {
-    "@atomist/automation-client": "0.17.2-20180605032022",
-    "@atomist/sdm": "https://r.atomist.com/SJ7x_U8xBem"
+    "@atomist/automation-client": "0.17.2-20180605032022"
+  },
+  "peerDependencies": {
+    "@atomist/sdm": ">= 0.2.1"
   },
   "devDependencies": {
+    "@atomist/sdm": "https://r.atomist.com/SJ7x_U8xBem",
     "@types/lodash": "^4.14.109",
     "@types/mocha": "^2.2.48",
     "@types/node": "^9.4.1",
