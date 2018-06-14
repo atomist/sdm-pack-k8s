@@ -23,7 +23,7 @@ import { RepoContext } from "@atomist/sdm/api/context/SdmContext";
 import { SdmGoal } from "@atomist/sdm/ingesters/sdmGoalIngester";
 
 // tslint:disable-next-line:no-var-requires
-const pj = require("./package.json");
+const pj = require("../package.json");
 
 /**
  * Configuration options to be passed to the Extension Pack creation.
