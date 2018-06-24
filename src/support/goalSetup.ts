@@ -15,7 +15,7 @@
  */
 
 import { GitProject } from "@atomist/automation-client/project/git/GitProject";
-import { SdmGoal } from "@atomist/sdm/ingesters/sdmGoalIngester";
+import { SdmGoal } from "@atomist/sdm/api/goal/SdmGoal";
 import * as path from "path";
 
 export interface KubernetesDeploymentOptions {
