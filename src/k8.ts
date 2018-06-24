@@ -20,7 +20,7 @@ import {
     PushTest,
 } from "@atomist/sdm";
 import { RepoContext } from "@atomist/sdm/api/context/SdmContext";
-import { SdmGoal } from "@atomist/sdm/ingesters/sdmGoalIngester";
+import { SdmGoal } from "@atomist/sdm/api/goal/SdmGoal";
 
 // tslint:disable-next-line:no-var-requires
 const pj = require("../package.json");
