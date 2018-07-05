@@ -18,12 +18,10 @@ import {
     ExtensionPack,
     Goal,
     PushTest,
+    SdmGoalEvent,
 } from "@atomist/sdm";
+import { metadata } from "@atomist/sdm/api-helper/misc/extensionPack";
 import { RepoContext } from "@atomist/sdm/api/context/SdmContext";
-import { SdmGoal } from "@atomist/sdm/api/goal/SdmGoal";
-
-// tslint:disable-next-line:no-var-requires
-const pj = require("../package.json");
 
 /**
  * Configuration options to be passed to the Extension Pack creation.
@@ -35,7 +33,7 @@ export interface KubernetesOptions {
     deployments: Array<{
         goal: Goal;
         pushTest?: PushTest;
-        callback?: (goal: SdmGoal, context: RepoContext) => Promise<SdmGoal>;
+        callback?: (goal: SdmGoalEvent, context: RepoContext) => Promise<SdmGoalEvent>;
     }>;
 }
 
@@ -46,9 +44,7 @@ export interface KubernetesOptions {
  */
 export function kubernetesSupport(options: KubernetesOptions): ExtensionPack {
     return {
-        name: pj.name,
-        vendor: pj.author.name,
-        version: pj.version,
+        ...metadata(),
         configure: sdm => {
 
             options.deployments.forEach(deployment => {
