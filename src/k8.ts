@@ -59,7 +59,7 @@ export function kubernetesSupport(options: KubernetesOptions): ExtensionPack {
                 });
 
                 if (deployment.callback) {
-                    sdm.goalFulfillmentMapper.addFullfillmentCallback({
+                    sdm.goalFulfillmentMapper.addFulfillmentCallback({
                         goal: deployment.goal,
                         callback: deployment.callback,
                     });
