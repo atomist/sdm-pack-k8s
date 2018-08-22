@@ -8,14 +8,8 @@ This page details all runtime OSS dependencies of `@atomist/sdm-pack-k8`.
 
 | License | Count |
 |---------|-------|
-|[Apache-2.0](#apache-20)|1|
 
-#### Apache-2.0
-Apache License 2.0 - [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
-| Name | Version | Publisher | Repository |
-|------|---------|-----------|------------|
-|`@atomist/sdm-pack-k8`|`0.1.2`|Atomist, Inc.|[https://github.com/atomist/sdm-pack-k8](https://github.com/atomist/sdm-pack-k8)|
 
 ## Contact
 
