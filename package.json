@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Extension Pack for an Atomist SDM to integrate Kubernetes deployments",
   "author": {
-    "name": "Atomist, Inc."
+    "name": "Atomist",
+    "email": "support@atomist.com",
+    "url": "https://atomist.com/"
   },
   "license": "Apache-2.0",
   "homepage": "https://github.com/atomist/sdm-pack-k8#readme",
