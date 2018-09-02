@@ -15,7 +15,7 @@
  */
 
 import { GitProject } from "@atomist/automation-client/project/git/GitProject";
-import { SdmGoal } from "@atomist/sdm/api/goal/SdmGoal";
+import { SdmGoalEvent } from "@atomist/sdm";
 import * as path from "path";
 
 export interface KubernetesDeploymentOptions {
@@ -38,7 +38,9 @@ export interface KubernetesDeploymentOptions {
  * @param {GitProject} p
  * @returns {Promise<SdmGoal>}
  */
-export async function createKubernetesData(goal: SdmGoal, options: KubernetesDeploymentOptions, p: GitProject): Promise<SdmGoal> {
+export async function createKubernetesData(goal: SdmGoalEvent,
+                                           options: KubernetesDeploymentOptions,
+                                           p: GitProject): Promise<SdmGoalEvent> {
     const deploymentSpec = await readKubernetesSpec(p, "deployment.json");
     const serviceSpec = await readKubernetesSpec(p, "service.json");
     return {

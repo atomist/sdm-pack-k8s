@@ -20,8 +20,13 @@ import {
     PushTest,
     SdmGoalEvent,
 } from "@atomist/sdm";
+import { isInLocalMode } from "@atomist/sdm-core";
 import { metadata } from "@atomist/sdm/api-helper/misc/extensionPack";
 import { RepoContext } from "@atomist/sdm/api/context/SdmContext";
+import {
+    executeKubernetesDeploy,
+    KubernetesDeployerOptions,
+} from "./support/deploy";
 
 /**
  * Configuration options to be passed to the Extension Pack creation.
@@ -45,15 +50,28 @@ export interface KubernetesOptions {
 export function kubernetesSupport(options: KubernetesOptions): ExtensionPack {
     return {
         ...metadata(),
+        requiredConfigurationValues: isInLocalMode() ? [
+            "sdm.k8.environment",
+        ] : [],
         configure: sdm => {
 
             options.deployments.forEach(deployment => {
-                sdm.goalFulfillmentMapper.addSideEffect({
-                    goal: deployment.goal,
-                    pushTest: deployment.pushTest,
-                    sideEffectName: "@atomist/k8-automation",
-                });
 
+                if (isInLocalMode()) {
+                    sdm.addGoalImplementation(
+                        `k8-deploy-${deployment.goal.name.toLowerCase()}`,
+                        deployment.goal,
+                        executeKubernetesDeploy(sdm.configuration.sdm.k8 as KubernetesDeployerOptions),
+                        {
+                            pushTest: deployment.pushTest,
+                        });
+                } else {
+                    sdm.goalFulfillmentMapper.addSideEffect({
+                        goal: deployment.goal,
+                        pushTest: deployment.pushTest,
+                        sideEffectName: "@atomist/k8-automation",
+                    });
+                }
                 if (deployment.callback) {
                     sdm.goalFulfillmentMapper.addFulfillmentCallback({
                         goal: deployment.goal,

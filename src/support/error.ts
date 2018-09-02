@@ -13,3 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * Prepend message to (e: Error).message.
+ *
+ * @param e original Error
+ * @param prefix text to prepend to e.message
+ * @return e with modified message
+ */
+export function preErrMsg(e: Error, prefix: string): Error {
+    e.message = `${prefix}: ${e.message}`;
+    return e;
+}
