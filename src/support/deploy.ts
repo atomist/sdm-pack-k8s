@@ -22,6 +22,7 @@ import {
     SdmGoalEvent,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
+import stringify = require("json-stringify-safe");
 import * as k8 from "kubernetes-client";
 import {
     endpointBaseUrl,
@@ -30,7 +31,6 @@ import {
     KubeApplicationRequest,
     upsertApplication,
 } from "./api";
-import stringify = require("json-stringify-safe");
 
 export interface KubernetesDeployerOptions {
     environment: string;
