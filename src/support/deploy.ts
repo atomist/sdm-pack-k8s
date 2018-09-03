@@ -83,12 +83,13 @@ export function executeKubernetesDeploy(options: KubernetesDeployerOptions): Exe
         };
         return upsertApplication(upsertReq)
             .then(() => {
-                const msg = `Successfully deployed ${depName} to Kubernetes`;
-                progressLog.write(msg);
+                const message = `Successfully deployed ${depName} to Kubernetes`;
+                const description = `Deployed to Kubernetes namespace \`${kubeApp.ns}\``;
+                progressLog.write(message);
                 if (kubeApp.path && kubeApp.host) {
-                    return { code: 0, message: msg, targetUrl: endpointBaseUrl(kubeApp) };
+                    return { code: 0, message, targetUrl: endpointBaseUrl(kubeApp), description };
                 } else {
-                    return { code: 0, message: msg };
+                    return { code: 0, message, description };
                 }
             }, e => {
                 const msg = `Failed to deploy ${depName} to Kubernetes: ${e.message}`;
