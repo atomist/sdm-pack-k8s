@@ -18,8 +18,10 @@ import { isInLocalMode } from "@atomist/sdm-core";
 import { RepoContext } from "@atomist/sdm/api/context/SdmContext";
 import { Goal } from "@atomist/sdm/api/goal/Goal";
 import * as _ from "lodash";
-import { Service } from "../../dist/support/k8Api";
-import { Deployment } from "./api";
+import {
+    Deployment,
+    Service,
+} from "./api";
 import { executeKubernetesDeploy } from "./deploy";
 import {
     KubernetesDeploymentOptions,
