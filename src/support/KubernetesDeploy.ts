@@ -134,11 +134,11 @@ function kubernetesDataCallback(k8Deploy: KubernetesDeploy,
             return {
                 ...goal,
                 data: JSON.stringify({
-                    ...JSON.parse(goal.data),
+                    ...JSON.parse(goal.data || "{}"),
                     kubernetes: {
-                        ...registration.deploymentData,
-                        deploymentSpec,
-                        serviceSpec,
+                        ...deploymentData,
+                        deploymentSpec: JSON.stringify(deploymentSpec),
+                        serviceSpec: JSON.stringify(serviceSpec),
                     },
                 }),
             };
