@@ -14,32 +14,20 @@
  * limitations under the License.
  */
 
-import {
-    ExtensionPack,
-    Goal,
-    PushTest,
-    SdmGoalEvent,
-} from "@atomist/sdm";
+import { ExtensionPack } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import { metadata } from "@atomist/sdm/api-helper/misc/extensionPack";
-import { RepoContext } from "@atomist/sdm/api/context/SdmContext";
+import * as _ from "lodash";
 import {
-    executeKubernetesDeploy,
-    KubernetesDeployerOptions,
-} from "./support/deploy";
+    getKubeConfig,
+    loadKubeConfig,
+} from "./support/api";
 
 /**
  * Configuration options to be passed to the Extension Pack creation.
- * Deployments can be configured based on goals and push tests. Each
- * deployment can be configured using a callback to prepare the deployment
- * and service spec data needed to triggered customized deployments.
  */
 export interface KubernetesOptions {
-    deployments: Array<{
-        goal: Goal;
-        pushTest?: PushTest;
-        callback?: (goal: SdmGoalEvent, context: RepoContext) => Promise<SdmGoalEvent>;
-    }>;
+    context?: string;
 }
 
 /**
@@ -47,39 +35,37 @@ export interface KubernetesOptions {
  * @param {KubernetesOptions} options
  * @returns {ExtensionPack}
  */
-export function kubernetesSupport(options: KubernetesOptions): ExtensionPack {
+export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPack {
     return {
         ...metadata(),
-        requiredConfigurationValues: isInLocalMode() ? [
-            "sdm.k8.environment",
-        ] : [],
         configure: sdm => {
 
-            options.deployments.forEach(deployment => {
+            if (isInLocalMode()) {
 
-                if (isInLocalMode()) {
-                    sdm.addGoalImplementation(
-                        `k8-deploy-${deployment.goal.name.toLowerCase()}`,
-                        deployment.goal,
-                        executeKubernetesDeploy(sdm.configuration.sdm.k8 as KubernetesDeployerOptions),
-                        {
-                            pushTest: deployment.pushTest,
-                        });
-                } else {
-                    sdm.goalFulfillmentMapper.addSideEffect({
-                        goal: deployment.goal,
-                        pushTest: deployment.pushTest,
-                        sideEffectName: "@atomist/k8-automation",
-                    });
-                }
-                if (deployment.callback) {
-                    sdm.goalFulfillmentMapper.addFulfillmentCallback({
-                        goal: deployment.goal,
-                        callback: deployment.callback,
-                    });
-                }
-            });
+                const kubeConfig = loadKubeConfig();
+                const contexts = kubeConfig.contexts.map(c => c.cluster);
+                let context: string;
 
+                // Assign context
+                if (options.context) {
+                    context = options.context;
+                } else if (!_.get(sdm, "configuration.sdm.k8.context")) {
+                    if (contexts.includes("minikube")) {
+                        context = "minikube";
+                    } else {
+                        context = kubeConfig["current-context"];
+                    }
+                }
+
+                try {
+                    // Validate context
+                    getKubeConfig(_.get(sdm, context));
+                } catch (err) {
+                    throw new Error(`Failed to load Kubernetes cluster context '${context}'. Available contexts are: ${contexts.join(", ")}`);
+                }
+
+                _.set(sdm, "configuration.sdm.k8.context", context);
+            }
         },
     };
 }

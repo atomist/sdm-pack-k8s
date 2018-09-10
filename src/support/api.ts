@@ -30,12 +30,12 @@ import { preErrMsg } from "./error";
  * Get Kubernetes configuration either from the creds directory or the
  * in-cluster client.
  */
-export function getKubeConfig(): k8.ClusterConfiguration | k8.ClientConfiguration {
+export function getKubeConfig(context?: string): k8.ClusterConfiguration | k8.ClientConfiguration {
     let k8Config: k8.ClusterConfiguration | k8.ClientConfiguration;
-    const cfgPath = path.join(os.homedir(), ".kube", "config");
+    const cfgPath = process.env.KUBECONFIG || path.join(os.homedir(), ".kube", "config");
     try {
         const kubeconfig = k8.config.loadKubeconfig(cfgPath);
-        k8Config = k8.config.fromKubeconfig(kubeconfig);
+        k8Config = k8.config.fromKubeconfig(kubeconfig, context);
     } catch (e) {
         logger.debug(`failed to use ${cfgPath}: ${e.message}`);
         try {
@@ -49,6 +49,11 @@ export function getKubeConfig(): k8.ClusterConfiguration | k8.ClientConfiguratio
         }
     }
     return k8Config;
+}
+
+export function loadKubeConfig(): any {
+    const cfgPath = process.env.KUBECONFIG || path.join(os.homedir(), ".kube", "config");
+    return k8.config.loadKubeconfig(cfgPath);
 }
 
 /**

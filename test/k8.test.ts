@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import * as os from "os";
+import * as path from "path";
 import * as assert from "power-assert";
 
 import {
@@ -27,6 +29,7 @@ import {
     KubeApplication,
     serviceTemplate,
 } from "../src/support/api";
+import * as k8 from "kubernetes-client";
 
 import {
     logger,
@@ -36,6 +39,16 @@ LoggingConfig.format = "cli";
 (logger as any).level = process.env.LOG_LEVEL || "info";
 
 describe("k8", () => {
+
+    describe("getKubeConfig", () => {
+        const cfgPath = process.env.KUBECONFIG || path.join(os.homedir(), ".kube", "config");
+        const kubeconfig = k8.config.loadKubeconfig(cfgPath);
+        kubeconfig.contexts.forEach(c => {
+            console.log(c);
+        });
+        const k8Config = k8.config.fromKubeconfig(kubeconfig, "minikube");
+        console.log(k8Config);
+    });
 
     describe("deploymentPatch", () => {
 
