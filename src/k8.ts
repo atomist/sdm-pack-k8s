@@ -43,7 +43,7 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
             if (isInLocalMode()) {
 
                 const kubeConfig = loadKubeConfig();
-                const contexts = kubeConfig.contexts.map(c => c.cluster);
+                const contexts = kubeConfig.contexts.map(c => c.context.cluster);
                 let context: string;
 
                 // Assign context
@@ -59,7 +59,7 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
 
                 try {
                     // Validate context
-                    getKubeConfig(_.get(sdm, context));
+                    getKubeConfig(context);
                 } catch (err) {
                     throw new Error(`Failed to load Kubernetes cluster context '${context}'. Available contexts are: ${contexts.join(", ")}`);
                 }
