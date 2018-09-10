@@ -70,9 +70,12 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
         return this;
     }
 
-    public withDeployment(deploymentData?: (goal: SdmGoalEvent, context: RepoContext) => Promise<KubernetesDeploymentOptions>,
-                          serviceSpecCreator?: (serviceSpec: Service, goal: SdmGoalEvent, context: RepoContext) => Promise<Service>,
-                          deploymentSpecCreator?: (deploymentSpec: Deployment, goal: SdmGoalEvent, context: RepoContext) => Promise<Deployment>): this {
+    public withDeployment(deploymentData?:
+                              (goal: SdmGoalEvent, context: RepoContext) => Promise<KubernetesDeploymentOptions>,
+                          serviceSpecCreator?:
+                              (serviceSpec: Service, goal: SdmGoalEvent, context: RepoContext) => Promise<Service>,
+                          deploymentSpecCreator?:
+                              (deploymentSpec: Deployment, goal: SdmGoalEvent, context: RepoContext) => Promise<Deployment>): this {
         this.with({
             name: DefaultGoalNameGenerator.generateName(this.definition.uniqueName),
             deploymentData,
@@ -202,5 +205,3 @@ function getEnvironment(details?: { environment?: string }): GoalEnvironment {
         return IndependentOfEnvironment;
     }
 }
-
-new KubernetesDeploy({ environment: "testing" });
