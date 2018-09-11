@@ -1,3 +1,4 @@
+import { SuccessIsReturn0ErrorFinder } from "@atomist/automation-client/util/spawned";
 import {
     AnyPush,
     Configuration,
@@ -15,6 +16,8 @@ import {
     StagingEnvironment,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
+import { StringCapturingProgressLog } from "@atomist/sdm/api-helper/log/StringCapturingProgressLog";
+import { spawnAndWatch } from "@atomist/sdm/api-helper/misc/spawned";
 import { RepoContext } from "@atomist/sdm/api/context/SdmContext";
 import { Goal } from "@atomist/sdm/api/goal/Goal";
 import * as _ from "lodash";
@@ -162,11 +165,36 @@ export async function defaultDeploymentData(p: Project,
             throw new Error(`Unable to determine port for default ingress. Dockerfile in project '${goal.repo.owner}/${
                 goal.repo.name}' has more then one EXPOSE instruction: ${exposeCommands.map(c => c.args).join(", ")}`);
         } else if (exposeCommands.length === 1) {
+            let host = "sdm.info";
+            let path = `/${goal.repo.owner}/${goal.repo.name}`;
+            if (_.get(configuration, "sdm.k8.ingress.host")) {
+                host = _.get(configuration, "sdm.k8.ingress.host");
+            } else if (_.get(configuration, "sdm.k8.context") === "minikube") {
+                // Attempt to load the minikube ip and use that to construct a hostname
+                const log = new StringCapturingProgressLog();
+                const result = await spawnAndWatch({
+                        command: "minikube",
+                        args: ["ip"],
+                    },
+                    {}
+                    ,
+                    log,
+                    {
+                        errorFinder: SuccessIsReturn0ErrorFinder,
+                        logCommand: false,
+                    },
+                );
+
+                if (result.code === 0) {
+                    host = `${goal.repo.owner}.${goal.repo.name}.${log.log.trim()}.nip.io`;
+                    path = "";
+                }
+            }
             ingress = {
-                host: _.get(configuration, "sdm.k8.ingress.host") || "sdm.info",
+                host,
                 port: +exposeCommands[0].args[0],
                 protocol: "http",
-                path: `/${goal.repo.owner}/${goal.repo.name}`,
+                path,
             };
         }
     }
