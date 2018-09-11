@@ -54,7 +54,7 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
                 const context = configureContext(sdm, options);
 
                 // if we are using minikube, set the docker-env too
-                if (context === "minikube" && !process.env.DOCKER_HOST) {
+                if (context === "minikube") {
                     sdm.addStartupListener(DockerEnvStartupListener);
                 }
             }
