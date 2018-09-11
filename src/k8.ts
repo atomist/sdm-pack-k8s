@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-import { ExtensionPack } from "@atomist/sdm";
+import { SuccessIsReturn0ErrorFinder } from "@atomist/automation-client/util/spawned";
+import {
+    ExtensionPack,
+    logger,
+    SoftwareDeliveryMachine,
+    StartupListener,
+} from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
+import { StringCapturingProgressLog } from "@atomist/sdm/api-helper/log/StringCapturingProgressLog";
 import { metadata } from "@atomist/sdm/api-helper/misc/extensionPack";
+import { spawnAndWatch } from "@atomist/sdm/api-helper/misc/spawned";
 import * as _ from "lodash";
 import {
     getKubeConfig,
@@ -42,30 +50,65 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
 
             if (isInLocalMode()) {
 
-                const kubeConfig = loadKubeConfig();
-                const contexts = kubeConfig.contexts.map(c => c.context.cluster);
-                let context: string;
+                // set up the kube context
+                const context = configureContext(sdm, options);
 
-                // Assign context
-                if (options.context) {
-                    context = options.context;
-                } else if (!_.get(sdm, "configuration.sdm.k8.context")) {
-                    if (contexts.includes("minikube")) {
-                        context = "minikube";
-                    } else {
-                        context = kubeConfig["current-context"];
-                    }
+                // if we are using minikube, set the docker-env too
+                if (context === "minikube" && !process.env.DOCKER_HOST) {
+                    sdm.addStartupListener(DockerEnvStartupListener);
                 }
-
-                try {
-                    // Validate context
-                    getKubeConfig(context);
-                } catch (err) {
-                    throw new Error(`Failed to load Kubernetes cluster context '${context}'. Available contexts are: ${contexts.join(", ")}`);
-                }
-
-                _.set(sdm, "configuration.sdm.k8.context", context);
             }
         },
     };
 }
+
+function configureContext(sdm: SoftwareDeliveryMachine,
+                          options: KubernetesOptions): string {
+    const kubeConfig = loadKubeConfig();
+    const contexts = kubeConfig.contexts.map(c => c.context.cluster);
+    let context: string;
+
+    // Assign context
+    if (options.context) {
+        context = options.context;
+    } else if (!_.get(sdm, "configuration.sdm.k8.context")) {
+        if (contexts.includes("minikube")) {
+            context = "minikube";
+        } else {
+            context = kubeConfig["current-context"];
+        }
+    }
+
+    try {
+        // Validate context
+        getKubeConfig(context);
+    } catch (err) {
+        throw new Error(`Failed to load Kubernetes cluster context '${context}'. Available contexts are: ${contexts.join(", ")}`);
+    }
+
+    _.set(sdm, "configuration.sdm.k8.context", context);
+    return context;
+}
+
+const DockerEnvStartupListener: StartupListener = async () => {
+    const log = new StringCapturingProgressLog();
+    const result = await spawnAndWatch({
+            command: "minikube",
+            args: ["docker-env"],
+        },
+        {},
+        log,
+        {
+            errorFinder: SuccessIsReturn0ErrorFinder,
+            logCommand: false,
+        });
+
+    if (result.code === 0) {
+        const envVars = log.log.trim().split("\n").filter(l => !l.startsWith("#"));
+        envVars.forEach(v => {
+            const parts = v.split("=");
+            process.env[parts[0].replace(/export /g, "")] = parts[1].replace(/"/g, "");
+        });
+        logger.info("Configured local minikube docker env");
+    }
+};

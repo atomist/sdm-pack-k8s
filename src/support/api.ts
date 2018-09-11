@@ -41,10 +41,6 @@ export function getKubeConfig(context?: string): k8.ClusterConfiguration | k8.Cl
         try {
             k8Config = k8.config.getInCluster();
         } catch (er) {
-            logger.debug(`failed to use in-cluster-config: ${er.message}`);
-            er.message = "Failed to use either kubeconfig or in-cluster-config, will not deploy: " +
-                `${e.message}; ${er.message}`;
-            logger.error(er.message);
             throw er;
         }
     }
