@@ -203,7 +203,7 @@ export async function defaultDeploymentData(p: Project,
 
                 if (result.code === 0) {
                     host = `${goal.repo.owner}.${goal.repo.name}.${log.log.trim()}.nip.io`;
-                    path = "";
+                    path = "/";
                 }
             }
             ingress = {

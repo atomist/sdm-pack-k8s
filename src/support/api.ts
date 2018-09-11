@@ -963,8 +963,8 @@ const ingressName = "atm-ingress";
 export function endpointBaseUrl(req: KubeApplication): string {
     const defaultProtocol = (req.tlsSecret) ? "https" : "http";
     const protocol = (req.protocol) ? req.protocol : defaultProtocol;
-    const host = (req.host) ? req.host : "localhost";
-    const tail = (req.path) ? `${req.path}/` : "/";
+    const host = req.host ? req.host : "localhost";
+    const tail = req.path && req.path !== "/" ? `${req.path}/` : "/";
     return `${protocol}://${host}${tail}`;
 }
 
