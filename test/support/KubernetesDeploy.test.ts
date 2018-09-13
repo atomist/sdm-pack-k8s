@@ -32,18 +32,25 @@ describe("KubernetesDeploy", () => {
             } as any;
             const p = InMemoryProject.of();
             const conf = {
-                environment: "demo",
+                details: {
+                    environment: "demo",
+                },
                 sdm: {
-                    ingress: {
-                        host: "demo.com",
+                    configuration: {
+                        environment: "demo",
+                        sdm: {
+                            ingress: {
+                                host: "demo.com",
+                            },
+                        },
                     },
                 },
             };
-            const dd = await defaultDeploymentData(p, goal, null, conf);
+            const dd = await defaultDeploymentData(p, goal, null, conf as any);
             const exp = {
                 name: "sdm",
                 environment: "demo",
-                ns: "atm-atomist",
+                ns: "demo",
             };
             assert.deepEqual(dd, exp);
         });
@@ -80,21 +87,28 @@ COPY target/spring-boot.jar spring-boot.jar`;
             } as any;
             const p = InMemoryProject.of({ path: "Dockerfile", content: DockerfileWithOneExpose });
             const conf = {
-                environment: "demo",
+                details: {
+                    environment: "demo",
+                },
                 sdm: {
-                    ingress: {
-                        host: "demo.com",
+                    configuration: {
+                        environment: "demo",
+                        sdm: {
+                            ingress: {
+                                host: "demo.com",
+                            },
+                        },
                     },
                 },
             };
-            const dd = await defaultDeploymentData(p, goal, null, conf);
+            const dd = await defaultDeploymentData(p, goal, null, conf as any);
             const exp = {
                 name: "sdm",
                 host: "sdm.info",
                 environment: "demo",
-                ns: "atm-atomist",
+                ns: "demo",
                 port: 8080,
-                path: "/atomist/sdm",
+                path: "/demo/atomist/sdm",
                 protocol: "http",
             } as KubernetesDeploymentOptions;
             assert.deepStrictEqual(dd, exp);
@@ -132,9 +146,24 @@ COPY target/spring-boot.jar spring-boot.jar`;
                     name: "sdm",
                 },
             } as any;
+            const conf = {
+                details: {
+                    environment: "demo",
+                },
+                sdm: {
+                    configuration: {
+                        environment: "demo",
+                        sdm: {
+                            ingress: {
+                                host: "demo.com",
+                            },
+                        },
+                    },
+                },
+            } as any;
             const p = InMemoryProject.of({ path: "Dockerfile", content: DockerfileWithSeveralExpose });
             try {
-                await defaultDeploymentData(p, goal, null, null);
+                await defaultDeploymentData(p, goal, null, conf);
                 assert.fail();
             } catch (err) {
                 assert(err.message.includes("Unable to determine port for default ingress"));

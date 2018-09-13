@@ -17,7 +17,6 @@
 import { SuccessIsReturn0ErrorFinder } from "@atomist/automation-client/util/spawned";
 import {
     AnyPush,
-    Configuration,
     DefaultGoalNameGenerator,
     FulfillableGoalDetails,
     FulfillableGoalWithRegistrations,
@@ -47,15 +46,34 @@ import {
     readKubernetesSpec,
 } from "./goalSetup";
 
+/**
+ * Registration to pass to KubernetesDeploy goal to describe the deployment metadata
+ */
 export interface KubernetesDeployRegistration extends FulfillmentRegistration {
+
+    /**
+     * Create the raw deployment data (name, ns, environment, ingress etc)
+     */
     deploymentData?: (goal: SdmGoalEvent, context: RepoContext) => Promise<KubernetesDeploymentOptions>;
+
+    /**
+     * Create the service spec patch for this application
+     */
     serviceSpecCreator?: (serviceSpec: Service, goal: SdmGoalEvent, context: RepoContext) => Promise<Service>;
+
+    /**
+     * Create the deployment spec path
+     */
     deploymentSpecCreator?: (deploymentSpec: Deployment, goal: SdmGoalEvent, context: RepoContext) => Promise<Deployment>;
 }
 
+/**
+ * Goal that deploys an application to a Kubernetes cluster by using a direct deploy in SDM local mode or
+ * triggers deploy via k8-automation for non-local mode use.
+ */
 export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {
 
-    constructor(details?: {
+    constructor(public readonly details?: {
                     environment: "testing" | "production" | string,
                 } & FulfillableGoalDetails,
                 ...dependsOn: Goal[]) {
@@ -70,6 +88,9 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
         }, ...dependsOn);
     }
 
+    /**
+     * Register a deployment with all required callbacks
+     */
     public with(registration: KubernetesDeployRegistration): this {
         if (isInLocalMode()) {
             this.addFulfillment({
@@ -91,6 +112,9 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
         return this;
     }
 
+    /**
+     * Convenience method to register a deployment
+     */
     public withDeployment(deploymentData?:
                               (goal: SdmGoalEvent, context: RepoContext) => Promise<KubernetesDeploymentOptions>,
                           serviceSpecCreator?:
@@ -98,7 +122,7 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
                           deploymentSpecCreator?:
                               (deploymentSpec: Deployment, goal: SdmGoalEvent, context: RepoContext) => Promise<Deployment>): this {
         this.with({
-            name: DefaultGoalNameGenerator.generateName(this.definition.uniqueName),
+            name: DefaultGoalNameGenerator.generateName("k8-deployer"),
             deploymentData,
             serviceSpecCreator,
             deploymentSpecCreator,
@@ -106,6 +130,9 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
         return this;
     }
 
+    /**
+     * Called by the SDM on initialization
+     */
     public register(sdm: SoftwareDeliveryMachine) {
         super.register(sdm);
 
@@ -143,7 +170,7 @@ function kubernetesDataCallback(k8Deploy: KubernetesDeploy,
             if (registration.deploymentData) {
                 deploymentData = await registration.deploymentData(goal, ctx);
             } else {
-                deploymentData = await defaultDeploymentData(p, goal, ctx, k8Deploy.sdm.configuration);
+                deploymentData = await defaultDeploymentData(p, goal, ctx, k8Deploy);
             }
 
             if (!deploymentData.environment) {
@@ -165,11 +192,19 @@ function kubernetesDataCallback(k8Deploy: KubernetesDeploy,
     };
 }
 
+/**
+ * Default deployment data callback that reads the Dockerfile and uses EXPOSE instructions to setup
+ * ingress rules.
+ */
 export async function defaultDeploymentData(p: Project,
                                             goal: SdmGoalEvent,
                                             ctx: RepoContext,
-                                            configuration: Configuration): Promise<KubernetesDeploymentOptions> {
+                                            k8Deploy: KubernetesDeploy): Promise<KubernetesDeploymentOptions> {
+    const configuration = k8Deploy.sdm.configuration;
+    const details = k8Deploy.details;
+    const ns = details && details.environment ? details.environment : "default";
     let ingress: Partial<KubernetesDeploymentOptions> = {};
+
     if (await p.hasFile("Dockerfile")) {
         const df = await p.getFile("Dockerfile");
         const parser = require("docker-file-parser");
@@ -177,12 +212,13 @@ export async function defaultDeploymentData(p: Project,
 
         const commands = parser.parse(await df.getContent(), options);
         const exposeCommands = commands.filter(c => c.name === "EXPOSE");
-        if (exposeCommands.length >= 2) {
+
+        if (exposeCommands.length > 1) {
             throw new Error(`Unable to determine port for default ingress. Dockerfile in project '${goal.repo.owner}/${
                 goal.repo.name}' has more then one EXPOSE instruction: ${exposeCommands.map(c => c.args).join(", ")}`);
         } else if (exposeCommands.length === 1) {
             let host = "sdm.info";
-            let path = `/${goal.repo.owner}/${goal.repo.name}`;
+            let path = `/${ns}/${goal.repo.owner}/${goal.repo.name}`;
             if (_.get(configuration, "sdm.k8.ingress.host")) {
                 host = _.get(configuration, "sdm.k8.ingress.host");
             } else if (_.get(configuration, "sdm.k8.context") === "minikube") {
@@ -202,7 +238,7 @@ export async function defaultDeploymentData(p: Project,
                 );
 
                 if (result.code === 0) {
-                    host = `${goal.repo.name}.${goal.repo.owner}.${configuration.environment}.${log.log.trim()}.nip.io`;
+                    host = `${goal.repo.name}.${goal.repo.owner}.${ns}.${log.log.trim()}.nip.io`;
                     path = "/";
                 }
             }
@@ -219,7 +255,7 @@ export async function defaultDeploymentData(p: Project,
         name: goal.repo.name,
         environment: configuration.environment,
 
-        ns: `atm-${goal.repo.owner}`,
+        ns,
         ...ingress,
     };
 }
@@ -235,7 +271,7 @@ function getEnvironmentLabel(details?: { environment?: string }): string {
                 return ` to \`${details.environment}\``;
         }
     } else {
-        return IndependentOfEnvironment;
+        return "";
     }
 }
 
