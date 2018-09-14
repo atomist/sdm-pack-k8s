@@ -31,13 +31,6 @@ import {
 } from "../src/support/api";
 import * as k8 from "kubernetes-client";
 
-import {
-    logger,
-    LoggingConfig,
-} from "@atomist/automation-client";
-LoggingConfig.format = "cli";
-(logger as any).level = process.env.LOG_LEVEL || "info";
-
 describe("k8", () => {
 
     describe("getKubeConfig", () => {
