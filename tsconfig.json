@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
     "newLine": "LF",
-    "target": "ES2017",
+    "target": "ES6",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "resolveJsonModule": true,
     "jsx": "React",
     "declaration": true,
     "sourceMap": true,
@@ -17,14 +16,21 @@
       "esnext.asynciterable"
     ],
     "strict": true,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
     "strictNullChecks": false,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": [
-    "lib/**/*.ts"
+  "exclude": [
+    "assets",
+    "build",
+    "doc",
+    "legal",
+    "log",
+    "node_modules",
+    ".#*"
   ],
   "compileOnSave": true,
   "buildOnSave": false,

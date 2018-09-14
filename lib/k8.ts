@@ -67,7 +67,7 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
 function configureContext(sdm: SoftwareDeliveryMachine,
                           options: KubernetesOptions): string {
     const kubeConfig = loadKubeConfig();
-    const contexts = kubeConfig.contexts.map(c => c.context.cluster);
+    const contexts = kubeConfig.contexts.map((c: any) => c.context.cluster);
     let context: string;
 
     // Assign context

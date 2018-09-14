@@ -36,7 +36,7 @@ describe("k8", () => {
     describe("getKubeConfig", () => {
         const cfgPath = process.env.KUBECONFIG || path.join(os.homedir(), ".kube", "config");
         const kubeconfig = k8.config.loadKubeconfig(cfgPath);
-        kubeconfig.contexts.forEach(c => {
+        kubeconfig.contexts.forEach((c: any) => {
             console.log(c);
         });
         const k8Config = k8.config.fromKubeconfig(kubeconfig, "minikube");

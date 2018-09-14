@@ -213,11 +213,11 @@ export async function defaultDeploymentData(p: Project,
         const options = { includeComments: false };
 
         const commands = parser.parse(await df.getContent(), options);
-        const exposeCommands = commands.filter(c => c.name === "EXPOSE");
+        const exposeCommands = commands.filter((c: any) => c.name === "EXPOSE");
 
         if (exposeCommands.length > 1) {
             throw new Error(`Unable to determine port for default ingress. Dockerfile in project '${goal.repo.owner}/${
-                goal.repo.name}' has more then one EXPOSE instruction: ${exposeCommands.map(c => c.args).join(", ")}`);
+                goal.repo.name}' has more then one EXPOSE instruction: ${exposeCommands.map((c: any) => c.args).join(", ")}`);
         } else if (exposeCommands.length === 1) {
             let host = "sdm.info";
             let path = `/${ns}/${goal.repo.owner}/${goal.repo.name}`;
@@ -284,6 +284,8 @@ function getEnvironment(details?: { environment?: string }): GoalEnvironment {
                 return StagingEnvironment;
             case "production":
                 return ProductionEnvironment;
+            default:
+                return IndependentOfEnvironment;
         }
     } else {
         return IndependentOfEnvironment;

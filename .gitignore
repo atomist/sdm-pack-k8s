@@ -6,7 +6,6 @@
 .npmrc
 node_modules/
 *.d.ts
-*.d.ts.map
 *.js
 *.js.map
 *.log
@@ -15,6 +14,3 @@ node_modules/
 /doc/
 /log/
 git-info.json
-
-coverage/
-.nyc_output/
