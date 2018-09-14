@@ -2,7 +2,6 @@
 .npmrc*
 config/
 graphql/
-src/
 test/
 tmp/
 build/

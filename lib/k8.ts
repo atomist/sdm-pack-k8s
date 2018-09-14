@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-import { SuccessIsReturn0ErrorFinder } from "@atomist/automation-client/util/spawned";
+import {
+    spawnAndWatch,
+    SuccessIsReturn0ErrorFinder,
+} from "@atomist/automation-client";
 import {
     ExtensionPack,
     logger,
+    metadata,
     SoftwareDeliveryMachine,
     StartupListener,
+    StringCapturingProgressLog,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { StringCapturingProgressLog } from "@atomist/sdm/api-helper/log/StringCapturingProgressLog";
-import { metadata } from "@atomist/sdm/api-helper/misc/extensionPack";
-import { spawnAndWatch } from "@atomist/sdm/api-helper/misc/spawned";
 import * as _ from "lodash";
 import {
     getKubeConfig,

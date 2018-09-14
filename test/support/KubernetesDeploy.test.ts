@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { InMemoryProject } from "@atomist/automation-client/project/mem/InMemoryProject";
-import { KubernetesDeploymentOptions } from "../../src";
-import { defaultDeploymentData } from "../../src/support/KubernetesDeploy";
+import { InMemoryProject } from "@atomist/automation-client";
 import assert = require("power-assert");
+import { KubernetesDeploymentOptions } from "../../index";
+import { defaultDeploymentData } from "../../lib/support/KubernetesDeploy";
 
 describe("KubernetesDeploy", () => {
 
@@ -55,6 +55,7 @@ describe("KubernetesDeploy", () => {
             assert.deepEqual(dd, exp);
         });
 
+        // noinspection TsLint
         const DockerfileWithOneExpose = `FROM openjdk:8
 
 ENV DUMB_INIT_VERSION=1.2.1
@@ -76,7 +77,6 @@ CMD ["-jar", "spring-boot.jar"]
 ENTRYPOINT ["dumb-init", "java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Xmx256m", "-Djava.security.egd=file:/dev/urandom"]
 
 COPY target/spring-boot.jar spring-boot.jar`;
-
 
         it("should return deployment data with ingress from Dockerfile", async () => {
             const goal = {
@@ -114,6 +114,7 @@ COPY target/spring-boot.jar spring-boot.jar`;
             assert.deepStrictEqual(dd, exp);
         });
 
+        // noinspection TsLint
         const DockerfileWithSeveralExpose = `FROM openjdk:8
 
 ENV DUMB_INIT_VERSION=1.2.1
@@ -137,7 +138,6 @@ CMD ["-jar", "spring-boot.jar"]
 ENTRYPOINT ["dumb-init", "java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Xmx256m", "-Djava.security.egd=file:/dev/urandom"]
 
 COPY target/spring-boot.jar spring-boot.jar`;
-
 
         it("should fail to return deployment data with ingress from Dockerfile", async () => {
             const goal = {

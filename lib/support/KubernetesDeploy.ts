@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { SuccessIsReturn0ErrorFinder } from "@atomist/automation-client/util/spawned";
+import {
+    spawnAndWatch,
+    SuccessIsReturn0ErrorFinder,
+} from "@atomist/automation-client";
 import {
     AnyPush,
     DefaultGoalNameGenerator,
@@ -22,19 +25,18 @@ import {
     FulfillableGoalWithRegistrations,
     FulfillmentRegistration,
     getGoalDefintionFrom,
+    Goal,
     GoalEnvironment,
     IndependentOfEnvironment,
     ProductionEnvironment,
     Project,
+    RepoContext,
     SdmGoalEvent,
     SoftwareDeliveryMachine,
     StagingEnvironment,
+    StringCapturingProgressLog,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { StringCapturingProgressLog } from "@atomist/sdm/api-helper/log/StringCapturingProgressLog";
-import { spawnAndWatch } from "@atomist/sdm/api-helper/misc/spawned";
-import { RepoContext } from "@atomist/sdm/api/context/SdmContext";
-import { Goal } from "@atomist/sdm/api/goal/Goal";
 import * as _ from "lodash";
 import {
     Deployment,

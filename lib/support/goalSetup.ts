@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { GitProject } from "@atomist/automation-client/project/git/GitProject";
+import { GitProject } from "@atomist/automation-client";
 import { SdmGoalEvent } from "@atomist/sdm";
 import * as path from "path";
 

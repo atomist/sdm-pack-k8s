@@ -18,6 +18,7 @@ import * as os from "os";
 import * as path from "path";
 import * as assert from "power-assert";
 
+import * as k8 from "kubernetes-client";
 import {
     deploymentPatch,
     deploymentTemplate,
@@ -28,8 +29,7 @@ import {
     ingressTemplate,
     KubeApplication,
     serviceTemplate,
-} from "../src/support/api";
-import * as k8 from "kubernetes-client";
+} from "../lib/support/api";
 
 describe("k8", () => {
 

@@ -2,9 +2,9 @@ export {
     KubernetesDeploymentOptions,
     createKubernetesData,
     readKubernetesSpec,
-} from "./support/goalSetup";
+} from "./lib/support/goalSetup";
 
 export {
     KubernetesOptions,
     kubernetesSupport,
-} from "./k8";
+} from "./lib/k8";
