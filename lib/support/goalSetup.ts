@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { GitProject } from "@atomist/automation-client/project/git/GitProject";
+import { GitProject } from "@atomist/automation-client";
 import { SdmGoalEvent } from "@atomist/sdm";
 import * as path from "path";
 
@@ -63,7 +63,7 @@ export async function createKubernetesData(goal: SdmGoalEvent,
  */
 export async function readKubernetesSpec(p: GitProject, name: string): Promise<string> {
     const specPath = path.join(".atomist", "kubernetes", name);
-    if (p.fileExistsSync(specPath)) {
+    if (await p.hasFile(specPath)) {
         return (await p.getFile(specPath)).getContent();
     } else {
         return undefined;

@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
 import {
     ExecuteGoal,
     ExecuteGoalResult,
     GoalInvocation,
     SdmGoalEvent,
 } from "@atomist/sdm";
-import { isInLocalMode } from "@atomist/sdm-core";
 import stringify = require("json-stringify-safe");
 import * as k8 from "kubernetes-client";
 import {
@@ -33,20 +31,19 @@ import {
 } from "./api";
 
 export interface KubernetesDeployerOptions {
-    environment: string;
-    mode: "cluster" | "namespace";
-    namespaces: string[];
+    context: string;
 }
 
-export function executeKubernetesDeploy(options: KubernetesDeployerOptions): ExecuteGoal {
+export function executeKubernetesDeploy(): ExecuteGoal {
     return async (goalInvocation: GoalInvocation): Promise<ExecuteGoalResult> => {
-        const { context, sdmGoal, progressLog } = goalInvocation;
+        const { configuration, context, sdmGoal, progressLog } = goalInvocation;
 
+        const options = configuration.sdm.k8 as KubernetesDeployerOptions;
         const repo = sdmGoal.repo.name;
         const owner = sdmGoal.repo.owner;
         const sha = sdmGoal.sha;
         const workspaceId = context.workspaceId;
-        const env = options.environment;
+        const env = configuration.environment;
         const depName = `${workspaceId}:${env}:${owner}:${repo}:${sha}`;
         if (!sdmGoal.push.after.image) {
             const msg = `Kubernetes deploy requested for ${depName} but that commit ` +
@@ -58,20 +55,20 @@ export function executeKubernetesDeploy(options: KubernetesDeployerOptions): Exe
 
         let k8Config: k8.ClusterConfiguration | k8.ClientConfiguration;
         try {
-            k8Config = getKubeConfig();
+            k8Config = getKubeConfig(options.context);
         } catch (e) {
             return { code: 1, message: e.message };
         }
 
         let kubeApp: KubeApplication;
         try {
-            kubeApp = validateSdmGoal(sdmGoal, options);
+            kubeApp = validateSdmGoal(sdmGoal);
         } catch (e) {
             const msg = `${depName} ${e.message}`;
             return { code: 1, message: msg };
         }
         if (!kubeApp) {
-            return { code: 1, message: "No Kuberneetes deployment data found"};
+            return { code: 1, message: "No Kubernetes deployment data found" };
         }
 
         progressLog.write(`Deploying ${depName} to Kubernetes`);
@@ -108,7 +105,7 @@ export function executeKubernetesDeploy(options: KubernetesDeployerOptions): Exe
  * @return valid KubeApplication if something should be deployed,
  *         undefined if nothing should be deployed
  */
-export function validateSdmGoal(sdmGoal: SdmGoalEvent, kd: KubernetesDeployerOptions): KubeApplication {
+export function validateSdmGoal(sdmGoal: SdmGoalEvent): KubeApplication {
     if (!sdmGoal.data) {
         throw new Error(`SDM goal data property is false, cannot deploy: '${stringify(sdmGoal)}'`);
     }
@@ -125,30 +122,6 @@ export function validateSdmGoal(sdmGoal: SdmGoalEvent, kd: KubernetesDeployerOpt
     const kubeApp: KubeApplication = sdmData.kubernetes;
     if (!kubeApp.name) {
         throw new Error(`SDM goal data kubernetes name property is false, cannot deploy: '${stringify(sdmData)}'`);
-    }
-    if (kubeApp.environment !== kd.environment) {
-        logger.info(`SDM goal data kubernetes environment '${kubeApp.environment}' is not this ` +
-            `environment '${kd.environment}'`);
-        return undefined;
-    }
-    kubeApp.ns = kubeApp.ns || "default";
-    const podNs = process.env.POD_NAMESPACE;
-    if (!isInLocalMode()) {
-        if (kd.mode === "namespace") {
-            if (!podNs) {
-                throw new Error(`Kubernetes deploy requested but k8-automation is running in ` +
-                    `namespace-scoped mode and the POD_NAMESPACE environment variable is not set`);
-            }
-            if (kubeApp.ns !== podNs) {
-                logger.info(`SDM goal data kubernetes namespace '${kubeApp.ns}' is not the name as ` +
-                    `k8-automation running in namespace-scoped mode '${podNs}'`);
-                return undefined;
-            }
-        } else if (kd.namespaces && kd.namespaces.length > 0 && !kd.namespaces.includes(kubeApp.ns)) {
-            logger.info(`SDM goal data kubernetes namespace '${kubeApp.ns}' is not in managed ` +
-                `namespaces '${kd.namespaces.join(",")}'`);
-            return undefined;
-        }
     }
     return kubeApp;
 }
