@@ -19,6 +19,7 @@ import assert = require("power-assert");
 import { KubernetesDeploymentOptions } from "../../index";
 import { defaultDeploymentData } from "../../lib/support/KubernetesDeploy";
 
+// tslint:disable
 describe("KubernetesDeploy", () => {
 
     describe("defaultDeploymentData", () => {
@@ -55,7 +56,7 @@ describe("KubernetesDeploy", () => {
             assert.deepEqual(dd, exp);
         });
 
-        // noinspection TsLint
+        // tslint:disable
         const DockerfileWithOneExpose = `FROM openjdk:8
 
 ENV DUMB_INIT_VERSION=1.2.1

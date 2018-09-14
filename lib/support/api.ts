@@ -26,6 +26,8 @@ import * as path from "path";
 import promiseRetry = require("promise-retry");
 import { preErrMsg } from "./error";
 
+// tslint:disable:max-file-line-count
+
 /**
  * Get Kubernetes configuration either from the creds directory or the
  * in-cluster client.
@@ -1042,6 +1044,7 @@ export function ingressTemplate(req: KubeApplication): Ingress {
  * @param req ingress request
  * @return ingress patch or undefined if no need to patch
  */
+// tslint:disable:cyclomatic-complexity
 export function ingressPatch(ing: Ingress, req: KubeApplication): Partial<Ingress> {
     const httpPath: HTTPIngressPath = httpIngressPath(req);
     const rules = (ing && ing.spec && ing.spec.rules) ? ing.spec.rules : [];
