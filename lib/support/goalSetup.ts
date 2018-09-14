@@ -29,6 +29,7 @@ export interface KubernetesDeploymentOptions {
     host?: string;
     protocol?: string;
     replicas?: number;
+    tlsSecret?: string;
 }
 
 /**
