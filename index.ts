@@ -28,5 +28,5 @@ export {
 export {
     KubernetesDeploy,
     defaultDeploymentData,
-    KubernetesDeployRegistration
+    KubernetesDeployRegistration,
 } from "./lib/support/KubernetesDeploy";
