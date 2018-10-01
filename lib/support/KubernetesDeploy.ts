@@ -24,7 +24,7 @@ import {
     FulfillableGoalDetails,
     FulfillableGoalWithRegistrations,
     FulfillmentRegistration,
-    getGoalDefintionFrom,
+    getGoalDefinitionFrom,
     Goal,
     GoalEnvironment,
     IndependentOfEnvironment,
@@ -81,7 +81,7 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
                 ...dependsOn: Goal[]) {
 
         super({
-            ...getGoalDefintionFrom(details, DefaultGoalNameGenerator.generateName("k8-deploy")),
+            ...getGoalDefinitionFrom(details, DefaultGoalNameGenerator.generateName("k8-deploy")),
             displayName: `deploy${getEnvironmentLabel(details)}`,
             environment: getEnvironment(details),
             completedDescription: `Deployed${getEnvironmentLabel(details)}`,
