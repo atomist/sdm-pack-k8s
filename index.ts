@@ -30,3 +30,5 @@ export {
     defaultDeploymentData,
     KubernetesDeployRegistration,
 } from "./lib/support/KubernetesDeploy";
+
+export * from "./lib/support/api";
