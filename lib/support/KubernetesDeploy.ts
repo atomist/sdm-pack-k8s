@@ -158,12 +158,13 @@ function kubernetesDataCallback(k8Deploy: KubernetesDeploy,
             credentials: ctx.credentials, id: ctx.id, context: ctx.context, readOnly: true,
         }, async p => {
 
-            let deploymentSpec = (await readKubernetesSpec(p, "deployment.json") as any) || {} as Deployment;
+            let deploymentSpec = JSON.parse(
+                (await readKubernetesSpec(p, "deployment.json")) || "{}") as Deployment;
             if (registration.deploymentSpecCreator) {
                 deploymentSpec = await registration.deploymentSpecCreator(deploymentSpec, goal, ctx);
             }
 
-            let serviceSpec = (await readKubernetesSpec(p, "service.json") as any) || {} as Service;
+            let serviceSpec = JSON.parse((await readKubernetesSpec(p, "service.json")) || "{}") as Service;
             if (registration.serviceSpecCreator) {
                 serviceSpec = await registration.serviceSpecCreator(serviceSpec, goal, ctx);
             }
