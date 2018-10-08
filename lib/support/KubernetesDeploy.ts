@@ -264,7 +264,7 @@ export async function defaultDeploymentData(p: Project,
 }
 
 function getEnvironmentLabel(details?: { environment?: string }): string {
-    if (details && details.environment) {
+    if (details && details.environment && typeof details.environment === "string") {
         switch (details.environment) {
             case "testing":
                 return " to `testing`";
@@ -273,13 +273,22 @@ function getEnvironmentLabel(details?: { environment?: string }): string {
             default:
                 return ` to \`${details.environment}\``;
         }
+    } else if (details && details.environment) {
+        switch (details.environment) {
+            case StagingEnvironment:
+                return " to `testing`";
+            case ProductionEnvironment:
+                return " to `production`";
+            default:
+                return "";
+        }
     } else {
         return "";
     }
 }
 
 function getEnvironment(details?: { environment?: string }): GoalEnvironment {
-    if (details && details.environment) {
+    if (details && details.environment && typeof details.environment === "string") {
         switch (details.environment) {
             case "testing":
                 return StagingEnvironment;
@@ -288,6 +297,8 @@ function getEnvironment(details?: { environment?: string }): GoalEnvironment {
             default:
                 return IndependentOfEnvironment;
         }
+    } else if (details && details.environment) {
+        return details.environment as GoalEnvironment;
     } else {
         return IndependentOfEnvironment;
     }
