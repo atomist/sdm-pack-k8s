@@ -47,7 +47,7 @@ describe("KubernetesDeploy", () => {
                     },
                 },
             };
-            const dd = await defaultDeploymentData(p, goal, null, conf as any);
+            const dd = await defaultDeploymentData(p as any, goal, null, conf as any);
             const exp = {
                 name: "sdm",
                 environment: "demo",
@@ -102,7 +102,7 @@ COPY target/spring-boot.jar spring-boot.jar`;
                     },
                 },
             };
-            const dd = await defaultDeploymentData(p, goal, null, conf as any);
+            const dd = await defaultDeploymentData(p as any, goal, null, conf as any);
             const exp = {
                 name: "sdm",
                 host: "sdm.info",
@@ -164,7 +164,7 @@ COPY target/spring-boot.jar spring-boot.jar`;
             } as any;
             const p = InMemoryProject.of({ path: "Dockerfile", content: DockerfileWithSeveralExpose });
             try {
-                await defaultDeploymentData(p, goal, null, conf);
+                await defaultDeploymentData(p as any, goal, null, conf);
                 assert.fail();
             } catch (err) {
                 assert(err.message.includes("Unable to determine port for default ingress"));

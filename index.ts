@@ -24,11 +24,9 @@ export {
     KubernetesOptions,
     kubernetesSupport,
 } from "./lib/k8";
-
 export {
     KubernetesDeploy,
     defaultDeploymentData,
     KubernetesDeployRegistration,
 } from "./lib/support/KubernetesDeploy";
-
 export * from "./lib/support/api";

@@ -15,12 +15,12 @@
  */
 
 import {
+    logger,
     spawnAndWatch,
     SuccessIsReturn0ErrorFinder,
 } from "@atomist/automation-client";
 import {
     ExtensionPack,
-    logger,
     metadata,
     SoftwareDeliveryMachine,
     StartupListener,

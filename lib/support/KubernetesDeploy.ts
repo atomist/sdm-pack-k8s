@@ -15,6 +15,7 @@
  */
 
 import {
+    GitProject,
     spawnAndWatch,
     SuccessIsReturn0ErrorFinder,
 } from "@atomist/automation-client";
@@ -29,7 +30,6 @@ import {
     GoalEnvironment,
     IndependentOfEnvironment,
     ProductionEnvironment,
-    Project,
     RepoContext,
     SdmGoalEvent,
     SoftwareDeliveryMachine,
@@ -199,7 +199,7 @@ function kubernetesDataCallback(k8Deploy: KubernetesDeploy,
  * Default deployment data callback that reads the Dockerfile and uses EXPOSE instructions to setup
  * ingress rules.
  */
-export async function defaultDeploymentData(p: Project,
+export async function defaultDeploymentData(p: GitProject,
                                             goal: SdmGoalEvent,
                                             ctx: RepoContext,
                                             k8Deploy: KubernetesDeploy): Promise<KubernetesDeploymentOptions> {
