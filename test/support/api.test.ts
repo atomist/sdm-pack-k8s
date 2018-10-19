@@ -25,9 +25,10 @@ import {
     ingressTemplate,
     KubeApplication,
     serviceTemplate,
-} from "../lib/support/api";
+} from "../../lib/support/api";
 
-// tslint:disable
+// tslint:disable:max-file-line-count
+
 describe("k8", () => {
 
     describe("deploymentPatch", () => {

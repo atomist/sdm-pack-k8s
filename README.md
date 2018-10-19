@@ -1,15 +1,60 @@
+<p align="center">
+  <img src="https://images.atomist.com/sdm/SDM-Logo-Dark.png">
+</p>
+
 # @atomist/sdm-pack-k8
 
 [![atomist sdm goals](http://badge.atomist.com/T29E48P34/atomist/sdm-pack-k8/36919e92-7d10-4e4c-87b7-a0fd58bca349)](https://app.atomist.com/workspace/T29E48P34)
-[![npm version](https://img.shields.io/npm/v/@atomist/sdm-pack-k8/next.svg)](https://www.npmjs.com/package/@atomist/sdm-pack-k8/v/next)
+[![npm version](https://img.shields.io/npm/v/@atomist-seeds/sdm-pack-k8.svg)](https://www.npmjs.com/package/@atomist/sdm-pack-k8)
 
-[Atomist][atomist] software delivery machine (SDM) extension Pack for an Atomist SDM to integrate [Kubernetes](https://kubernetes.io) deployments.
+[Atomist][atomist] software delivery machine (SDM) extension Pack for
+an Atomist SDM to integrate [Kubernetes][kubernetes] deployments.
 
-See the [Atomist documentation][atomist-doc] for more information on
-what SDMs are and what they can do for you using the Atomist API for
-software.
+[kubernetes]: https://kubernetes.io (Kubernetes)
+
+Software delivery machines enable you to control your delivery process
+in code.  Think of it as an API for your software delivery.  See the
+[Atomist documentation][atomist-doc] for more information on the
+concept of a software delivery machine and how to create and develop
+an SDM.
 
 [atomist-doc]: https://docs.atomist.com/ (Atomist Documentation)
+
+## Getting started
+
+See the [Developer Quick Start][atomist-quick] to jump straight to
+creating an SDM.
+
+[atomist-quick]: https://docs.atomist.com/quick-start/ (Atomist - Developer Quick Start)
+
+## Contributing
+
+Contributions to this project from community members are encouraged
+and appreciated. Please review the [Contributing
+Guidelines](CONTRIBUTING.md) for more information. Also see the
+[Development](#development) section in this document.
+
+## Code of conduct
+
+This project is governed by the [Code of
+Conduct](CODE_OF_CONDUCT.md). You are expected to act in accordance
+with this code by participating. Please report any unacceptable
+behavior to code-of-conduct@atomist.com.
+
+## Documentation
+
+Please see [docs.atomist.com][atomist-doc] for
+[developer][atomist-doc-sdm] documentation.
+
+[atomist-doc-sdm]: https://docs.atomist.com/developer/sdm/ (Atomist Documentation - SDM Developer)
+
+## Connect
+
+Follow [@atomist][atomist-twitter] and [The Composition][atomist-blog]
+blog related to SDM.
+
+[atomist-twitter]: https://twitter.com/atomist (Atomist on Twitter)
+[atomist-blog]: https://the-composition.com/ (The Composition - The Official Atomist Blog)
 
 ## Usage
 
@@ -28,7 +73,7 @@ sdm.addExtensionPacks(kubernetesSupport({
         deployments: [{
             goal: StagingDeploymentGoal,
             pushTest: IsNode,
-            callback: kubernetesDataCallback(sdm.configuration), 
+            callback: kubernetesDataCallback(sdm.configuration),
         }, {
             goal: ProductionDeploymentGoal,
             pushTest: IsNode,
@@ -50,28 +95,29 @@ channel in the [Atomist community Slack workspace][slack].
 
 If you find a problem, please create an [issue][].
 
-[issue]: https://github.com/atomist/sdm-pack-spring/issues
+[issue]: https://github.com/atomist/sdm-pack-k8/issues
 
 ## Development
 
-You will need to install [Node][node] to build and test this project.
+You will need to install [Node.js][node] to build and test this
+project.
 
 [node]: https://nodejs.org/ (Node.js)
 
 ### Build and test
 
-Use the following package scripts to build, test, and perform other
-development tasks.
+Install dependencies.
 
-Command | Reason
-------- | ------
-`npm install` | install project dependencies
-`npm run build` | compile, test, lint, and generate docs
-`npm run lint` | run TSLint against the TypeScript
-`npm run compile` | generate types from GraphQL and compile TypeScript
-`npm test` | run tests
-`npm run autotest` | run tests every time a file changes
-`npm run clean` | remove files generated during build
+```
+$ npm install
+```
+
+Use the `build` package script to compile, test, lint, and build the
+documentation.
+
+```
+$ npm run build
+```
 
 ### Release
 
