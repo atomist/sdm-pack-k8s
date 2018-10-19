@@ -28,29 +28,29 @@ import { preErrMsg } from "./error";
 
 // tslint:disable:max-file-line-count
 
+function configPath(): string {
+    return process.env.KUBECONFIG || path.join(os.homedir(), ".kube", "config");
+}
+
 /**
  * Get Kubernetes configuration either from the creds directory or the
  * in-cluster client.
  */
 export function getKubeConfig(context?: string): k8.ClusterConfiguration | k8.ClientConfiguration {
     let k8Config: k8.ClusterConfiguration | k8.ClientConfiguration;
-    const cfgPath = process.env.KUBECONFIG || path.join(os.homedir(), ".kube", "config");
+    const cfgPath = configPath();
     try {
         const kubeconfig = k8.config.loadKubeconfig(cfgPath);
         k8Config = k8.config.fromKubeconfig(kubeconfig, context);
     } catch (e) {
         logger.debug(`failed to use ${cfgPath}: ${e.message}`);
-        try {
-            k8Config = k8.config.getInCluster();
-        } catch (er) {
-            throw er;
-        }
+        k8Config = k8.config.getInCluster();
     }
     return k8Config;
 }
 
 export function loadKubeConfig(): any {
-    const cfgPath = process.env.KUBECONFIG || path.join(os.homedir(), ".kube", "config");
+    const cfgPath = configPath();
     return k8.config.loadKubeconfig(cfgPath);
 }
 
@@ -965,8 +965,8 @@ const ingressName = "atm-ingress";
 export function endpointBaseUrl(req: KubeApplication): string {
     const defaultProtocol = (req.tlsSecret) ? "https" : "http";
     const protocol = (req.protocol) ? req.protocol : defaultProtocol;
-    const host = req.host ? req.host : "localhost";
-    const tail = req.path && req.path !== "/" ? `${req.path}/` : "/";
+    const host = (req.host) ? req.host : "localhost";
+    const tail = (req.path && req.path !== "/") ? `${req.path}/` : "/";
     return `${protocol}://${host}${tail}`;
 }
 
