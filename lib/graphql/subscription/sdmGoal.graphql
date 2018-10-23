@@ -1,0 +1,97 @@
+subscription KubeDeployRequestedSdmGoal {
+  SdmGoal(state: [requested]) {
+    uniqueName
+    name
+    id
+    environment
+    sha
+    branch
+    push {
+      id
+      timestamp
+      branch
+      before {
+        sha
+        message
+        committer {
+          login
+        }
+      }
+      after {
+        sha
+        message
+        committer {
+          login
+        }
+        image {
+          image
+          imageName
+        }
+      }
+      repo {
+        name
+        owner
+        org {
+          provider {
+            providerId
+          }
+        }
+      }
+      commits {
+        sha
+        timestamp
+        message
+        author {
+          login
+          name
+        }
+      }
+    }
+    repo {
+      name
+      owner
+      providerId
+    }
+    fulfillment(name: ["@atomist/k8-automation"], method: ["side-effect"])
+      @required {
+      method
+      name
+    }
+    description
+    url
+    externalUrl
+    state
+    externalKey
+    goalSet
+    goalSetId
+    phase
+    ts
+    error
+    retryFeasible
+    provenance {
+      correlationId
+      registration
+      name
+      version
+      ts
+      userId
+      channelId
+    }
+    preConditions {
+      environment
+      name
+    }
+    approvalRequired
+    preApproval {
+      correlationId
+      registration
+      name
+      version
+      ts
+      userId
+      channelId
+    }
+    preApprovalRequired
+    data
+  }
+}
