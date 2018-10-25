@@ -29,6 +29,12 @@ import {
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as _ from "lodash";
 import {
+    kubeUndeploy,
+} from "./commands/kubeUndeploy";
+import {
+    kubeDeploy,
+} from "./events/kubeDeploy";
+import {
     getKubeConfig,
     loadKubeConfig,
 } from "./support/api";
@@ -38,6 +44,7 @@ import {
  */
 export interface KubernetesOptions {
     context?: string;
+    addCommands?: boolean;
 }
 
 /**
@@ -49,6 +56,11 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
     return {
         ...metadata(),
         configure: sdm => {
+
+            sdm.addEvent(kubeDeploy);
+            if (options.addCommands) {
+                sdm.addCommand(kubeUndeploy);
+            }
 
             if (isInLocalMode()) {
 
@@ -64,8 +76,7 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
     };
 }
 
-function configureContext(sdm: SoftwareDeliveryMachine,
-                          options: KubernetesOptions): string {
+function configureContext(sdm: SoftwareDeliveryMachine, options: KubernetesOptions): string {
     const kubeConfig = loadKubeConfig();
     const contexts = kubeConfig.contexts.map((c: any) => c.context.cluster);
     let context: string;
@@ -95,9 +106,9 @@ function configureContext(sdm: SoftwareDeliveryMachine,
 const DockerEnvStartupListener: StartupListener = async () => {
     const log = new StringCapturingProgressLog();
     const result = await spawnAndWatch({
-            command: "minikube",
-            args: ["docker-env"],
-        },
+        command: "minikube",
+        args: ["docker-env"],
+    },
         {},
         log,
         {
