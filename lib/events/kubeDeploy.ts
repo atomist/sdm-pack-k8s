@@ -138,7 +138,7 @@ export const KubeDeploy: OnEvent<KubeDeployRequestedSdmGoal.Subscription, KubeDe
                             description: `Deployed to Kubernetes namespace \`${kubeApp.ns}\``,
                         };
                         if (kubeApp.path && kubeApp.host) {
-                            upParams.externalUrl = endpointBaseUrl(kubeApp);
+                            upParams.externalUrls = [{ label: "Endpoint", url: endpointBaseUrl(kubeApp) }];
                         }
                         return updateGoal(ctx, sdmGoal, upParams)
                             .then(() => Success, err => {
