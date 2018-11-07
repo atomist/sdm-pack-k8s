@@ -16,36 +16,34 @@
 
 import * as assert from "power-assert";
 
-import { Success } from "@atomist/automation-client";
-import { SdmGoalEvent } from "@atomist/sdm";
-
 import {
-    CommitForSdmGoal,
+    SdmGoalEvent,
+} from "@atomist/sdm";
+import {
     eligibleDeployGoal,
-    KubeDeployParameters,
-    validateSdmGoal,
+    KubernetesDeployParameters,
+    verifyKubernetesApplicationDeploy,
 } from "../../lib/events/kubeDeploy";
+import {
+    KubernetesApplicationOptions,
+} from "../../lib/support/options";
+import {
+    defaultNamespace,
+} from "../../lib/typings/kubernetes";
 
 describe("kubeDeploy", () => {
 
     describe("eligibleDeployGoal", () => {
 
-        const c: CommitForSdmGoal = {
-            image: {
-                imageName: "bowie/life-on-mars:19.7.1",
-            },
-        };
-
-        it("should reject a goal with no fulfillment", () => {
+        it("should reject a goal with no fulfillment", async () => {
             const g: SdmGoalEvent = {
                 state: "requested",
             } as any;
-            const r = eligibleDeployGoal(g, c);
-            assert(r.code !== 0);
-            assert(r.message.startsWith("SDM goal contains no fulfillment"));
+            const r = await eligibleDeployGoal(g);
+            assert(r === false);
         });
 
-        it("should reject a goal not for k8-automation", () => {
+        it("should reject a goal not for someone else", async () => {
             const g: SdmGoalEvent = {
                 fulfillment: {
                     name: "Quicksand",
@@ -53,236 +51,197 @@ describe("kubeDeploy", () => {
                 },
                 state: "requested",
             } as any;
-            const r = eligibleDeployGoal(g, c);
-            assert(r.code !== 0);
-            assert(r.message.startsWith("SDM goal fulfillment name 'Quicksand' is not"));
+            const r = await eligibleDeployGoal(g);
+            assert(r === false);
         });
 
-        it("should reject a goal with non-side-effect fulfillment", () => {
+        it("should reject a goal with non-side-effect fulfillment", async () => {
             const g: SdmGoalEvent = {
                 fulfillment: {
-                    name: "@atomist/k8-automation",
+                    name: "@atomist/sdm-pack-k8",
                     method: "other",
                 },
                 state: "requested",
             } as any;
-            const r = eligibleDeployGoal(g, c);
-            assert(r.code !== 0);
-            assert(r.message.startsWith("SDM goal fulfillment method 'other' is not"));
+            const r = await eligibleDeployGoal(g);
+            assert(r === false);
         });
 
-        it("should reject a goal with non-side-effect fulfillment", () => {
+        it("should reject a goal with non-requested state", async () => {
             const g: SdmGoalEvent = {
                 fulfillment: {
-                    name: "@atomist/k8-automation",
+                    name: "@atomist/sdm-pack-k8",
                     method: "side-effect",
                 },
                 state: "skipped",
             } as any;
-            const r = eligibleDeployGoal(g, c);
-            assert(r.code !== 0);
-            assert(r.message === "SDM goal state 'skipped' is not 'requested'");
+            const r = await eligibleDeployGoal(g);
+            assert(r === false);
         });
 
-        it("should reject a goal with non-side-effect fulfillment", () => {
+        it("should accept a goal side-effect fulfillment for this package", async () => {
             const g: SdmGoalEvent = {
                 fulfillment: {
-                    name: "@atomist/k8-automation",
+                    name: "@atomist/sdm-pack-k8",
                     method: "side-effect",
                 },
                 state: "requested",
             } as any;
-            const r = eligibleDeployGoal(g, c);
-            assert.deepStrictEqual(r, Success);
+            const r = await eligibleDeployGoal(g);
+            assert(r === true);
         });
 
     });
 
-    describe("validateSdmGoal", () => {
+    describe("verifyKubeApplication", () => {
+
+        it("should validate when no deployment is supplied", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kv = verifyKubernetesApplicationDeploy(ka, undefined);
+            assert.deepStrictEqual(kv, ka);
+        });
+
+        it("should populate the default namespace if none provided", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+            };
+            const kv = verifyKubernetesApplicationDeploy(ka, undefined);
+            assert(kv.name === ka.name);
+            assert(kv.environment === ka.environment);
+            assert(kv.ns === defaultNamespace);
+        });
+
+        it("should validate when no environment, mode, or namespaces are supplied", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd = new KubernetesDeployParameters();
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert.deepStrictEqual(kv, ka);
+        });
 
         it("should validate when no mode or namespaces are supplied", () => {
-            const kd = {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
                 environment: "stardust",
-            } as any as KubeDeployParameters;
-            const d = {
-                kubernetes: {
-                    name: "spiders-from-mars",
-                    environment: "stardust",
-                    ns: "ziggy",
-                },
+                ns: "ziggy",
             };
-            const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
-            const ka = validateSdmGoal(g, kd);
-            assert.deepStrictEqual(ka, d.kubernetes);
+            const kd = new KubernetesDeployParameters();
+            kd.environment = "stardust";
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert.deepStrictEqual(kv, ka);
         });
 
         it("should validate in cluster mode with no namespaces", () => {
-            const kd = {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
                 environment: "stardust",
-                mode: "cluster",
-            } as any as KubeDeployParameters;
-            const d = {
-                kubernetes: {
-                    name: "spiders-from-mars",
-                    environment: "stardust",
-                    ns: "ziggy",
-                },
+                ns: "ziggy",
             };
-            const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
-            const ka = validateSdmGoal(g, kd);
-            assert.deepStrictEqual(ka, d.kubernetes);
+            const kd = new KubernetesDeployParameters();
+            kd.environment = "stardust";
+            kd.mode = "cluster";
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert.deepStrictEqual(kv, ka);
         });
 
         it("should validate in cluster mode with namespaces", () => {
-            const kd = {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployParameters = {
                 environment: "stardust",
                 mode: "cluster",
                 namespaces: ["left-hand", "made-it-too-far", "special-man", "ziggy", "band"],
-            } as any as KubeDeployParameters;
-            const d = {
-                kubernetes: {
-                    name: "spiders-from-mars",
-                    environment: "stardust",
-                    ns: "ziggy",
-                },
             };
-            const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
-            const ka = validateSdmGoal(g, kd);
-            assert.deepStrictEqual(ka, d.kubernetes);
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert.deepStrictEqual(kv, ka);
         });
 
         it("should return undefined if ns not in namespaces", () => {
-            const kd = {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployParameters = {
                 environment: "stardust",
                 mode: "cluster",
                 namespaces: ["left-hand", "made-it-too-far", "special-man", "ziggys-band"],
-            } as any as KubeDeployParameters;
-            const d = {
-                kubernetes: {
-                    name: "spiders-from-mars",
-                    environment: "stardust",
-                    ns: "ziggy",
-                },
             };
-            const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
-            const ka = validateSdmGoal(g, kd);
-            assert(ka === undefined);
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert(kv === undefined);
         });
 
         it("should validate in namespace mode", () => {
-            const kd = {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployParameters = {
                 environment: "stardust",
                 mode: "namespace",
-            } as any as KubeDeployParameters;
-            const d = {
-                kubernetes: {
-                    name: "spiders-from-mars",
-                    environment: "stardust",
-                    ns: "ziggy",
-                },
+                namespaces: undefined,
             };
-            const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
             const ns = process.env.POD_NAMESPACE;
             process.env.POD_NAMESPACE = "ziggy";
-            const ka = validateSdmGoal(g, kd);
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
             if (ns) {
                 process.env.POD_NAMESPACE = ns;
             } else {
                 delete process.env.POD_NAMESPACE;
             }
-            assert.deepStrictEqual(ka, d.kubernetes);
+            assert.deepStrictEqual(kv, ka);
         });
 
         it("should return undefined if ns not POD_NAMESPACE", () => {
-            const kd: KubeDeployParameters = {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployParameters = {
                 environment: "stardust",
                 mode: "namespace",
-            } as any;
-            const d = {
-                kubernetes: {
-                    name: "spiders-from-mars",
-                    environment: "stardust",
-                    ns: "ziggy",
-                },
+                namespaces: undefined,
             };
-            const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
             const ns = process.env.POD_NAMESPACE;
             process.env.POD_NAMESPACE = "not-ziggy";
-            const ka = validateSdmGoal(g, kd);
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
             if (ns) {
                 process.env.POD_NAMESPACE = ns;
             } else {
                 delete process.env.POD_NAMESPACE;
             }
-            assert(ka === undefined);
-        });
-
-        it("should throw an error if no data", () => {
-            const kd: KubeDeployParameters = {
-                environment: "stardust",
-                mode: "cluster",
-                namespaces: ["left-hand", "made-it-too-far", "special-man", "ziggys-band"],
-            } as any;
-            const g: SdmGoalEvent = {} as any;
-            assert.throws(() => validateSdmGoal(g, kd), /SDM goal data property is false, cannot deploy:/);
-        });
-
-        it("should throw an error if data does not parse", () => {
-            const kd: KubeDeployParameters = {
-                environment: "stardust",
-                mode: "cluster",
-                namespaces: ["left-hand", "made-it-too-far", "special-man", "ziggys-band"],
-            } as any;
-            const g: SdmGoalEvent = { data: "{not valid json]" } as any;
-            assert.throws(() => validateSdmGoal(g, kd), /Failed to parse SDM goal data/);
-        });
-
-        it("should throw an error if no kubernetes data", () => {
-            const kd: KubeDeployParameters = {
-                environment: "stardust",
-                mode: "cluster",
-                namespaces: ["left-hand", "made-it-too-far", "special-man", "ziggys-band"],
-            } as any;
-            const g: SdmGoalEvent = { data: "{}" } as any;
-            assert.throws(() => validateSdmGoal(g, kd),
-                /SDM goal data kubernetes property is false, cannot deploy:/);
-        });
-
-        it("should throw an error if no app name", () => {
-            const kd: KubeDeployParameters = {
-                environment: "stardust",
-                mode: "cluster",
-                namespaces: ["left-hand", "made-it-too-far", "special-man", "ziggys-band"],
-            } as any;
-            const d = {
-                kubernetes: {
-                    environment: "stardust",
-                    ns: "ziggy",
-                },
-            };
-            const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
-            assert.throws(() => validateSdmGoal(g, kd),
-                /SDM goal data kubernetes name property is false, cannot deploy:/);
+            assert(kv === undefined);
         });
 
         it("should throw an error if namespace not available in namespace mode", () => {
-            const kd: KubeDeployParameters = {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployParameters = {
                 environment: "stardust",
                 mode: "namespace",
-            } as any;
-            const d = {
-                kubernetes: {
-                    name: "spiders-from-mars",
-                    environment: "stardust",
-                    ns: "ziggy",
-                },
+                namespaces: undefined,
             };
-            const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
             const ns = process.env.POD_NAMESPACE;
             if (ns) {
                 delete process.env.POD_NAMESPACE;
             }
-            assert.throws(() => validateSdmGoal(g, kd),
+            assert.throws(() => verifyKubernetesApplicationDeploy(ka, kd),
                 // tslint:disable-next-line:max-line-length
                 /Kubernetes deploy requested but k8-automation is running in namespace-scoped mode and the POD_NAMESPACE environment variable is not set/);
             if (ns) {

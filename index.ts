@@ -15,18 +15,22 @@
  */
 
 export {
-    KubernetesDeploymentOptions,
-    createKubernetesData,
-    readKubernetesSpec,
-} from "./lib/support/goalSetup";
-
-export {
     KubernetesOptions,
     kubernetesSupport,
 } from "./lib/k8";
+export * from "./lib/support/api";
+export {
+    createKubernetesData,
+    readKubernetesSpec,
+} from "./lib/support/goal";
 export {
     KubernetesDeploy,
     defaultDeploymentData,
     KubernetesDeployRegistration,
 } from "./lib/support/KubernetesDeploy";
-export * from "./lib/support/api";
+export {
+    KubernetesApplicationOptions,
+    KubernetesDeploymentOptions,
+} from "./lib/support/options";
+import * as k8 from "./lib/typings/kubernetes";
+export { k8 };

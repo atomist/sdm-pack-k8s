@@ -23,7 +23,7 @@ subscription KubeDeployRequestedSdmGoal {
         committer {
           login
         }
-        image {
+        images {
           image
           imageName
         }

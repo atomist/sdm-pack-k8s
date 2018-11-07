@@ -32,7 +32,7 @@ import {
     kubeUndeploy,
 } from "./commands/kubeUndeploy";
 import {
-    kubeDeploy,
+    kubernetesDeploy,
 } from "./events/kubeDeploy";
 import {
     getKubeConfig,
@@ -57,7 +57,7 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
         ...metadata(),
         configure: sdm => {
 
-            sdm.addEvent(kubeDeploy);
+            sdm.addEvent(kubernetesDeploy);
             if (options.addCommands) {
                 sdm.addCommand(kubeUndeploy);
             }
@@ -96,7 +96,8 @@ function configureContext(sdm: SoftwareDeliveryMachine, options: KubernetesOptio
         // Validate context
         getKubeConfig(context);
     } catch (err) {
-        throw new Error(`Failed to load Kubernetes cluster context '${context}'. Available contexts are: ${contexts.join(", ")}`);
+        throw new Error(`Failed to load Kubernetes cluster context '${context}'. Available contexts are: ` +
+            contexts.join(", "));
     }
 
     _.set(sdm, "configuration.sdm.k8.context", context);
