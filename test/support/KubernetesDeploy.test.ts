@@ -15,9 +15,9 @@
  */
 
 import { InMemoryProject } from "@atomist/automation-client";
-import assert = require("power-assert");
-import { KubernetesDeploymentOptions } from "../../index";
+import * as assert from "power-assert";
 import { defaultDeploymentData } from "../../lib/support/KubernetesDeploy";
+import { KubernetesApplicationOptions } from "../../lib/support/options";
 
 // tslint:disable
 describe("KubernetesDeploy", () => {
@@ -111,7 +111,7 @@ COPY target/spring-boot.jar spring-boot.jar`;
                 port: 8080,
                 path: "/demo/atomist/sdm",
                 protocol: "http",
-            } as KubernetesDeploymentOptions;
+            } as KubernetesApplicationOptions;
             assert.deepStrictEqual(dd, exp);
         });
 

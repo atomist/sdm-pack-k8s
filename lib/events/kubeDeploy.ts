@@ -34,8 +34,11 @@ import {
     updateGoal,
     UpdateSdmGoalParams,
 } from "@atomist/sdm";
+import * as appRoot from "app-root-path";
+import * as fs from "fs-extra";
 import * as stringify from "json-stringify-safe";
 import * as k8 from "kubernetes-client";
+import * as path from "path";
 import {
     endpointBaseUrl,
     getKubeConfig,
@@ -43,6 +46,15 @@ import {
     KubeApplicationRequest,
     upsertApplication,
 } from "../support/api";
+import {
+    validateSdmGoal,
+} from "../support/deploy";
+import {
+    KubernetesApplicationOptions,
+} from "../support/options";
+import {
+    defaultNamespace,
+} from "../typings/kubernetes";
 import { KubeDeployRequestedSdmGoal } from "../typings/types";
 
 export interface CommitForSdmGoal {
@@ -52,28 +64,29 @@ export interface CommitForSdmGoal {
 }
 
 @Parameters()
-export class KubeDeployParameters {
+export class KubernetesDeployParameters {
     @Value("environment")
     public environment: string;
 
     /** cluster or namespace mode, default is cluster */
     @Value({
-        path: "kubernetes.mode",
+        path: "sdm.k8.mode",
         required: false,
     })
     public mode: "cluster" | "namespace" = "cluster";
 
     @Value({
-        path: "kubernetes.namespaces",
+        path: "sdm.k8.namespaces",
         required: false,
     })
     public namespaces: string[];
 }
 
-export const KubeDeploy: OnEvent<KubeDeployRequestedSdmGoal.Subscription, KubeDeployParameters> = async (
+/* tslint:disable:cyclomatic-complexity */
+export const KubernetesDeploy: OnEvent<KubeDeployRequestedSdmGoal.Subscription, KubernetesDeployParameters> = async (
     ef: EventFired<KubeDeployRequestedSdmGoal.Subscription>,
     ctx: HandlerContext,
-    params: KubeDeployParameters,
+    params: KubernetesDeployParameters,
 ): Promise<HandlerResult> => {
 
     if (!ef.data.SdmGoal) {
@@ -81,88 +94,100 @@ export const KubeDeploy: OnEvent<KubeDeployRequestedSdmGoal.Subscription, KubeDe
         return Promise.resolve(Success);
     }
 
-    return Promise.all(ef.data.SdmGoal.map(g => {
+    return Promise.all(ef.data.SdmGoal.map(async g => {
         const sdmGoal = g as SdmGoalEvent;
-        return fetchCommitForSdmGoal(ctx, sdmGoal)
-            .then((commit: CommitForSdmGoal) => {
-                const eligible = eligibleDeployGoal(sdmGoal, commit);
-                if (eligible !== Success) {
-                    logger.info(`SDM goal is not eligible for Kubernetes deploy: ${eligible.message}`);
-                    return Success;
-                }
+        const eligible = await eligibleDeployGoal(sdmGoal);
+        if (!eligible) {
+            logger.info("SDM goal is not eligible for Kubernetes deploy");
+            return Success;
+        }
+        const repo = g.repo.name;
+        const owner = g.repo.owner;
+        const sha = g.sha;
+        const workspaceId = ctx.workspaceId;
+        const env = params.environment;
+        const depName = `${workspaceId}:${env}:${owner}:${repo}:${sha}`;
+        const commit = await fetchCommitForSdmGoal(ctx, sdmGoal);
+        if (!commit.image) {
+            const msg = `Kubernetes deploy requested for ${depName} but that commit ` +
+                `has no Docker image associated with it`;
+            return failGoal(ctx, sdmGoal, msg);
+        }
+        const image = commit.image.imageName;
+        logger.debug(`Processing ${depName}`);
 
-                const repo = g.repo.name;
-                const owner = g.repo.owner;
-                const sha = g.sha;
-                const workspaceId = ctx.workspaceId;
-                const env = params.environment;
-                const depName = `${workspaceId}:${env}:${owner}:${repo}:${sha}`;
-                if (!commit.image) {
-                    const msg = `Kubernetes deploy requested for ${depName} but that commit ` +
-                        `has no Docker image associated with it`;
-                    return failGoal(ctx, sdmGoal, msg);
-                }
-                const image = commit.image.imageName;
-                logger.debug(`Processing ${depName}`);
+        let k8Config: k8.ClusterConfiguration | k8.ClientConfiguration;
+        try {
+            k8Config = getKubeConfig();
+        } catch (e) {
+            return failGoal(ctx, sdmGoal, e.message);
+        }
 
-                let k8Config: k8.ClusterConfiguration | k8.ClientConfiguration;
-                try {
-                    k8Config = getKubeConfig();
-                } catch (e) {
-                    return failGoal(ctx, sdmGoal, e.message);
-                }
+        let kubeGoalData = validateSdmGoal(sdmGoal);
+        if (!kubeGoalData) {
+            logger.debug(`No Kubernetes goal data found for ${depName}`);
+            return Success;
+        }
+        try {
+            kubeGoalData = verifyKubernetesApplicationDeploy(kubeGoalData, params);
+            if (!kubeGoalData) {
+                logger.debug(`Kubernetes deployment data did not match parameters for ${depName}`);
+                return Success;
+            }
+        } catch (e) {
+            const msg = `${depName} ${e.message}`;
+            return failGoal(ctx, sdmGoal, msg);
+        }
 
-                let kubeApp: KubeApplication;
-                try {
-                    kubeApp = validateSdmGoal(sdmGoal, params);
-                } catch (e) {
-                    const msg = `${depName} ${e.message}`;
-                    return failGoal(ctx, sdmGoal, msg);
-                }
-                if (!kubeApp) {
-                    return Success;
-                }
+        const kubeApp: KubeApplication = {
+            ...kubeGoalData,
+            workspaceId,
+            image,
+            ns: kubeGoalData.ns || defaultNamespace,
+        };
 
-                logger.info(`Deploying ${depName} to Kubernetes`);
-                const upsertReq: KubeApplicationRequest = {
-                    ...kubeApp,
-                    config: k8Config,
-                    workspaceId,
-                    image,
-                };
-                return upsertApplication(upsertReq)
-                    .then(() => {
-                        logger.info(`Successfully deployed ${depName} to Kubernetes`);
-                        const upParams: UpdateSdmGoalParams = {
-                            state: SdmGoalState.success,
-                            description: `Deployed to Kubernetes namespace \`${kubeApp.ns}\``,
-                        };
-                        if (kubeApp.path && kubeApp.host) {
-                            upParams.externalUrls = [{ label: "Endpoint", url: endpointBaseUrl(kubeApp) }];
-                        }
-                        return updateGoal(ctx, sdmGoal, upParams)
-                            .then(() => Success, err => {
-                                const message = `Successfully deployed ${depName} to Kubernetes, but failed to ` +
-                                    `update the SDM goal: ${err.message}`;
-                                logger.error(message);
-                                return { code: 1, message };
-                            });
-                    }, e => {
-                        const msg = `Failed to deploy ${depName} to Kubernetes: ${e.message}`;
-                        return failGoal(ctx, sdmGoal, msg);
-                    });
-            });
+        logger.info(`Deploying ${depName} to Kubernetes`);
+        const upsertReq: KubeApplicationRequest = {
+            ...kubeApp,
+            config: k8Config,
+        };
+        try {
+            await upsertApplication(upsertReq);
+        } catch (e) {
+            const msg = `Failed to deploy ${depName} to Kubernetes: ${e.message}`;
+            return failGoal(ctx, sdmGoal, msg);
+        }
+        logger.info(`Successfully deployed ${depName} to Kubernetes`);
+        const upParams: UpdateSdmGoalParams = {
+            state: SdmGoalState.success,
+            description: `Deployed to Kubernetes namespace \`${kubeApp.ns}\``,
+        };
+        if (kubeApp.path && kubeApp.host) {
+            const label = `Kubernetes ${env}:${kubeApp.ns}`;
+            const url = endpointBaseUrl(kubeApp);
+            upParams.externalUrls = [{ label, url }];
+        }
+        try {
+            await updateGoal(ctx, sdmGoal, upParams);
+        } catch (e) {
+            const msg = `Successfully deployed ${depName} to Kubernetes, but failed to ` +
+                `update the SDM goal: ${e.message}`;
+            return failGoal(ctx, sdmGoal, msg);
+        }
+        return Success;
     }))
-        .then(results => reduceResults(results));
+        .then(reduceResults);
 };
+/* tslint:enable:cyclomatic-complexity */
 
-export const kubeDeploy: EventHandlerRegistration<KubeDeployRequestedSdmGoal.Subscription, KubeDeployParameters> = {
+export const kubernetesDeploy: EventHandlerRegistration<KubeDeployRequestedSdmGoal.Subscription,
+    KubernetesDeployParameters> = {
     name: "KubeDeploy",
     description: "Deploy application resources to Kubernetes cluster",
     tags: ["deploy", "kubernetes"],
     subscription: GraphQL.subscription("KubeDeployRequestedSdmGoal"),
-    paramsMaker: KubeDeployParameters,
-    listener: KubeDeploy,
+    paramsMaker: KubernetesDeployParameters,
+    listener: KubernetesDeploy,
 };
 
 /**
@@ -172,75 +197,91 @@ export const kubeDeploy: EventHandlerRegistration<KubeDeployRequestedSdmGoal.Sub
  * @param g SDM goal event
  * @return Success if eligible, Failure if not, with message properly populated
  */
-export function eligibleDeployGoal(goal: SdmGoalEvent, commit: CommitForSdmGoal): HandlerResult {
+export async function eligibleDeployGoal(goal: SdmGoalEvent): Promise<boolean> {
     if (!goal.fulfillment) {
-        return { code: 1, message: `SDM goal contains no fulfillment: ${stringify(goal)}` };
+        logger.debug(`SDM goal contains no fulfillment: ${stringify(goal)}`);
+        return false;
     }
-    const atmName = "@atomist/k8-automation";
-    if (goal.fulfillment.name !== atmName) {
-        return { code: 1, message: `SDM goal fulfillment name '${goal.fulfillment.name}' is not '${atmName}'` };
+    const pkgPath = path.join(appRoot.path, "package.json");
+    try {
+        const pkg: { name: string } = await fs.readJson(pkgPath);
+        if (goal.fulfillment.name !== pkg.name) {
+            logger.debug(`SDM goal fulfillment name '${goal.fulfillment.name}' is not '${pkg.name}'`);
+            return false;
+        }
+    } catch (e) {
+        logger.warn(`Failed to determine package name: ${e.message}`);
+        return false;
     }
     const atmMethod = "side-effect";
     if (goal.fulfillment.method !== atmMethod) {
-        return { code: 1, message: `SDM goal fulfillment method '${goal.fulfillment.method}' is not '${atmMethod}'` };
+        logger.debug(`SDM goal fulfillment method '${goal.fulfillment.method}' is not '${atmMethod}'`);
+        return false;
     }
     if (goal.state !== "requested") {
-        return { code: 1, message: `SDM goal state '${goal.state}' is not 'requested'` };
+        logger.debug(`SDM goal state '${goal.state}' is not 'requested'`);
+        return false;
     }
-    return Success;
+    return true;
 }
 
 /* tslint:disable:cyclomatic-complexity */
 /**
- * Validate the SDM goal has all necessary data.  It will throw an
- * Error if the goal is invalid in some way.  It will return undefined
- * if nothing should be deployed.
+ * Verify that the deployment of the application should be fulfilled
+ * by this SDM.  Ensures the that environment and namespace of the
+ * application and deployment parameters match, as appropriate.
  *
- * @param sdmGoal SDM goal for Kubernetes application deployment
- * @return valid KubeApplication if something should be deployed,
- *         undefined if nothing should be deployed
+ * If deployment environment is not set, it is presumed to satisfy all
+ * environments so any application environment is considered to match.
+ *
+ * If the deployment mode is "namespace", then the `POD_NAMESPACE`
+ * environment variable must be defined.  If the values of `app.ns`
+ * and `POD_NAMESPACE` environment variable are the same, it is a
+ * match.  If they are not equal, `undefined` will be returned.  If
+ * `POD_NAMESPACE` is not set, an `Error` is thrown.
+ *
+ * If the deployment mode is "cluster" or not set and the deployment
+ * namespaces array has elements, then then the value of `app.ns` must
+ * be in the array for there to be a match.  If the deployment
+ * namespaces array is not set or zero length, any value of `app.ns`
+ * is considered a match.
+ *
+ * @param app Kubernetes application options data from SDM goal.
+ * @param deploy Kubernetes deployment parameters from command or configuration.
+ * @return verified Kubernetes application options if deployment should proceed, `undefined` otherwise.
  */
-export function validateSdmGoal(sdmGoal: SdmGoalEvent, kd: KubeDeployParameters): KubeApplication {
-    if (!sdmGoal.data) {
-        throw new Error(`SDM goal data property is false, cannot deploy: '${stringify(sdmGoal)}'`);
+export function verifyKubernetesApplicationDeploy(
+    app: KubernetesApplicationOptions,
+    deploy: KubernetesDeployParameters,
+): KubernetesApplicationOptions | undefined {
+
+    app.ns = app.ns || defaultNamespace;
+    if (!deploy) {
+        return app;
     }
-    let sdmData: any;
-    try {
-        sdmData = JSON.parse(sdmGoal.data);
-    } catch (e) {
-        e.message = `Failed to parse SDM goal data '${sdmGoal.data}' as JSON: ${e.message}`;
-        throw e;
-    }
-    if (!sdmData.kubernetes) {
-        throw new Error(`SDM goal data kubernetes property is false, cannot deploy: '${stringify(sdmData)}'`);
-    }
-    const kubeApp: KubeApplication = sdmData.kubernetes;
-    if (!kubeApp.name) {
-        throw new Error(`SDM goal data kubernetes name property is false, cannot deploy: '${stringify(sdmData)}'`);
-    }
-    if (kubeApp.environment !== kd.environment) {
-        logger.info(`SDM goal data kubernetes environment '${kubeApp.environment}' is not this ` +
-            `environment '${kd.environment}'`);
+    if (deploy.environment && deploy.environment !== app.environment) {
+        logger.debug(`SDM goal data kubernetes environment '${app.environment}' is not this ` +
+            `environment '${deploy.environment}'`);
         return undefined;
     }
-    kubeApp.ns = kubeApp.ns || "default";
-    const podNs = process.env.POD_NAMESPACE;
-    if (kd.mode === "namespace") {
+    if (deploy.mode === "namespace") {
+        const podNs = process.env.POD_NAMESPACE;
         if (!podNs) {
             throw new Error(`Kubernetes deploy requested but k8-automation is running in ` +
                 `namespace-scoped mode and the POD_NAMESPACE environment variable is not set`);
         }
-        if (kubeApp.ns !== podNs) {
-            logger.info(`SDM goal data kubernetes namespace '${kubeApp.ns}' is not the name as ` +
+        if (app.ns !== podNs) {
+            logger.info(`SDM goal data kubernetes namespace '${app.ns}' is not the name as ` +
                 `k8-automation running in namespace-scoped mode '${podNs}'`);
             return undefined;
         }
-    } else if (kd.namespaces && kd.namespaces.length > 0 && !kd.namespaces.includes(kubeApp.ns)) {
-        logger.info(`SDM goal data kubernetes namespace '${kubeApp.ns}' is not in managed ` +
-            `namespaces '${kd.namespaces.join(",")}'`);
+    } else if (deploy.namespaces && deploy.namespaces.length > 0 && !deploy.namespaces.includes(app.ns)) {
+        logger.debug(`SDM goal data kubernetes namespace '${app.ns}' is not in managed ` +
+            `namespaces '${deploy.namespaces.join(",")}'`);
         return undefined;
     }
-    return kubeApp;
+
+    return app;
 }
 /* tslint:enable:cyclomatic-complexity */
 
