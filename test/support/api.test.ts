@@ -19,13 +19,15 @@ import {
     deploymentPatch,
     deploymentTemplate,
     endpointBaseUrl,
-    Ingress,
     ingressPatch,
     ingressRemove,
     ingressTemplate,
     KubeApplication,
     serviceTemplate,
 } from "../../lib/support/api";
+import {
+    Ingress,
+} from "../../lib/typings/kubernetes";
 
 // tslint:disable:max-file-line-count
 

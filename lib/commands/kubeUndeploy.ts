@@ -31,6 +31,9 @@ import {
     getKubeConfig,
     KubeDeleteRequest,
 } from "../support/api";
+import {
+    defaultNamespace,
+} from "../typings/kubernetes";
 
 @Parameters()
 export class KubeUndeployParameters {
@@ -57,7 +60,7 @@ export class KubeUndeployParameters {
         maxLength: 63,
         required: false,
     })
-    public ns: string = "default";
+    public ns: string = defaultNamespace;
 
     @Parameter({
         displayName: "Port",
