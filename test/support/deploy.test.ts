@@ -20,8 +20,17 @@ import {
     SdmGoalEvent,
 } from "@atomist/sdm";
 import {
+    KubernetesDeployCoreOptions,
+    KubernetesDeployMode,
     validateSdmGoal,
+    verifyKubernetesApplicationDeploy,
 } from "../../lib/support/deploy";
+import {
+    KubernetesApplicationOptions,
+} from "../../lib/support/options";
+import {
+    defaultNamespace,
+} from "../../lib/typings/kubernetes";
 
 describe("deploy", () => {
 
@@ -86,6 +95,166 @@ describe("deploy", () => {
             const g: SdmGoalEvent = { data: JSON.stringify(d) } as any;
             const ka = validateSdmGoal(g);
             assert(ka === undefined);
+        });
+
+    });
+
+    describe("verifyKubernetesApplicationDeploy", () => {
+
+        it("should validate when no deployment is supplied", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kv = verifyKubernetesApplicationDeploy(ka, undefined);
+            assert.deepStrictEqual(kv, ka);
+        });
+
+        it("should populate the default namespace if none provided", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+            };
+            const kv = verifyKubernetesApplicationDeploy(ka, undefined);
+            assert(kv.name === ka.name);
+            assert(kv.environment === ka.environment);
+            assert(kv.ns === defaultNamespace);
+        });
+
+        it("should validate when no environment, mode, or namespaces are supplied", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployCoreOptions = {} as any;
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert.deepStrictEqual(kv, ka);
+        });
+
+        it("should validate when no mode or namespaces are supplied", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployCoreOptions = {
+                environment: "stardust",
+            };
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert.deepStrictEqual(kv, ka);
+        });
+
+        it("should validate in cluster mode with no namespaces", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployCoreOptions = {
+                environment: "stardust",
+                mode: KubernetesDeployMode.Cluster,
+            };
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert.deepStrictEqual(kv, ka);
+        });
+
+        it("should validate in cluster mode with namespaces", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployCoreOptions = {
+                environment: "stardust",
+                mode: KubernetesDeployMode.Cluster,
+                namespaces: ["left-hand", "made-it-too-far", "special-man", "ziggy", "band"],
+            };
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert.deepStrictEqual(kv, ka);
+        });
+
+        it("should return undefined if ns not in namespaces", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployCoreOptions = {
+                environment: "stardust",
+                mode: KubernetesDeployMode.Cluster,
+                namespaces: ["left-hand", "made-it-too-far", "special-man", "ziggys-band"],
+            };
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            assert(kv === undefined);
+        });
+
+        it("should validate in namespace mode", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployCoreOptions = {
+                environment: "stardust",
+                mode: KubernetesDeployMode.Namespace,
+                namespaces: undefined,
+            };
+            const ns = process.env.POD_NAMESPACE;
+            process.env.POD_NAMESPACE = "ziggy";
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            if (ns) {
+                process.env.POD_NAMESPACE = ns;
+            } else {
+                delete process.env.POD_NAMESPACE;
+            }
+            assert.deepStrictEqual(kv, ka);
+        });
+
+        it("should return undefined if ns not POD_NAMESPACE", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployCoreOptions = {
+                environment: "stardust",
+                mode: KubernetesDeployMode.Namespace,
+                namespaces: undefined,
+            };
+            const ns = process.env.POD_NAMESPACE;
+            process.env.POD_NAMESPACE = "not-ziggy";
+            const kv = verifyKubernetesApplicationDeploy(ka, kd);
+            if (ns) {
+                process.env.POD_NAMESPACE = ns;
+            } else {
+                delete process.env.POD_NAMESPACE;
+            }
+            assert(kv === undefined);
+        });
+
+        it("should throw an error if namespace not available in namespace mode", () => {
+            const ka: KubernetesApplicationOptions = {
+                name: "spiders-from-mars",
+                environment: "stardust",
+                ns: "ziggy",
+            };
+            const kd: KubernetesDeployCoreOptions = {
+                environment: "stardust",
+                mode: KubernetesDeployMode.Namespace,
+                namespaces: undefined,
+            };
+            const ns = process.env.POD_NAMESPACE;
+            if (ns) {
+                delete process.env.POD_NAMESPACE;
+            }
+            assert.throws(() => verifyKubernetesApplicationDeploy(ka, kd),
+                // tslint:disable-next-line:max-line-length
+                /Kubernetes deploy requested but k8-automation is running in namespace-scoped mode and the POD_NAMESPACE environment variable is not set/);
+            if (ns) {
+                process.env.POD_NAMESPACE = ns;
+            }
         });
 
     });
