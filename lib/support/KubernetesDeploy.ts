@@ -198,7 +198,7 @@ function kubernetesDataCallback(k8Deploy: KubernetesDeploy,
 }
 
 /**
- * Default deployment data callback that reads the Dockerfile and uses EXPOSE instructions to setup
+ * Default deployment data callback that reads the Dockerfile and uses EXPOSE instructions to set up
  * ingress rules.
  */
 export async function defaultDeploymentData(p: GitProject,

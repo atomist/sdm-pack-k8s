@@ -10,6 +10,8 @@
 [Atomist][atomist] software delivery machine (SDM) extension Pack for
 an Atomist SDM to integrate [Kubernetes][kubernetes] deployments.
 
+See also: [API Documentation][apidoc]
+
 [kubernetes]: https://kubernetes.io (Kubernetes)
 
 Software delivery machines enable you to control your delivery process
@@ -44,9 +46,13 @@ behavior to code-of-conduct@atomist.com.
 ## Documentation
 
 Please see [docs.atomist.com][atomist-doc] for
-[developer][atomist-doc-sdm] documentation.
+[developer][atomist-doc-sdm] documentation and for high-level documentation of [this pack][atomist-doc-k8-pack].
+
+Also see the TypeScript [API Doc][apidoc] for this pack.
 
 [atomist-doc-sdm]: https://docs.atomist.com/developer/sdm/ (Atomist Documentation - SDM Developer)
+[atomist-doc-k8-pack]: https://docs.atomist.com/pack/kubernetes/ (Atomist K8s Pack Documentation)
+[apidoc]: https://atomist.github.io/sdm-pack-k8
 
 ## Connect
 
