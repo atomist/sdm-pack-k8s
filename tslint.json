@@ -35,9 +35,9 @@
     },
     "curly": true,
     "cyclomatic-complexity": {
-      "severity": "warning",
-      "options": [10]
+      "severity": "warning"
     },
+    "deprecation": true,
     "eofline": true,
     "forin": true,
     "import-spacing": true,
@@ -114,7 +114,9 @@
     "no-unnecessary-callback-wrapper": true,
     "no-unnecessary-class": true,
     "no-unnecessary-initializer": true,
-    "no-unnecessary-type-assertion": true,
+    "no-unnecessary-type-assertion": {
+      "severity": "warning"
+    },
     "no-unsafe-finally": true,
     "no-unused-expression": true,
     "no-use-before-declare": false,

@@ -108,7 +108,7 @@ export const KubernetesDeploy: OnEvent<KubeDeployRequestedSdmGoal.Subscription, 
                 state: (result.code) ? SdmGoalState.failure : SdmGoalState.success,
                 description: result.description,
                 error: (result.code) ? new Error(result.message) : undefined,
-                externalUrls: result.targetUrls,
+                externalUrls: result.externalUrls,
             };
             try {
                 await updateGoal(ctx, sdmGoal, updateParams);

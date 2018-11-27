@@ -188,8 +188,8 @@ export async function deployApplication(
     llog(message, logger.info, log);
     const description = `Deployed to Kubernetes namespace \`${kubeApp.ns}\``;
     const label = `Kubernetes ${env}:${kubeApp.ns}`;
-    const targetUrls = (kubeApp.path && kubeApp.host) ? [{ label, url: endpointBaseUrl(kubeApp) }] : undefined;
-    return { code: 0, message, description, targetUrls };
+    const externalUrls = (kubeApp.path && kubeApp.host) ? [{ label, url: endpointBaseUrl(kubeApp) }] : undefined;
+    return { code: 0, message, description, externalUrls };
 }
 
 export function executeKubernetesDeploy(): ExecuteGoal {
