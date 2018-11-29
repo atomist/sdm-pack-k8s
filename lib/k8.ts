@@ -15,16 +15,9 @@
  */
 
 import {
-    logger,
-    spawnAndWatch,
-    SuccessIsReturn0ErrorFinder,
-} from "@atomist/automation-client";
-import {
     ExtensionPack,
     metadata,
     SoftwareDeliveryMachine,
-    StartupListener,
-    StringCapturingProgressLog,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as _ from "lodash";
@@ -38,6 +31,9 @@ import {
     getKubeConfig,
     loadKubeConfig,
 } from "./support/api";
+import {
+    minikubeStartupListener,
+} from "./support/minikube";
 
 /**
  * Configuration options to be passed to the Extension Pack creation.
@@ -69,7 +65,7 @@ export function kubernetesSupport(options: KubernetesOptions = {}): ExtensionPac
 
                 // if we are using minikube, set the docker-env too
                 if (context === "minikube") {
-                    sdm.addStartupListener(DockerEnvStartupListener);
+                    sdm.addStartupListener(minikubeStartupListener);
                 }
             }
         },
@@ -103,26 +99,3 @@ function configureContext(sdm: SoftwareDeliveryMachine, options: KubernetesOptio
     _.set(sdm, "configuration.sdm.k8.context", context);
     return context;
 }
-
-const DockerEnvStartupListener: StartupListener = async () => {
-    const log = new StringCapturingProgressLog();
-    const result = await spawnAndWatch({
-        command: "minikube",
-        args: ["docker-env"],
-    },
-        {},
-        log,
-        {
-            errorFinder: SuccessIsReturn0ErrorFinder,
-            logCommand: false,
-        });
-
-    if (result.code === 0) {
-        const envVars = log.log.trim().split("\n").filter(l => !l.startsWith("#"));
-        envVars.forEach(v => {
-            const parts = v.split("=");
-            process.env[parts[0].replace(/export /g, "")] = parts[1].replace(/"/g, "");
-        });
-        logger.info("Configured local minikube docker env");
-    }
-};

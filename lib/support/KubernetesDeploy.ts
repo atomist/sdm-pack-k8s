@@ -16,12 +16,12 @@
 
 import {
     GitProject,
-    spawnAndWatch,
-    SuccessIsReturn0ErrorFinder,
+    logger,
 } from "@atomist/automation-client";
 import {
     AnyPush,
     DefaultGoalNameGenerator,
+    execPromise,
     FulfillableGoalDetails,
     FulfillableGoalWithRegistrations,
     FulfillmentRegistration,
@@ -34,7 +34,6 @@ import {
     SdmGoalEvent,
     SoftwareDeliveryMachine,
     StagingEnvironment,
-    StringCapturingProgressLog,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as _ from "lodash";
@@ -229,23 +228,12 @@ export async function defaultDeploymentData(p: GitProject,
                 host = _.get(configuration, "sdm.k8.ingress.host");
             } else if (_.get(configuration, "sdm.k8.context") === "minikube") {
                 // Attempt to load the minikube ip and use that to construct a hostname
-                const log = new StringCapturingProgressLog();
-                const result = await spawnAndWatch({
-                    command: "minikube",
-                    args: ["ip"],
-                },
-                    {}
-                    ,
-                    log,
-                    {
-                        errorFinder: SuccessIsReturn0ErrorFinder,
-                        logCommand: false,
-                    },
-                );
-
-                if (result.code === 0) {
-                    host = `${goal.repo.name}.${goal.repo.owner}.${ns}.${log.log.trim()}.nip.io`;
+                try {
+                    const result = await execPromise("minikube", ["ip"]);
+                    host = `${goal.repo.name}.${goal.repo.owner}.${ns}.${result.stdout.trim()}.nip.io`;
                     path = "/";
+                } catch (e) {
+                    logger.warn(`Failed to get minikube IP: ${e.message}`);
                 }
             }
             ingress = {
