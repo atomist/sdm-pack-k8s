@@ -42,9 +42,14 @@ export function processMinikubeDockeEnv(env: string): Record<string, string> {
 }
 
 /**
- * Use `minikube docker-env` to set proper Docker environment variables.
+ * If the `DOCKER_HOST` environment variable is not set, try to Use
+ * `minikube docker-env` to set the Docker environment variables.
  */
 export const minikubeStartupListener: StartupListener = async () => {
+    if (process.env.DOCKER_HOST) {
+        logger.info(`Using provided Docker environment variables: DOCKER_HOST=${process.env.DOCKER_HOST}`);
+        return;
+    }
     try {
         const result = await execPromise("minikube", ["docker-env"]);
         const envVars = processMinikubeDockeEnv(result.stdout);

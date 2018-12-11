@@ -28,6 +28,7 @@ import {
 } from "@atomist/automation-client";
 import {
     EventHandlerRegistration,
+    ExecuteGoalResult,
     fetchCommitForSdmGoal,
     SdmGoalEvent,
     SdmGoalState,
@@ -80,7 +81,7 @@ export const KubernetesDeploy: OnEvent<KubeDeployRequestedSdmGoal.Subscription, 
 
     if (!ef.data.SdmGoal) {
         logger.warn(`Received event had no SdmGoal`);
-        return Promise.resolve(Success);
+        return Success;
     }
 
     if (params.mode !== KubernetesDeployMode.Cluster && params.mode !== KubernetesDeployMode.Namespace) {
@@ -118,7 +119,10 @@ export const KubernetesDeploy: OnEvent<KubeDeployRequestedSdmGoal.Subscription, 
                 logger.error(msg);
                 result.message = `${e.message}; ${msg}`;
             }
-            return result;
+            if (!result.code) {
+                result.code = 0;
+            }
+            return result as ExecuteGoalResult & HandlerResult;
         } catch (e) {
             const msg = `Deploy failed: ${e.message}`;
             return failGoal(ctx, sdmGoal, msg);

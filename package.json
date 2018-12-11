@@ -43,14 +43,14 @@
     "retry": "^0.12.0"
   },
   "peerDependencies": {
-    "@atomist/automation-client": ">=1.0.1",
-    "@atomist/sdm": ">=1.0.1",
-    "@atomist/sdm-core": ">=1.0.1"
+    "@atomist/automation-client": ">=1.1.0",
+    "@atomist/sdm": ">=1.1.0",
+    "@atomist/sdm-core": ">=1.1.0"
   },
   "devDependencies": {
-    "@atomist/automation-client": "1.1.0-master.20181129143544",
-    "@atomist/sdm": "1.1.0-master.20181128135959",
-    "@atomist/sdm-core": "1.1.0-master.20181127084329",
+    "@atomist/automation-client": "1.1.1-master.20181211154014",
+    "@atomist/sdm": "1.1.1-master.20181211135728",
+    "@atomist/sdm-core": "1.1.0-master.20181208221947",
     "@types/mocha": "^5.2.5",
     "@types/power-assert": "^1.4.29",
     "espower-typescript": "^9.0.0",

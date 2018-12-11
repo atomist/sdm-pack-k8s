@@ -257,7 +257,6 @@ function logAndFailDeploy(message: string, log?: ProgressLog): HandlerResult {
     return { code: 1, message };
 }
 
-/* tslint:disable:cyclomatic-complexity */
 /**
  * Check if the SDM is running in side-effect fulfillment mode.  If
  * not, there is no need for further checks.  If it is, verify that
@@ -318,4 +317,3 @@ export function verifyKubernetesApplicationDeploy(
 
     return app;
 }
-/* tslint:enable:cyclomatic-complexity */
