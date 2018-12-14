@@ -131,8 +131,7 @@ export const KubernetesDeploy: OnEvent<KubeDeployRequestedSdmGoal.Subscription, 
         .then(reduceResults);
 };
 
-export const kubernetesDeploy: EventHandlerRegistration<KubeDeployRequestedSdmGoal.Subscription,
-    KubernetesDeployParameters> = {
+export const kubernetesDeploy: EventHandlerRegistration<KubeDeployRequestedSdmGoal.Subscription, KubernetesDeployParameters> = {
     name: "KubeDeploy",
     description: "Deploy application resources to Kubernetes cluster",
     tags: ["deploy", "kubernetes"],

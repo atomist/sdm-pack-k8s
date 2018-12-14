@@ -192,6 +192,9 @@ export async function deployApplication(
     return { code: 0, message, description, externalUrls };
 }
 
+/**
+ * Goal executor wrapper for deploying an application to Kubernetes.
+ */
 export function executeKubernetesDeploy(): ExecuteGoal {
     return async (goalInvocation: GoalInvocation): Promise<ExecuteGoalResult> => {
         const { configuration, context, sdmGoal, progressLog } = goalInvocation;
