@@ -30,11 +30,9 @@ import {
 } from "@atomist/sdm";
 import * as stringify from "json-stringify-safe";
 import * as k8 from "kubernetes-client";
+import { endpointBaseUrl } from "../kubernetes/endpoint";
+import { defaultNamespace } from "../typings/kubernetes";
 import {
-    defaultNamespace,
-} from "../typings/kubernetes";
-import {
-    endpointBaseUrl,
     getKubeConfig,
     KubeApplication,
     KubeApplicationRequest,

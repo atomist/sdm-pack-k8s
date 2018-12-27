@@ -18,7 +18,6 @@ import * as assert from "power-assert";
 import {
     deploymentPatch,
     deploymentTemplate,
-    endpointBaseUrl,
     ingressPatch,
     ingressRemove,
     ingressTemplate,
@@ -566,74 +565,6 @@ describe("k8", () => {
                 },
             };
             assert.deepStrictEqual(s, e);
-        });
-
-    });
-
-    describe("endpointBaseUrl", () => {
-
-        it("should return the default", () => {
-            const req: KubeApplication = {
-                workspaceId: "KAT3BU5H",
-                environment: "new-wave",
-                ns: "hounds-of-love",
-                name: "cloudbusting",
-                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                port: 5510,
-            };
-            const u = endpointBaseUrl(req);
-            const e = "http://localhost/";
-            assert(u === e);
-        });
-
-        it("should return the host and path", () => {
-            const req: KubeApplication = {
-                workspaceId: "KAT3BU5H",
-                environment: "new-wave",
-                ns: "hounds-of-love",
-                name: "cloudbusting",
-                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                port: 5510,
-                path: "/bush/kate/hounds-of-love/cloudbusting",
-                host: "emi.com",
-                protocol: "https",
-            };
-            const u = endpointBaseUrl(req);
-            const e = `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`;
-            assert(u === e);
-        });
-
-        it("should return http protocol with no tlsSecret", () => {
-            const req: KubeApplication = {
-                workspaceId: "KAT3BU5H",
-                environment: "new-wave",
-                ns: "hounds-of-love",
-                name: "cloudbusting",
-                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                port: 5510,
-                path: "/bush/kate/hounds-of-love/cloudbusting",
-                host: "emi.com",
-            };
-            const u = endpointBaseUrl(req);
-            const e = `http://emi.com/bush/kate/hounds-of-love/cloudbusting/`;
-            assert(u === e);
-        });
-
-        it("should return https protocol with tslSecret", () => {
-            const req: KubeApplication = {
-                workspaceId: "KAT3BU5H",
-                environment: "new-wave",
-                ns: "hounds-of-love",
-                name: "cloudbusting",
-                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                port: 5510,
-                path: "/bush/kate/hounds-of-love/cloudbusting",
-                host: "emi.com",
-                tlsSecret: "wickham",
-            };
-            const u = endpointBaseUrl(req);
-            const e = `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`;
-            assert(u === e);
         });
 
     });

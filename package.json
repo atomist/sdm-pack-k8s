@@ -27,11 +27,16 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "dependencies": {
+    "@kubernetes/client-node": "^0.7.2",
     "@types/app-root-path": "^1.2.4",
     "@types/fs-extra": "^5.0.4",
     "@types/json-stringify-safe": "^5.0.0",
     "@types/lodash": "^4.14.118",
     "@types/node": "^10.12.10",
+    "@types/p-retry": "^2.0.0",
+    "@types/promise-retry": "^1.1.2",
+    "@types/read-pkg-up": "^3.0.1",
+    "@types/request": "^2.48.1",
     "@types/retry": "^0.10.2",
     "app-root-path": "^2.1.0",
     "docker-file-parser": "^1.0.3",
@@ -39,7 +44,9 @@
     "json-stringify-safe": "^5.0.1",
     "kubernetes-client": "^5.3.1",
     "lodash": "^4.17.11",
+    "p-retry": "^3.0.0",
     "promise-retry": "^1.1.1",
+    "read-pkg-up": "^4.0.0",
     "retry": "^0.12.0"
   },
   "peerDependencies": {
@@ -83,7 +90,7 @@
     "gql:gen": "atm-gql-gen",
     "lint": "tslint --config tslint.json --format verbose --project .",
     "lint:fix": "npm run lint -- --fix",
-    "test": "mocha --require espower-typescript/guess --require source-map-support/register \"test/**/*.test.ts\"",
+    "test": "mocha --require espower-typescript/guess \"test/**/*.test.ts\"",
     "test:one": "mocha --require espower-typescript/guess \"test/**/${TEST:-*.test.ts}\"",
     "typedoc": "npm run doc"
   },
