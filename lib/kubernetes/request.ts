@@ -119,7 +119,7 @@ export interface KubernetesApplication {
  * Information needed to delete resources related to an application in
  * a Kubernetes cluster.
  */
-export type KubernetesDelete = Pick<KubernetesApplication, "name" | "ns">;
+export type KubernetesDelete = Pick<KubernetesApplication, "name" | "ns" | "workspaceId">;
 
 /**
  * Intermediate interface for use in combination with other

@@ -22,9 +22,9 @@ describe("kubernetes/service", () => {
 
     describe("serviceTemplate", () => {
 
-        let pkg: string;
+        let pv: string;
         before(async () => {
-            pkg = await pkgInfo();
+            pv = await pkgInfo();
         });
 
         it("should create a service spec", async () => {
@@ -43,7 +43,7 @@ describe("kubernetes/service", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/environment": r.environment,
@@ -103,7 +103,7 @@ describe("kubernetes/service", () => {
                     },
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/environment": r.environment,

@@ -93,9 +93,6 @@ export async function deleteService(req: KubernetesDeleteResourceRequest): Promi
  * request has a `serviceSpec`, it is merged into the spec created
  * by this function using `lodash.merge(default, req.serviceSpec)`.
  *
- * There are `as any` in this method because of
- * https://github.com/kubernetes-client/javascript/issues/87
- *
  * @param req service template request
  * @return service resource speciification
  */
@@ -123,7 +120,7 @@ export async function serviceTemplate(req: KubernetesApplication): Promise<k8s.V
             sessionAffinity: "None",
             type: "NodePort",
         },
-    } as any;
+    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
     if (req.serviceSpec) {
         _.merge(s, req.serviceSpec);
     }

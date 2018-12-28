@@ -88,9 +88,6 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
  * `deploymentSpec`, it is merged into the patch created by this
  * function using `lodash.merge(default, req.deploymentSpec)`.
  *
- * There are `as any` in this method because of
- * https://github.com/kubernetes-client/javascript/issues/87
- *
  * @param req deployment template request
  * @return deployment resource patch
  */
@@ -108,7 +105,7 @@ export function deploymentPatch(req: KubernetesApplication): Partial<k8s.V1Deplo
                 },
             },
         },
-    } as any;
+    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
     if (req.replicas) {
         patch.spec.replicas = req.replicas;
     }
@@ -122,9 +119,6 @@ export function deploymentPatch(req: KubernetesApplication): Partial<k8s.V1Deplo
  * Create deployment spec for a Kubernetes application.  If the
  * request has a `deploymentSpec`, it is merged into the patch created
  * by this function using `lodash.merge(default, req.deploymentSpec)`.
- *
- * There are `as any` in this method because of
- * https://github.com/kubernetes-client/javascript/issues/87
  *
  * @param req Kubernetes application request
  * @return deployment resource specification
@@ -190,7 +184,7 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
                 },
             },
         },
-    } as any;
+    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
     if (req.port) {
         d.spec.template.spec.containers[0].ports = [
             {

@@ -107,9 +107,6 @@ function httpIngressPath(req: KubernetesApplication): k8s.V1beta1HTTPIngressPath
  * request has an `ingressSpec`, it is merged into the spec created
  * by this function using `lodash.merge(default, req.ingressSpec)`.
  *
- * There are `as any` in this method because of
- * https://github.com/kubernetes-client/javascript/issues/87
- *
  * @param req Kubernestes application
  * @return ingress spec with single rule
  */
@@ -140,7 +137,7 @@ export async function ingressTemplate(req: KubernetesApplication): Promise<k8s.V
         spec: {
             rules: [rule],
         },
-    } as any;
+    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
     if (req.tlsSecret) {
         i.spec.tls = [
             {

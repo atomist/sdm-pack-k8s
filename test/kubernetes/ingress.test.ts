@@ -22,9 +22,9 @@ describe("kubernetes/ingress", () => {
 
     describe("ingressTemplate", () => {
 
-        let pkg: string;
+        let pv: string;
         before(async () => {
-            pkg = await pkgInfo();
+            pv = await pkgInfo();
         });
 
         it("should create a wildcard ingress spec", async () => {
@@ -49,7 +49,7 @@ describe("kubernetes/ingress", () => {
                         "nginx.ingress.kubernetes.io/client-body-buffer-size": "1m",
                     },
                     labels: {
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/environment": r.environment,
@@ -101,7 +101,7 @@ describe("kubernetes/ingress", () => {
                         "nginx.ingress.kubernetes.io/client-body-buffer-size": "1m",
                     },
                     labels: {
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/environment": r.environment,
@@ -175,7 +175,7 @@ describe("kubernetes/ingress", () => {
                         "nginx.ingress.kubernetes.io/limit-rps": "25",
                     },
                     labels: {
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/environment": r.environment,

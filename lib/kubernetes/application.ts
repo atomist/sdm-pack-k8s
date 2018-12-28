@@ -32,6 +32,10 @@ import {
     KubernetesDeleteRequest,
 } from "./request";
 import {
+    deleteSecrets,
+    upsertSecrets,
+} from "./secret";
+import {
     deleteService,
     upsertService,
 } from "./service";
@@ -63,6 +67,7 @@ export async function upsertApplication(upReq: KubernetesApplicationRequest): Pr
     try {
         await upsertNamespace(req);
         await upsertService(req);
+        await upsertSecrets(req);
         await upsertDeployment(req);
         await upsertIngress(req);
     } catch (e) {
@@ -92,15 +97,21 @@ export async function deleteApplication(delReq: KubernetesDeleteRequest): Promis
         errs.push(e);
     }
     try {
-        await deleteService(req);
-    } catch (e) {
-        e.message = `Failed to delete service ${slug}: ${e.message}`;
-        errs.push(e);
-    }
-    try {
         await deleteDeployment(req);
     } catch (e) {
         e.message = `Failed to delete deployment ${slug}: ${e.message}`;
+        errs.push(e);
+    }
+    try {
+        await deleteSecrets(req);
+    } catch (e) {
+        e.message = `Failed to delete secrets of ${slug}: ${e.message}`;
+        errs.push(e);
+    }
+    try {
+        await deleteService(req);
+    } catch (e) {
+        e.message = `Failed to delete service ${slug}: ${e.message}`;
         errs.push(e);
     }
     if (errs.length > 0) {

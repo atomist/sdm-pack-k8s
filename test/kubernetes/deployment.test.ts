@@ -165,9 +165,9 @@ describe("kubernetes/deployment", () => {
 
     describe("deploymentTemplate", () => {
 
-        let pkg: string;
+        let pv: string;
         before(async () => {
-            pkg = await pkgInfo();
+            pv = await pkgInfo();
         });
 
         it("should create a deployment spec", async () => {
@@ -183,7 +183,7 @@ describe("kubernetes/deployment", () => {
             const d = await deploymentTemplate(r);
             assert(d.kind === "Deployment");
             assert(d.metadata.name === r.name);
-            assert(d.metadata.labels["app.kubernetes.io/managed-by"] === pkg);
+            assert(d.metadata.labels["app.kubernetes.io/managed-by"] === pv);
             assert(d.metadata.labels["app.kubernetes.io/name"] === r.name);
             assert(d.metadata.labels["app.kubernetes.io/part-of"] === r.name);
             assert(d.metadata.labels["atomist.com/environment"] === r.environment);
@@ -196,7 +196,7 @@ describe("kubernetes/deployment", () => {
                 `{"environment":"new-wave","webhooks":["https://webhook.atomist.com/atomist/kube/teams/KAT3BU5H"]}`);
             assert(d.spec.template.metadata.labels["app.kubernetes.io/name"] === r.name);
             assert(d.spec.template.metadata.labels["app.kubernetes.io/part-of"] === r.name);
-            assert(d.spec.template.metadata.labels["app.kubernetes.io/managed-by"] === pkg);
+            assert(d.spec.template.metadata.labels["app.kubernetes.io/managed-by"] === pv);
             assert(d.spec.template.metadata.labels["atomist.com/environment"] === r.environment);
             assert(d.spec.template.metadata.labels["atomist.com/workspaceId"] === r.workspaceId);
             assert(d.spec.template.metadata.name === r.name);
@@ -257,7 +257,7 @@ describe("kubernetes/deployment", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/environment": r.environment,
@@ -277,7 +277,7 @@ describe("kubernetes/deployment", () => {
                         metadata: {
                             name: r.name,
                             labels: {
-                                "app.kubernetes.io/managed-by": pkg,
+                                "app.kubernetes.io/managed-by": pv,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
                                 "atomist.com/environment": r.environment,
@@ -376,7 +376,7 @@ describe("kubernetes/deployment", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/environment": r.environment,
@@ -396,7 +396,7 @@ describe("kubernetes/deployment", () => {
                         metadata: {
                             name: r.name,
                             labels: {
-                                "app.kubernetes.io/managed-by": pkg,
+                                "app.kubernetes.io/managed-by": pv,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
                                 "atomist.com/environment": r.environment,
@@ -493,7 +493,7 @@ describe("kubernetes/deployment", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/environment": r.environment,
@@ -513,7 +513,7 @@ describe("kubernetes/deployment", () => {
                         metadata: {
                             name: r.name,
                             labels: {
-                                "app.kubernetes.io/managed-by": pkg,
+                                "app.kubernetes.io/managed-by": pv,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
                                 "atomist.com/environment": r.environment,

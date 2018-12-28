@@ -52,9 +52,6 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<U
 /**
  * Create namespace resource.
  *
- * The `as any` in this method because of
- * https://github.com/kubernetes-client/javascript/issues/87
- *
  * @param req Kubernetes application
  * @return kubernetes namespace resource
  */
@@ -67,6 +64,6 @@ export async function namespaceTemplate(req: KubernetesApplication): Promise<k8s
         apiVersion: "v1",
         kind: "Namespace",
         metadata,
-    } as any;
+    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
     return ns;
 }

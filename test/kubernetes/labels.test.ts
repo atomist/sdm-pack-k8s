@@ -24,9 +24,9 @@ import { pkgInfo } from "./pkg";
 
 describe("kubernetes/labels", () => {
 
-    let pkg: string;
+    let pv: string;
     before(async () => {
-        pkg = await pkgInfo();
+        pv = await pkgInfo();
     });
 
     describe("getCreator", () => {
@@ -34,7 +34,7 @@ describe("kubernetes/labels", () => {
         it("should return this package name and version", async () => {
             const c = await getCreator();
             assert(c);
-            assert(c === pkg);
+            assert(c === pv);
         });
 
     });
@@ -71,7 +71,7 @@ describe("kubernetes/labels", () => {
                 "atomist.com/workspaceId": "KAT3BU5H",
                 "app.kubernetes.io/version": "5.1.0",
                 "app.kubernetes.io/part-of": "cloudbusting",
-                "app.kubernetes.io/managed-by": pkg,
+                "app.kubernetes.io/managed-by": pv,
                 "atomist.com/environment": "new-wave",
             };
             assert.deepStrictEqual(l, e);
@@ -92,7 +92,7 @@ describe("kubernetes/labels", () => {
                 "atomist.com/workspaceId": "KAT3BU5H",
                 "app.kubernetes.io/version": "5.1.0",
                 "app.kubernetes.io/part-of": "cloudbusting",
-                "app.kubernetes.io/managed-by": pkg,
+                "app.kubernetes.io/managed-by": pv,
                 "atomist.com/environment": "new-wave",
                 "app.kubernetes.io/component": "song",
                 "app.kubernetes.io/instance": "Fifth",

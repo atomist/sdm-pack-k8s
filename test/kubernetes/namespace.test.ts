@@ -20,9 +20,9 @@ import { pkgInfo } from "./pkg";
 
 describe("kubernetes/namespace", () => {
 
-    let pkg: string;
+    let pv: string;
     before(async () => {
-        pkg = await pkgInfo();
+        pv = await pkgInfo();
     });
 
     describe("namespaceTemplate", () => {
@@ -44,7 +44,7 @@ describe("kubernetes/namespace", () => {
                     labels: {
                         "atomist.com/workspaceId": "SlASHR3C0RDS",
                         "atomist.com/environment": "MachineElf",
-                        "app.kubernetes.io/managed-by": pkg,
+                        "app.kubernetes.io/managed-by": pv,
                     },
                 },
             } as any;
