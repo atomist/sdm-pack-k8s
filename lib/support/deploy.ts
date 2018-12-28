@@ -116,7 +116,7 @@ function llog(message: string, ll: LeveledLogMethod, log?: ProgressLog): void {
  * This function is able to be called for internal or side-effect goal
  * fulfillments.
  *
- * @param sdmGoal The Kubernetes deployment goal
+ * @param goalEvent The Kubernetes deployment goal
  * @param context A standard handler context available from goal executions
  *                or event handlers
  * @param options Kubernetes deployment options
@@ -125,21 +125,21 @@ function llog(message: string, ll: LeveledLogMethod, log?: ProgressLog): void {
  *         ingress properties are set
  */
 export async function deployApplication(
-    sdmGoal: SdmGoalEvent,
+    goalEvent: SdmGoalEvent,
     context: HandlerContext,
     options: KubernetesDeployOptions,
     log?: ProgressLog,
 ): Promise<ExecuteGoalResult> {
 
-    const repo = sdmGoal.repo.name;
-    const owner = sdmGoal.repo.owner;
-    const sha = sdmGoal.sha;
+    const repo = goalEvent.repo.name;
+    const owner = goalEvent.repo.owner;
+    const sha = goalEvent.sha;
     const workspaceId = context.workspaceId;
     const env = options.environment;
     const appName = `${workspaceId}:${env}:${owner}:${repo}:${sha}`;
     llog(`Processing ${appName}`, logger.debug, log);
 
-    let kubeGoalData = validateSdmGoal(sdmGoal);
+    let kubeGoalData = validateSdmGoal(goalEvent);
     if (!kubeGoalData) {
         if (options.mode) {
             logger.debug(`No Kubernetes goal data found for ${appName}`);
@@ -195,19 +195,19 @@ export async function deployApplication(
  */
 export function executeKubernetesDeploy(): ExecuteGoal {
     return async (goalInvocation: GoalInvocation): Promise<ExecuteGoalResult> => {
-        const { configuration, context, sdmGoal, progressLog } = goalInvocation;
-        if (!sdmGoal || !sdmGoal.push || !sdmGoal.push.after || !sdmGoal.push.after.images ||
-            sdmGoal.push.after.images.length < 1) {
-            const msg = `Kubernetes deploy requested but that commit has no Docker image: ${stringify(sdmGoal)}`;
+        const { configuration, context, goalEvent, progressLog } = goalInvocation;
+        if (!goalEvent || !goalEvent.push || !goalEvent.push.after || !goalEvent.push.after.images ||
+            goalEvent.push.after.images.length < 1) {
+            const msg = `Kubernetes deploy requested but that commit has no Docker image: ${stringify(goalEvent)}`;
             return logAndFailDeploy(msg, progressLog);
         }
-        const image = sdmGoal.push.after.images[0].imageName;
+        const image = goalEvent.push.after.images[0].imageName;
         const options: KubernetesDeployOptions = {
             environment: configuration.environment,
             ...configuration.sdm.k8,
             image,
         };
-        return deployApplication(sdmGoal, context, options, progressLog);
+        return deployApplication(goalEvent, context, options, progressLog);
     };
 }
 
@@ -216,20 +216,20 @@ export function executeKubernetesDeploy(): ExecuteGoal {
  * KubeApplication data if the deployment should proceed.  It will
  * return `undefined` if nothing should be deployed.
  *
- * @param sdmGoal SDM goal for Kubernetes application deployment
+ * @param goalEvent SDM goal for Kubernetes application deployment
  * @return valid KubeApplication if something should be deployed,
  *         undefined if nothing should be deployed
  */
-export function validateSdmGoal(sdmGoal: SdmGoalEvent): KubernetesGoalData | undefined {
-    if (!sdmGoal.data) {
-        logger.debug(`SDM goal data property is false, cannot deploy: '${stringify(sdmGoal)}'`);
+export function validateSdmGoal(goalEvent: SdmGoalEvent): KubernetesGoalData | undefined {
+    if (!goalEvent.data) {
+        logger.debug(`SDM goal data property is false, cannot deploy: '${stringify(goalEvent)}'`);
         return undefined;
     }
     let sdmData: any;
     try {
-        sdmData = JSON.parse(sdmGoal.data);
+        sdmData = JSON.parse(goalEvent.data);
     } catch (e) {
-        logger.debug(`Failed to parse SDM goal data '${sdmGoal.data}' as JSON: ${e.message}`);
+        logger.debug(`Failed to parse SDM goal data '${goalEvent.data}' as JSON: ${e.message}`);
         return undefined;
     }
     if (!sdmData.kubernetes) {
