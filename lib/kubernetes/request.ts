@@ -22,8 +22,10 @@ import { KubernetesClients } from "./clients";
  */
 export interface KubernetesApplicationRbac {
     /**
-     * Partial role to create for binding to service account.
-     * This partial spec is overlaid onto the default role spec.
+     * Partial role to create for binding to service account.  This
+     * partial spec is overlaid onto the default role spec.  If this
+     * is not defined, no RBAC or service account resources are
+     * managed for this application.
      */
     roleSpec: Partial<k8s.V1Role>;
     /**

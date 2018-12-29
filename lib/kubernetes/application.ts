@@ -28,6 +28,10 @@ import {
 } from "./ingress";
 import { upsertNamespace } from "./namespace";
 import {
+    deleteRbac,
+    upsertRbac,
+} from "./rbac";
+import {
     KubernetesApplicationRequest,
     KubernetesDeleteRequest,
 } from "./request";
@@ -41,7 +45,7 @@ import {
 } from "./service";
 
 /** Stringify filter for a Kubernetes request object. */
-function reqFilter<T>(k: string, v: T): T {
+function reqFilter<T>(k: string, v: T): T | undefined {
     if (k === "config" || k === "clients") {
         return undefined;
     }
@@ -66,6 +70,7 @@ export async function upsertApplication(upReq: KubernetesApplicationRequest): Pr
 
     try {
         await upsertNamespace(req);
+        await upsertRbac(req);
         await upsertService(req);
         await upsertSecrets(req);
         await upsertDeployment(req);
@@ -112,6 +117,12 @@ export async function deleteApplication(delReq: KubernetesDeleteRequest): Promis
         await deleteService(req);
     } catch (e) {
         e.message = `Failed to delete service ${slug}: ${e.message}`;
+        errs.push(e);
+    }
+    try {
+        await deleteRbac(req);
+    } catch (e) {
+        e.message = `Failed to delete RBAC resources for ${slug}: ${e.message}`;
         errs.push(e);
     }
     if (errs.length > 0) {
