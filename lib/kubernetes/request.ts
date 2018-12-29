@@ -21,24 +21,22 @@ import { KubernetesClients } from "./clients";
  * Role-based access control resources associated with an application.
  */
 export interface KubernetesApplicationRbac {
-    /** Whether to manage RBAC resources for this application. */
-    manage: boolean;
+    /**
+     * Partial role to create for binding to service account.
+     * This partial spec is overlaid onto the default role spec.
+     */
+    roleSpec: Partial<k8s.V1Role>;
     /**
      * Partial service account spec to create, bind to the role,
      * and use by the deployment.  This partial spec is overlaid
      * onto the default service account spec.
      */
-    serviceAccount?: Partial<k8s.V1ServiceAccount>;
-    /**
-     * Partial role to create for binding to service account.
-     * This partial spec is overlaid onto the default role spec.
-     */
-    role?: Partial<k8s.V1Role>;
+    serviceAccountSpec?: Partial<k8s.V1ServiceAccount>;
     /**
      * Partial binding of role to service account.  This partial
      * spec is overlaid onto the default role binding spec.
      */
-    roleBinding?: Partial<k8s.V1RoleBinding>;
+    roleBindingSpec?: Partial<k8s.V1RoleBinding>;
 }
 
 /**

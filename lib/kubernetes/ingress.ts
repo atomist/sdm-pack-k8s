@@ -19,6 +19,7 @@ import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
+import { DeepPartial } from "ts-essentials";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
@@ -130,14 +131,15 @@ export async function ingressTemplate(req: KubernetesApplication): Promise<k8s.V
     if (req.host) {
         rule.host = req.host;
     }
-    const i: k8s.V1beta1Ingress = {
+    // avoid https://github.com/kubernetes-client/javascript/issues/52
+    const i: DeepPartial<k8s.V1beta1Ingress> = {
         kind: "Ingress",
         apiVersion: "extensions/v1beta1",
         metadata,
         spec: {
             rules: [rule],
         },
-    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
+    };
     if (req.tlsSecret) {
         i.spec.tls = [
             {
@@ -151,5 +153,5 @@ export async function ingressTemplate(req: KubernetesApplication): Promise<k8s.V
     if (req.ingressSpec) {
         _.merge(i, req.ingressSpec);
     }
-    return i;
+    return i as k8s.V1beta1Ingress;
 }

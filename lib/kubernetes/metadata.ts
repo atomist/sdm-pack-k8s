@@ -15,7 +15,7 @@
  */
 
 import * as k8s from "@kubernetes/client-node";
-// import { KubernetesResourceRequest } from "./request";
+import { DeepPartial } from "ts-essentials";
 
 /**
  * Workaround for all properties erroneously being required in
@@ -24,6 +24,6 @@ import * as k8s from "@kubernetes/client-node";
  * reality everything is optional in the metadata, even, somehow, the
  * name.
  */
-export function metadataTemplate(partial: Partial<k8s.V1ObjectMeta> = {}): k8s.V1ObjectMeta {
+export function metadataTemplate(partial: DeepPartial<k8s.V1ObjectMeta> = {}): k8s.V1ObjectMeta {
     return partial as k8s.V1ObjectMeta;
 }

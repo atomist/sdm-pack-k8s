@@ -18,6 +18,7 @@ import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as stringify from "json-stringify-safe";
+import { DeepPartial } from "ts-essentials";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
@@ -60,10 +61,11 @@ export async function namespaceTemplate(req: KubernetesApplication): Promise<k8s
     const retain = ["atomist.com/workspaceId", "atomist.com/environment", "app.kubernetes.io/managed-by"];
     const labels = Object.assign({}, ...Object.keys(allLabels).filter(k => retain.includes(k)).map(k => ({ [k]: allLabels[k] })));
     const metadata = metadataTemplate({ labels, name: req.ns });
-    const ns: k8s.V1Namespace = {
+    // avoid https://github.com/kubernetes-client/javascript/issues/52
+    const ns: DeepPartial<k8s.V1Namespace> = {
         apiVersion: "v1",
         kind: "Namespace",
         metadata,
-    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
-    return ns;
+    };
+    return ns as k8s.V1Namespace;
 }

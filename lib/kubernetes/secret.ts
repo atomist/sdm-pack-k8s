@@ -96,7 +96,7 @@ export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promi
 
 /**
  * Given an array of all the secrets in a namespace, return the list
- * associated with the application describe in `req`.
+ * associated with the application described in `req`.
  *
  * @param secrets array of all secrets in a namespace
  * @return array of secrets associated with the application in `req`
@@ -115,7 +115,7 @@ export function applicationSecrets(req: KubernetesDelete, secrets: k8s.V1Secret[
 export async function secretTemplate(req: KubernetesApplication, secret: k8s.V1Secret): Promise<k8s.V1Secret> {
     const labels = await applicationLabels({ ...req, component: "secret" });
     const metadata = metadataTemplate({ labels });
-    // avoid https://github.com/kubernetes-client/javascript/issues/87
+    // avoid https://github.com/kubernetes-client/javascript/issues/52
     const s: Partial<k8s.V1Secret> = {
         kind: "Secret",
         apiVersion: "v1",
@@ -134,7 +134,7 @@ export async function secretTemplate(req: KubernetesApplication, secret: k8s.V1S
  */
 export function encodeSecret(name: string, data: { [key: string]: string }): k8s.V1Secret {
     const metadata = metadataTemplate({ name });
-    // avoid https://github.com/kubernetes-client/javascript/issues/87
+    // avoid https://github.com/kubernetes-client/javascript/issues/52
     const secret: Partial<k8s.V1Secret> = {
         apiVersion: "v1",
         kind: "Secret",

@@ -22,6 +22,7 @@ import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
+import { DeepPartial } from "ts-essentials";
 import { logRetry } from "../support/retry";
 import {
     applicationLabels,
@@ -91,8 +92,8 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
  * @param req deployment template request
  * @return deployment resource patch
  */
-export function deploymentPatch(req: KubernetesApplication): Partial<k8s.V1Deployment> {
-    const patch: Partial<k8s.V1Deployment> = {
+export function deploymentPatch(req: KubernetesApplication): DeepPartial<k8s.V1Deployment> {
+    const patch: DeepPartial<k8s.V1Deployment> = {
         spec: {
             template: {
                 spec: {
@@ -105,7 +106,7 @@ export function deploymentPatch(req: KubernetesApplication): Partial<k8s.V1Deplo
                 },
             },
         },
-    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
+    };
     if (req.replicas) {
         patch.spec.replicas = req.replicas;
     }
@@ -144,7 +145,8 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
     const selector: k8s.V1LabelSelector = {
         matchLabels: matchers,
     } as any;
-    const d: k8s.V1Deployment = {
+    // avoid https://github.com/kubernetes-client/javascript/issues/52
+    const d: DeepPartial<k8s.V1Deployment> = {
         apiVersion: "extensions/v1beta1",
         kind: "Deployment",
         metadata,
@@ -179,12 +181,12 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
             strategy: {
                 type: "RollingUpdate",
                 rollingUpdate: {
-                    maxUnavailable: 0,
-                    maxSurge: 1,
+                    maxUnavailable: 0 as any, // DeepPartial or TypeScript bug?
+                    maxSurge: 1 as any,
                 },
             },
         },
-    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
+    };
     if (req.port) {
         d.spec.template.spec.containers[0].ports = [
             {
@@ -214,5 +216,5 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
     if (req.deploymentSpec) {
         _.merge(d, req.deploymentSpec);
     }
-    return d;
+    return d as k8s.V1Deployment;
 }

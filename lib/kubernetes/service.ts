@@ -19,6 +19,7 @@ import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
+import { DeepPartial } from "ts-essentials";
 import { logRetry } from "../support/retry";
 import {
     applicationLabels,
@@ -94,7 +95,7 @@ export async function deleteService(req: KubernetesDeleteResourceRequest): Promi
  * by this function using `lodash.merge(default, req.serviceSpec)`.
  *
  * @param req service template request
- * @return service resource speciification
+ * @return service resource specification
  */
 export async function serviceTemplate(req: KubernetesApplication): Promise<k8s.V1Service> {
     const labels = await applicationLabels(req);
@@ -103,7 +104,8 @@ export async function serviceTemplate(req: KubernetesApplication): Promise<k8s.V
         name: req.name,
         labels,
     });
-    const s: k8s.V1Service = {
+    // avoid https://github.com/kubernetes-client/javascript/issues/52
+    const s: DeepPartial<k8s.V1Service> = {
         kind: "Service",
         apiVersion: "v1",
         metadata,
@@ -113,16 +115,16 @@ export async function serviceTemplate(req: KubernetesApplication): Promise<k8s.V
                     name: "http",
                     protocol: "TCP",
                     port: req.port,
-                    targetPort: "http",
+                    targetPort: "http" as any, // DeepPartial or TypeScript bug?
                 },
             ],
             selector: matchers,
             sessionAffinity: "None",
             type: "NodePort",
         },
-    } as any; // avoid https://github.com/kubernetes-client/javascript/issues/87
+    };
     if (req.serviceSpec) {
         _.merge(s, req.serviceSpec);
     }
-    return s;
+    return s as k8s.V1Service;
 }
