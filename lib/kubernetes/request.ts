@@ -15,6 +15,7 @@
  */
 
 import * as k8s from "@kubernetes/client-node";
+import { DeepPartial } from "ts-essentials";
 import { KubernetesClients } from "./clients";
 
 /**
@@ -27,23 +28,29 @@ export interface KubernetesApplicationRbac {
      * is not defined, no RBAC or service account resources are
      * managed for this application.
      */
-    roleSpec: Partial<k8s.V1Role>;
+    roleSpec: DeepPartial<k8s.V1Role>;
     /**
      * Partial service account spec to create, bind to the role,
      * and use by the deployment.  This partial spec is overlaid
      * onto the default service account spec.
      */
-    serviceAccountSpec?: Partial<k8s.V1ServiceAccount>;
+    serviceAccountSpec?: DeepPartial<k8s.V1ServiceAccount>;
     /**
      * Partial binding of role to service account.  This partial
      * spec is overlaid onto the default role binding spec.
      */
-    roleBindingSpec?: Partial<k8s.V1RoleBinding>;
+    roleBindingSpec?: DeepPartial<k8s.V1RoleBinding>;
 }
 
 /**
  * Information used to construct resources when creating or updating
- * an application in a Kubernetes cluster.
+ * an application in a Kubernetes cluster.  This structure is designed
+ * for a typical microservice-type deployment of one container
+ * optionally providing a service on a single port.  If you need
+ * anything more complicated than that, you can use the various
+ * partial specs in this structure to manage more elaborate
+ * applications and the `applicationData` callback on the
+ * [[KubernetesDeploymentRegistration]].
  */
 export interface KubernetesApplication {
     /** Atomist workspace ID */
@@ -62,7 +69,7 @@ export interface KubernetesApplication {
      */
     imagePullSecret?: string;
     /**
-     * Port the service listens on, if not provided no service
+     * Port the service listens on, if not provided, no service
      * resource is created.
      */
     port?: number;
@@ -88,17 +95,17 @@ export interface KubernetesApplication {
      * Partial deployment spec for this application that is overlaid
      * on top of the default deployment spec template.
      */
-    deploymentSpec?: Partial<k8s.V1Deployment>;
+    deploymentSpec?: DeepPartial<k8s.V1Deployment>;
     /**
      * Partial service spec for this application that is overlaid on
      * top of the default service spec template.
      */
-    serviceSpec?: Partial<k8s.V1Service>;
+    serviceSpec?: DeepPartial<k8s.V1Service>;
     /**
      * Partial ingress spec for this application that is overlaid on
      * top of the default ingress spec template.
      */
-    ingressSpec?: Partial<k8s.V1beta1Ingress>;
+    ingressSpec?: DeepPartial<k8s.V1beta1Ingress>;
     /**
      * Number of replicas in deployment.  May be overridden by
      * deploymentSpec.
@@ -107,7 +114,7 @@ export interface KubernetesApplication {
     /**
      * Secrets to upsert prior to creating deployment.
      */
-    secrets?: k8s.V1Secret[];
+    secrets?: Array<DeepPartial<k8s.V1Secret>>;
     /**
      * Role-based access control resources that should be associated
      * with the application.

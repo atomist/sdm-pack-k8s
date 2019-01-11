@@ -27,6 +27,8 @@ import {
     KubernetesResourceRequest,
 } from "./request";
 
+export const defaultNamespace = "default";
+
 export interface UpsertNamespaceResponse {
     response: http.IncomingMessage;
     body: k8s.V1Namespace;

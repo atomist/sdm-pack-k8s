@@ -20,7 +20,7 @@ import { DeepPartial } from "ts-essentials";
 /**
  * Workaround for all properties erroneously being required in
  * TypeScript class definitions
- * https://github.com/kubernetes-client/javascript/issues/87 when in
+ * https://github.com/kubernetes-client/javascript/issues/52 when in
  * reality everything is optional in the metadata, even, somehow, the
  * name.
  */

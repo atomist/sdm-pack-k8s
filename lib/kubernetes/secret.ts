@@ -18,6 +18,7 @@ import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as _ from "lodash";
+import { DeepPartial } from "ts-essentials";
 import { logRetry } from "../support/retry";
 import {
     applicationLabels,
@@ -60,11 +61,11 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
             logger.debug(`Failed to read secret ${secretName}, creating: ${e.message}`);
             const secretSpec = await secretTemplate(req, secret);
             return logRetry(() => req.clients.core.createNamespacedSecret(req.ns, secretSpec),
-                `create secret ${secretName}`);
+                `create secret ${secretName} for ${slug}`);
         }
         logger.debug(`Secret ${secretName} exists, patching`);
         return logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, secret),
-            `patch secret ${slug}`);
+            `patch secret ${secretName} for ${slug}`);
     }));
 }
 
@@ -112,7 +113,7 @@ export function applicationSecrets(req: KubernetesDelete, secrets: k8s.V1Secret[
  * @param secret the unlabeled secret
  * @return the provided secret with appropriate labels
  */
-export async function secretTemplate(req: KubernetesApplication, secret: k8s.V1Secret): Promise<k8s.V1Secret> {
+export async function secretTemplate(req: KubernetesApplication, secret: DeepPartial<k8s.V1Secret>): Promise<k8s.V1Secret> {
     const labels = await applicationLabels({ ...req, component: "secret" });
     const metadata = metadataTemplate({ labels });
     // avoid https://github.com/kubernetes-client/javascript/issues/52
