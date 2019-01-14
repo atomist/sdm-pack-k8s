@@ -222,6 +222,49 @@ describe("kubernetes/rbac", () => {
             assert.deepStrictEqual(s, e);
         });
 
+        it("should use provided service account name", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                rbac: {
+                    serviceAccountSpec: {
+                        metadata: {
+                            annotation: {
+                                "music.com/genre": "Art Rock",
+                            },
+                            labels: {
+                                "emi.com/producer": "Kate Bush",
+                            },
+                            name: "peter-gabriel",
+                        },
+                    },
+                } as any,
+            };
+            const s = await serviceAccountTemplate(r);
+            const e = {
+                apiVersion: "v1",
+                kind: "ServiceAccount",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: "peter-gabriel",
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
     });
 
     describe("roleBindingTemplate", () => {
@@ -313,6 +356,51 @@ describe("kubernetes/rbac", () => {
                     {
                         kind: "ServiceAccount",
                         name: r.name,
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should create a role binding spec with provided service account", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                rbac: {
+                    roleSpec: {},
+                    serviceAccountSpec: {
+                        metadata: {
+                            name: "peter-gabriel",
+                        },
+                    },
+                },
+            };
+            const s = await roleBindingTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "RoleBinding",
+                metadata: {
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                roleRef: {
+                    apiGroup: "rbac.authorization.k8s.io",
+                    kind: "Role",
+                    name: r.name,
+                },
+                subjects: [
+                    {
+                        kind: "ServiceAccount",
+                        name: "peter-gabriel",
                     },
                 ],
             };

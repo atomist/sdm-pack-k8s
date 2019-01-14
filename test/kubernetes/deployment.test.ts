@@ -69,7 +69,7 @@ describe("kubernetes/deployment", () => {
                             },
                         },
                     },
-                } as any,
+                },
             };
             const d = deploymentPatch(r);
             const e = {
@@ -137,7 +137,7 @@ describe("kubernetes/deployment", () => {
                             },
                         },
                     },
-                } as any,
+                },
                 replicas: 12,
             };
             const d = deploymentPatch(r);
@@ -189,7 +189,6 @@ describe("kubernetes/deployment", () => {
             assert(d.metadata.labels["atomist.com/environment"] === r.environment);
             assert(d.metadata.labels["atomist.com/workspaceId"] === r.workspaceId);
             assert(d.spec.replicas === 1);
-            assert(d.spec.revisionHistoryLimit === 3);
             assert(d.spec.selector.matchLabels["app.kubernetes.io/name"] === r.name);
             assert(d.spec.selector.matchLabels["atomist.com/workspaceId"] === r.workspaceId);
             assert(d.spec.template.metadata.annotations["atomist.com/k8vent"] ===
@@ -223,8 +222,6 @@ describe("kubernetes/deployment", () => {
             assert(d.spec.template.spec.containers[0].livenessProbe.periodSeconds === 10);
             assert(d.spec.template.spec.containers[0].livenessProbe.successThreshold === 1);
             assert(d.spec.template.spec.containers[0].livenessProbe.failureThreshold === 3);
-            assert(d.spec.template.spec.dnsPolicy === "ClusterFirst");
-            assert(d.spec.template.spec.restartPolicy === "Always");
             assert(d.spec.template.spec.imagePullSecrets[0].name === r.imagePullSecret);
         });
 
@@ -240,14 +237,18 @@ describe("kubernetes/deployment", () => {
                 deploymentSpec: {
                     spec: {
                         replicas: 2,
+                        restartPolicy: "Never",
                         revisionHistoryLimit: 5,
                         template: {
                             spec: {
+                                containers: [
+                                    { imagePullPolicy: "Always" },
+                                ],
                                 dnsPolicy: "ClusterFirstWithHostNet",
                             },
                         },
                     },
-                } as any,
+                },
                 replicas: 12,
             };
             const d = await deploymentTemplate(r);
@@ -266,6 +267,7 @@ describe("kubernetes/deployment", () => {
                 },
                 spec: {
                     replicas: 2,
+                    restartPolicy: "Never",
                     revisionHistoryLimit: 5,
                     selector: {
                         matchLabels: {
@@ -293,7 +295,7 @@ describe("kubernetes/deployment", () => {
                                 {
                                     name: r.name,
                                     image: r.image,
-                                    imagePullPolicy: "IfNotPresent",
+                                    imagePullPolicy: "Always",
                                     resources: {
                                         limits: {
                                             cpu: "1000m",
@@ -338,7 +340,6 @@ describe("kubernetes/deployment", () => {
                                 },
                             ],
                             dnsPolicy: "ClusterFirstWithHostNet",
-                            restartPolicy: "Always",
                             imagePullSecrets: [
                                 {
                                     name: r.imagePullSecret,
@@ -385,7 +386,6 @@ describe("kubernetes/deployment", () => {
                 },
                 spec: {
                     replicas: 0,
-                    revisionHistoryLimit: 3,
                     selector: {
                         matchLabels: {
                             "app.kubernetes.io/name": r.name,
@@ -412,7 +412,6 @@ describe("kubernetes/deployment", () => {
                                 {
                                     name: r.name,
                                     image: r.image,
-                                    imagePullPolicy: "IfNotPresent",
                                     resources: {
                                         limits: {
                                             cpu: "1000m",
@@ -456,8 +455,6 @@ describe("kubernetes/deployment", () => {
                                     ],
                                 },
                             ],
-                            dnsPolicy: "ClusterFirst",
-                            restartPolicy: "Always",
                             imagePullSecrets: [
                                 {
                                     name: r.imagePullSecret,
@@ -502,7 +499,6 @@ describe("kubernetes/deployment", () => {
                 },
                 spec: {
                     replicas: 12,
-                    revisionHistoryLimit: 3,
                     selector: {
                         matchLabels: {
                             "app.kubernetes.io/name": r.name,
@@ -529,7 +525,6 @@ describe("kubernetes/deployment", () => {
                                 {
                                     name: r.name,
                                     image: r.image,
-                                    imagePullPolicy: "IfNotPresent",
                                     resources: {
                                         limits: {
                                             cpu: "1000m",
@@ -542,8 +537,179 @@ describe("kubernetes/deployment", () => {
                                     },
                                 },
                             ],
-                            dnsPolicy: "ClusterFirst",
-                            restartPolicy: "Always",
+                        },
+                    },
+                    strategy: {
+                        type: "RollingUpdate",
+                        rollingUpdate: {
+                            maxUnavailable: 0,
+                            maxSurge: 1,
+                        },
+                    },
+                },
+            };
+            assert.deepStrictEqual(d, e);
+        });
+
+        it("should create a deployment spec with service account", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                rbac: {
+                    roleSpec: {},
+                },
+            };
+            const d = await deploymentTemplate(r);
+            const e = {
+                apiVersion: "extensions/v1beta1",
+                kind: "Deployment",
+                metadata: {
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                spec: {
+                    replicas: 1,
+                    selector: {
+                        matchLabels: {
+                            "app.kubernetes.io/name": r.name,
+                            "atomist.com/workspaceId": r.workspaceId,
+                        },
+                    },
+                    template: {
+                        metadata: {
+                            name: r.name,
+                            labels: {
+                                "app.kubernetes.io/managed-by": pv,
+                                "app.kubernetes.io/name": r.name,
+                                "app.kubernetes.io/part-of": r.name,
+                                "atomist.com/environment": r.environment,
+                                "atomist.com/workspaceId": r.workspaceId,
+                            },
+                            annotations: {
+                                // tslint:disable-next-line:max-line-length
+                                "atomist.com/k8vent": `{"environment":"${r.environment}","webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                            },
+                        },
+                        spec: {
+                            containers: [
+                                {
+                                    name: r.name,
+                                    image: r.image,
+                                    resources: {
+                                        limits: {
+                                            cpu: "1000m",
+                                            memory: "384Mi",
+                                        },
+                                        requests: {
+                                            cpu: "100m",
+                                            memory: "320Mi",
+                                        },
+                                    },
+                                },
+                            ],
+                            serviceAccountName: r.name,
+                        },
+                    },
+                    strategy: {
+                        type: "RollingUpdate",
+                        rollingUpdate: {
+                            maxUnavailable: 0,
+                            maxSurge: 1,
+                        },
+                    },
+                },
+            };
+            assert.deepStrictEqual(d, e);
+        });
+
+        it("should create a deployment spec using service account name", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                rbac: {
+                    roleSpec: {
+                        rules: [
+                            {
+                                apiGroups: [""],
+                                resources: ["namespaces", "pods", "services"],
+                                verbs: ["get", "list", "watch", "create", "update", "patch", "delete"],
+                            },
+                        ],
+                    },
+                    serviceAccountSpec: {
+                        metadata: {
+                            name: "peter-gabriel",
+                        },
+                    },
+                },
+            };
+            const d = await deploymentTemplate(r);
+            const e = {
+                apiVersion: "extensions/v1beta1",
+                kind: "Deployment",
+                metadata: {
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                spec: {
+                    replicas: 1,
+                    selector: {
+                        matchLabels: {
+                            "app.kubernetes.io/name": r.name,
+                            "atomist.com/workspaceId": r.workspaceId,
+                        },
+                    },
+                    template: {
+                        metadata: {
+                            name: r.name,
+                            labels: {
+                                "app.kubernetes.io/managed-by": pv,
+                                "app.kubernetes.io/name": r.name,
+                                "app.kubernetes.io/part-of": r.name,
+                                "atomist.com/environment": r.environment,
+                                "atomist.com/workspaceId": r.workspaceId,
+                            },
+                            annotations: {
+                                // tslint:disable-next-line:max-line-length
+                                "atomist.com/k8vent": `{"environment":"${r.environment}","webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                            },
+                        },
+                        spec: {
+                            containers: [
+                                {
+                                    name: r.name,
+                                    image: r.image,
+                                    resources: {
+                                        limits: {
+                                            cpu: "1000m",
+                                            memory: "384Mi",
+                                        },
+                                        requests: {
+                                            cpu: "100m",
+                                            memory: "320Mi",
+                                        },
+                                    },
+                                },
+                            ],
+                            serviceAccountName: "peter-gabriel",
                         },
                     },
                     strategy: {

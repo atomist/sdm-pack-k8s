@@ -219,6 +219,9 @@ export async function roleBindingTemplate(req: KubernetesApplication): Promise<k
             },
         ],
     };
+    if (req.rbac.serviceAccountSpec && req.rbac.serviceAccountSpec.metadata && req.rbac.serviceAccountSpec.metadata.name) {
+        rb.subjects[0].name = req.rbac.serviceAccountSpec.metadata.name;
+    }
     if (req.rbac.roleBindingSpec) {
         _.merge(rb, req.rbac.roleBindingSpec);
     }

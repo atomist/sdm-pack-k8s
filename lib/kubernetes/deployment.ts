@@ -152,7 +152,6 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
         metadata,
         spec: {
             replicas: (req.replicas || req.replicas === 0) ? req.replicas : 1,
-            revisionHistoryLimit: 3,
             selector,
             template: {
                 metadata: podMetadata,
@@ -161,7 +160,6 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
                         {
                             name: req.name,
                             image: req.image,
-                            imagePullPolicy: "IfNotPresent",
                             resources: {
                                 limits: {
                                     cpu: "1000m",
@@ -174,8 +172,6 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
                             },
                         },
                     ],
-                    dnsPolicy: "ClusterFirst",
-                    restartPolicy: "Always",
                 },
             },
             strategy: {
@@ -212,6 +208,13 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
     }
     if (req.imagePullSecret) {
         d.spec.template.spec.imagePullSecrets = [{ name: req.imagePullSecret }];
+    }
+    if (req.rbac) {
+        if (req.rbac.serviceAccountSpec && req.rbac.serviceAccountSpec.metadata && req.rbac.serviceAccountSpec.metadata.name) {
+            d.spec.template.spec.serviceAccountName = req.rbac.serviceAccountSpec.metadata.name;
+        } else {
+            d.spec.template.spec.serviceAccountName = req.name;
+        }
     }
     if (req.deploymentSpec) {
         _.merge(d, req.deploymentSpec);
