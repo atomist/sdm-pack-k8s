@@ -1,6 +1,6 @@
 {
   "name": "@atomist/sdm-pack-k8",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Extension Pack for an Atomist SDM to integrate Kubernetes deployments",
   "author": {
     "name": "Atomist",
@@ -30,6 +30,7 @@
     "@kubernetes/client-node": "^0.7.2",
     "@types/app-root-path": "^1.2.4",
     "@types/fs-extra": "^5.0.4",
+    "@types/js-yaml": "^3.11.4",
     "@types/json-stringify-safe": "^5.0.0",
     "@types/lodash": "^4.14.118",
     "@types/node": "^10.12.10",
@@ -41,6 +42,7 @@
     "app-root-path": "^2.1.0",
     "docker-file-parser": "^1.0.3",
     "fs-extra": "^7.0.1",
+    "js-yaml": "^3.12.0",
     "json-stringify-safe": "^5.0.1",
     "kubernetes-client": "^5.3.1",
     "lodash": "^4.17.11",
@@ -68,8 +70,8 @@
     "supervisor": "^0.12.0",
     "ts-essentials": "^1.0.2",
     "ts-node": "^7.0.1",
-    "tslint": "^5.11.0",
-    "typedoc": "^0.13.0",
+    "tslint": "^5.12.1",
+    "typedoc": "^0.14.1",
     "typescript": "^3.2.2"
   },
   "directories": {
