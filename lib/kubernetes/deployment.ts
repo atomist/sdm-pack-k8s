@@ -209,9 +209,9 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
     if (req.imagePullSecret) {
         d.spec.template.spec.imagePullSecrets = [{ name: req.imagePullSecret }];
     }
-    if (req.rbac) {
-        if (req.rbac.serviceAccountSpec && req.rbac.serviceAccountSpec.metadata && req.rbac.serviceAccountSpec.metadata.name) {
-            d.spec.template.spec.serviceAccountName = req.rbac.serviceAccountSpec.metadata.name;
+    if (req.roleSpec) {
+        if (req.serviceAccountSpec && req.serviceAccountSpec.metadata && req.serviceAccountSpec.metadata.name) {
+            d.spec.template.spec.serviceAccountName = req.serviceAccountSpec.metadata.name;
         } else {
             d.spec.template.spec.serviceAccountName = req.name;
         }

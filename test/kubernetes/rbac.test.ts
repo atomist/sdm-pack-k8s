@@ -38,9 +38,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    roleSpec: {},
-                },
+                roleSpec: {},
             };
             const s = await roleTemplate(r);
             const e = {
@@ -68,40 +66,38 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    roleSpec: {
-                        metadata: {
-                            annotation: {
-                                "music.com/genre": "Art Rock",
-                            },
-                            labels: {
-                                "emi.com/producer": "Kate Bush",
-                            },
+                roleSpec: {
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
                         },
-                        rules: [
-                            {
-                                apiGroups: [""],
-                                resources: ["services"],
-                                verbs: ["get", "watch", "list"],
-                            },
-                            {
-                                apiGroups: [""],
-                                resources: ["pods"],
-                                verbs: ["get", "watch", "list"],
-                            },
-                            {
-                                apiGroups: ["extensions"],
-                                resources: ["ingresses"],
-                                verbs: ["get", "watch", "list"],
-                            },
-                            {
-                                apiGroups: [""],
-                                resources: ["nodes"],
-                                verbs: ["list"],
-                            },
-                        ],
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
                     },
-                } as any,
+                    rules: [
+                        {
+                            apiGroups: [""],
+                            resources: ["services"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["pods"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: ["extensions"],
+                            resources: ["ingresses"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["nodes"],
+                            verbs: ["list"],
+                        },
+                    ],
+                },
             };
             const s = await roleTemplate(r);
             const e = {
@@ -158,9 +154,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    roleSpec: {},
-                },
+                roleSpec: {},
             };
             const s = await serviceAccountTemplate(r);
             const e = {
@@ -187,18 +181,16 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    serviceAccountSpec: {
-                        metadata: {
-                            annotation: {
-                                "music.com/genre": "Art Rock",
-                            },
-                            labels: {
-                                "emi.com/producer": "Kate Bush",
-                            },
+                serviceAccountSpec: {
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
                         },
                     },
-                } as any,
+                },
             };
             const s = await serviceAccountTemplate(r);
             const e = {
@@ -229,19 +221,17 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    serviceAccountSpec: {
-                        metadata: {
-                            annotation: {
-                                "music.com/genre": "Art Rock",
-                            },
-                            labels: {
-                                "emi.com/producer": "Kate Bush",
-                            },
-                            name: "peter-gabriel",
+                serviceAccountSpec: {
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
                         },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                        name: "peter-gabriel",
                     },
-                } as any,
+                },
             };
             const s = await serviceAccountTemplate(r);
             const e = {
@@ -276,9 +266,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    roleSpec: {},
-                },
+                roleSpec: {},
             };
             const s = await roleBindingTemplate(r);
             const e = {
@@ -316,18 +304,16 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    roleBindingSpec: {
-                        metadata: {
-                            annotation: {
-                                "music.com/genre": "Art Rock",
-                            },
-                            labels: {
-                                "emi.com/producer": "Kate Bush",
-                            },
+                roleBindingSpec: {
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
                         },
                     },
-                } as any,
+                },
             };
             const s = await roleBindingTemplate(r);
             const e = {
@@ -369,12 +355,10 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    roleSpec: {},
-                    serviceAccountSpec: {
-                        metadata: {
-                            name: "peter-gabriel",
-                        },
+                roleSpec: {},
+                serviceAccountSpec: {
+                    metadata: {
+                        name: "peter-gabriel",
                     },
                 },
             };

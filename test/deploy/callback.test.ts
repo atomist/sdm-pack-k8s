@@ -237,11 +237,9 @@ describe("deploy/application", () => {
                 deploymentSpec: undefined,
                 serviceSpec: undefined,
                 ingressSpec: undefined,
-                rbac: {
-                    roleSpec: undefined,
-                    serviceAccountSpec: undefined,
-                    roleBindingSpec: undefined,
-                },
+                roleSpec: undefined,
+                serviceAccountSpec: undefined,
+                roleBindingSpec: undefined,
             } as any;
             assert.deepStrictEqual(d, r);
         });
@@ -313,11 +311,9 @@ describe("deploy/application", () => {
                     },
                 },
                 ingressSpec: undefined,
-                rbac: {
-                    roleSpec: undefined,
-                    serviceAccountSpec: undefined,
-                    roleBindingSpec: undefined,
-                },
+                roleSpec: undefined,
+                serviceAccountSpec: undefined,
+                roleBindingSpec: undefined,
             } as any;
             assert.deepStrictEqual(d, r);
         });
@@ -369,7 +365,6 @@ describe("deploy/application", () => {
                 name: "new-york",
                 ns: "NewYork",
                 image: "loureed/new-york:latest",
-                rbac: {},
             };
             assert.deepStrictEqual(gd["sdm-pack-k8"], exp);
         });
@@ -418,7 +413,6 @@ describe("deploy/application", () => {
                 name: "new-york",
                 ns: "NewYork",
                 image: "loureed/new-york:latest",
-                rbac: {},
             };
             assert.deepStrictEqual(gd["sdm-pack-k8"], exp);
         });
@@ -495,16 +489,14 @@ describe("deploy/application", () => {
                             replicas: 11,
                         },
                     },
-                    rbac: {
-                        roleSpec: {
-                            rules: [
-                                {
-                                    apiGroups: [""],
-                                    resources: ["services"],
-                                    verbs: ["get", "watch", "list"],
-                                },
-                            ],
-                        },
+                    roleSpec: {
+                        rules: [
+                            {
+                                apiGroups: [""],
+                                resources: ["services"],
+                                verbs: ["get", "watch", "list"],
+                            },
+                        ],
                     },
                 }),
             } as any;
@@ -553,16 +545,14 @@ describe("deploy/application", () => {
                         },
                     },
                 },
-                rbac: {
-                    roleSpec: {
-                        rules: [
-                            {
-                                apiGroups: [""],
-                                resources: ["services"],
-                                verbs: ["get", "watch", "list"],
-                            },
-                        ],
-                    },
+                roleSpec: {
+                    rules: [
+                        {
+                            apiGroups: [""],
+                            resources: ["services"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                    ],
                 },
             };
             assert.deepStrictEqual(gd["sdm-pack-k8"], exp);

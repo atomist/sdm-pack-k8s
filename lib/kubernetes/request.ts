@@ -19,30 +19,6 @@ import { DeepPartial } from "ts-essentials";
 import { KubernetesClients } from "./clients";
 
 /**
- * Role-based access control resources associated with an application.
- */
-export interface KubernetesApplicationRbac {
-    /**
-     * Partial role to create for binding to service account.  This
-     * partial spec is overlaid onto the default role spec.  If this
-     * is not defined, no RBAC or service account resources are
-     * managed for this application.
-     */
-    roleSpec: DeepPartial<k8s.V1Role>;
-    /**
-     * Partial service account spec to create, bind to the role,
-     * and use by the deployment.  This partial spec is overlaid
-     * onto the default service account spec.
-     */
-    serviceAccountSpec?: DeepPartial<k8s.V1ServiceAccount>;
-    /**
-     * Partial binding of role to service account.  This partial
-     * spec is overlaid onto the default role binding spec.
-     */
-    roleBindingSpec?: DeepPartial<k8s.V1RoleBinding>;
-}
-
-/**
  * Information used to construct resources when creating or updating
  * an application in a Kubernetes cluster.  This structure is designed
  * for a typical microservice-type deployment of one container
@@ -57,17 +33,25 @@ export interface KubernetesApplication {
     workspaceId: string;
     /** Arbitrary name of environment */
     environment: string;
-    /** Name of resources to create */
+    /**
+     * Name of resources to create.  It can be overriden for
+     * individual resources in the partial specs.
+     */
     name: string;
-    /** Namespace to create resources in */
+    /** Namespace to create resources in. */
     ns: string;
-    /** Full image name and tag for deployment pod template container */
+    /** Full image name and tag for deployment pod template container. */
     image: string;
     /**
      * Name of image pull secret for container image, if not provided
      * no image pull secret is provided in the pod spec.
      */
     imagePullSecret?: string;
+    /**
+     * Number of replicas in deployment.  May be overridden by
+     * deploymentSpec.
+     */
+    replicas?: number;
     /**
      * Port the service listens on, if not provided, no service
      * resource is created.
@@ -93,7 +77,9 @@ export interface KubernetesApplication {
     tlsSecret?: string;
     /**
      * Partial deployment spec for this application that is overlaid
-     * on top of the default deployment spec template.
+     * on top of the default deployment spec template.  It can be used
+     * to provide custom resource specifications, liveness and
+     * readiness checks, etc.
      */
     deploymentSpec?: DeepPartial<k8s.V1Deployment>;
     /**
@@ -107,19 +93,38 @@ export interface KubernetesApplication {
      */
     ingressSpec?: DeepPartial<k8s.V1beta1Ingress>;
     /**
-     * Number of replicas in deployment.  May be overridden by
-     * deploymentSpec.
-     */
-    replicas?: number;
-    /**
      * Secrets to upsert prior to creating deployment.
      */
     secrets?: Array<DeepPartial<k8s.V1Secret>>;
     /**
-     * Role-based access control resources that should be associated
-     * with the application.
+     * Partial role to create for binding to service account.  If
+     * provided, this partial spec is overlaid onto the default role
+     * spec, which is just metadata with no rules.  If this is not
+     * defined, this deployment will not create a role and therefore
+     * not bind a role to a service account.
      */
-    rbac?: KubernetesApplicationRbac;
+    roleSpec?: DeepPartial<k8s.V1Role>;
+    /**
+     * Partial service account spec to create and use in the
+     * deployment.  This partial spec is overlaid onto the default
+     * service account spec.  If the `serviceAccountSpec` is provided,
+     * the resulting service account spec is upserted during
+     * deployment.  If a `roleSpec` is provided, the resulting service
+     * account spec is upserted during deployment and a role binding
+     * is created between the role and service account.  If neither
+     * the `serviceAccountSpec` nor `roleSpec` are created, no service
+     * account is managed by the deployment.  If this spec contains a
+     * name, it is used in the role binding and deployment specs.
+     */
+    serviceAccountSpec?: DeepPartial<k8s.V1ServiceAccount>;
+    /**
+     * Partial role binding spec for the role to service account.
+     * This partial spec is overlaid onto the default role binding
+     * spec, which contains metadata and the role and service account
+     * names.  The role binding is only created if the `roleSpec` is
+     * also provided.
+     */
+    roleBindingSpec?: DeepPartial<k8s.V1RoleBinding>;
 }
 
 /**

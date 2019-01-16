@@ -31,8 +31,18 @@ import {
 } from "./request";
 
 export interface UpsertRbacResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Role;
+    role?: {
+        response: http.IncomingMessage;
+        body: k8s.V1Role;
+    };
+    serviceAccount?: {
+        response: http.IncomingMessage;
+        body: k8s.V1ServiceAccount;
+    };
+    roleBinding?: {
+        response: http.IncomingMessage;
+        body: k8s.V1RoleBinding;
+    };
 }
 
 /**
@@ -47,56 +57,62 @@ export interface UpsertRbacResponse {
  */
 export async function upsertRbac(req: KubernetesResourceRequest): Promise<UpsertRbacResponse | void> {
     const slug = appName(req);
-    if (!req.rbac || !req.rbac.roleSpec) {
-        logger.debug(`Role not provided, will not create RBAC resources for ${slug}`);
-        return;
+    if (req.roleSpec && !req.serviceAccountSpec) {
+        req.serviceAccountSpec = {};
     }
-    let roleResponse: UpsertRbacResponse;
-    try {
-        await req.clients.rbac.readNamespacedRole(req.name, req.ns);
-    } catch (e) {
-        logger.debug(`Failed to read role ${slug}, creating: ${e.message}`);
-        const role = await roleTemplate(req);
-        logger.debug(`Creating role ${slug} using '${stringify(role)}'`);
-        roleResponse = await logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, role), `create role ${slug}`);
-    }
-    if (!roleResponse) {
-        logger.debug(`Role ${slug} exists, patching using '${stringify(req.rbac.roleSpec)}'`);
-        roleResponse = await logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, req.rbac.roleSpec),
-            `patch role ${slug}`);
-    }
-
-    let saResponse: { response: http.IncomingMessage, body: k8s.V1ServiceAccount };
-    try {
-        saResponse = await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
-    } catch (e) {
-        logger.debug(`Failed to read service account ${slug}, creating: ${e.message}`);
-        const serviceAccount = await serviceAccountTemplate(req);
-        await logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, serviceAccount),
-            `create service account ${slug}`);
-    }
-    if (!saResponse && req.rbac.serviceAccountSpec) {
-        logger.debug(`Service account ${slug} exists, patching using '${stringify(req.rbac.serviceAccountSpec)}'`);
-        saResponse = await logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, req.rbac.serviceAccountSpec),
-            `patch service account ${slug}`);
+    const response: UpsertRbacResponse = {};
+    if (req.roleSpec) {
+        let roleResponse: { response: http.IncomingMessage, body: k8s.V1Role };
+        try {
+            roleResponse = await req.clients.rbac.readNamespacedRole(req.name, req.ns);
+        } catch (e) {
+            logger.debug(`Failed to read role ${slug}, creating: ${e.message}`);
+            const role = await roleTemplate(req);
+            logger.debug(`Creating role ${slug} using '${stringify(role)}'`);
+            response.role = await logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, role), `create role ${slug}`);
+        }
+        if (roleResponse && !response.role) {
+            logger.debug(`Role ${slug} exists, patching using '${stringify(req.roleSpec)}'`);
+            response.role = await logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, req.roleSpec),
+                `patch role ${slug}`);
+        }
     }
 
-    let rbResponse: { response: http.IncomingMessage, body: k8s.V1RoleBinding };
-    try {
-        rbResponse = await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
-    } catch (e) {
-        logger.debug(`Failed to read role binding ${slug}, creating: ${e.message}`);
-        const roleBinding = await roleBindingTemplate(req);
-        await logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, roleBinding),
-            `create role binding ${slug}`);
-    }
-    if (!rbResponse && req.rbac.roleBindingSpec) {
-        logger.debug(`Role binding ${slug} exists, patching using '${stringify(req.rbac.roleBindingSpec)}'`);
-        rbResponse = await logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, req.rbac.roleBindingSpec),
-            `patch role binding ${slug}`);
+    if (req.serviceAccountSpec) {
+        let saResponse: { response: http.IncomingMessage, body: k8s.V1ServiceAccount };
+        try {
+            saResponse = await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
+        } catch (e) {
+            logger.debug(`Failed to read service account ${slug}, creating: ${e.message}`);
+            const serviceAccount = await serviceAccountTemplate(req);
+            response.serviceAccount = await logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, serviceAccount),
+                `create service account ${slug}`);
+        }
+        if (saResponse && !response.serviceAccount) {
+            logger.debug(`Service account ${slug} exists, patching using '${stringify(req.serviceAccountSpec)}'`);
+            response.serviceAccount = await logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, req.serviceAccountSpec),
+                `patch service account ${slug}`);
+        }
     }
 
-    return roleResponse;
+    if (req.roleSpec) {
+        let rbResponse: { response: http.IncomingMessage, body: k8s.V1RoleBinding };
+        try {
+            rbResponse = await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
+        } catch (e) {
+            logger.debug(`Failed to read role binding ${slug}, creating: ${e.message}`);
+            const roleBinding = await roleBindingTemplate(req);
+            response.roleBinding = await logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, roleBinding),
+                `create role binding ${slug}`);
+        }
+        if (rbResponse && !response.roleBinding && req.roleBindingSpec) {
+            logger.debug(`Role binding ${slug} exists, patching using '${stringify(req.roleBindingSpec)}'`);
+            response.roleBinding = await logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, req.roleBindingSpec),
+                `patch role binding ${slug}`);
+        }
+    }
+
+    return response;
 }
 
 /**
@@ -156,7 +172,7 @@ export async function roleTemplate(req: KubernetesApplication): Promise<k8s.V1Ro
         metadata,
         rules: [],
     };
-    _.merge(r, req.rbac.roleSpec);
+    _.merge(r, req.roleSpec);
     return r;
 }
 
@@ -181,8 +197,8 @@ export async function serviceAccountTemplate(req: KubernetesApplication): Promis
         apiVersion: "v1",
         metadata,
     };
-    if (req.rbac.serviceAccountSpec) {
-        _.merge(sa, req.rbac.serviceAccountSpec);
+    if (req.serviceAccountSpec) {
+        _.merge(sa, req.serviceAccountSpec);
     }
     return sa as k8s.V1ServiceAccount;
 }
@@ -219,11 +235,11 @@ export async function roleBindingTemplate(req: KubernetesApplication): Promise<k
             },
         ],
     };
-    if (req.rbac.serviceAccountSpec && req.rbac.serviceAccountSpec.metadata && req.rbac.serviceAccountSpec.metadata.name) {
-        rb.subjects[0].name = req.rbac.serviceAccountSpec.metadata.name;
+    if (req.serviceAccountSpec && req.serviceAccountSpec.metadata && req.serviceAccountSpec.metadata.name) {
+        rb.subjects[0].name = req.serviceAccountSpec.metadata.name;
     }
-    if (req.rbac.roleBindingSpec) {
-        _.merge(rb, req.rbac.roleBindingSpec);
+    if (req.roleBindingSpec) {
+        _.merge(rb, req.roleBindingSpec);
     }
     return rb as k8s.V1RoleBinding;
 }

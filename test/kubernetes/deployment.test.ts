@@ -558,9 +558,7 @@ describe("kubernetes/deployment", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    roleSpec: {},
-                },
+                roleSpec: {},
             };
             const d = await deploymentTemplate(r);
             const e = {
@@ -638,20 +636,18 @@ describe("kubernetes/deployment", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                rbac: {
-                    roleSpec: {
-                        rules: [
-                            {
-                                apiGroups: [""],
-                                resources: ["namespaces", "pods", "services"],
-                                verbs: ["get", "list", "watch", "create", "update", "patch", "delete"],
-                            },
-                        ],
-                    },
-                    serviceAccountSpec: {
-                        metadata: {
-                            name: "peter-gabriel",
+                roleSpec: {
+                    rules: [
+                        {
+                            apiGroups: [""],
+                            resources: ["namespaces", "pods", "services"],
+                            verbs: ["get", "list", "watch", "create", "update", "patch", "delete"],
                         },
+                    ],
+                },
+                serviceAccountSpec: {
+                    metadata: {
+                        name: "peter-gabriel",
                     },
                 },
             };

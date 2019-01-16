@@ -296,11 +296,9 @@ export async function defaultDeploymentData(
         deploymentSpec,
         serviceSpec,
         ingressSpec,
-        rbac: {
-            roleSpec,
-            serviceAccountSpec,
-            roleBindingSpec,
-        },
+        roleSpec,
+        serviceAccountSpec,
+        roleBindingSpec,
     };
 
     const configDeploymentData: DeepPartial<KubernetesApplication> = (k8Deploy.sdm.configuration.sdm && k8Deploy.sdm.configuration.sdm.k8) ?
