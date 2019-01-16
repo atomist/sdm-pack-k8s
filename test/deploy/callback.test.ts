@@ -32,8 +32,8 @@ import {
     kubernetesApplicationCallback,
 } from "../../lib/deploy/callback";
 import {
-    KubernetesDeployment,
-    KubernetesDeploymentRegistration,
+    KubernetesDeployV2,
+    KubernetesDeployV2Registration,
 } from "../../lib/deploy/goal";
 import { KubernetesApplication } from "../../lib/kubernetes/request";
 
@@ -85,7 +85,7 @@ describe("deploy/application", () => {
                     },
                 },
             } as any;
-            const k: KubernetesDeployment = {} as any;
+            const k: KubernetesDeployV2 = {} as any;
             const c: HandlerContext = {} as any;
             const i = await defaultImage(e, k, c);
             assert(i === "miller/rhett:instigator");
@@ -104,7 +104,7 @@ describe("deploy/application", () => {
                 },
                 sha: "abcdef0123456789",
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 sdm: {
                     configuration: {
                         sdm: {
@@ -130,7 +130,7 @@ describe("deploy/application", () => {
                     owner: "rhettmiller",
                 },
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 sdm: {
                     configuration: {
                         sdm: {
@@ -159,7 +159,7 @@ describe("deploy/application", () => {
                 },
                 sha: "abcdef0123456789",
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 sdm: {
                     configuration: {},
                 },
@@ -179,7 +179,7 @@ describe("deploy/application", () => {
                     owner: "rhett-miller",
                 },
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 sdm: {
                     configuration: {},
                 },
@@ -195,7 +195,7 @@ describe("deploy/application", () => {
 
         it("should not return anything if not in local mode", async () => {
             const e: SdmGoalEvent = {} as any;
-            const k: KubernetesDeployment = {} as any;
+            const k: KubernetesDeployV2 = {} as any;
             const i = await defaultIngress(e, k);
             assert(i === undefined);
         });
@@ -215,7 +215,7 @@ describe("deploy/application", () => {
                     owner: "loureed",
                 },
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 details: {
                     environment: "NewYork",
                 },
@@ -264,7 +264,7 @@ describe("deploy/application", () => {
                 },
                 sha: "ca19881989",
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 sdm: {
                     configuration: {
                         environment: "NewYork",
@@ -333,7 +333,7 @@ describe("deploy/application", () => {
                     owner: "loureed",
                 },
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 details: {
                     environment: "NewYork",
                 },
@@ -347,7 +347,7 @@ describe("deploy/application", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeploymentRegistration = {} as any;
+            const r: KubernetesDeployV2Registration = {} as any;
             const rc: RepoContext = {
                 context: {
                     workspaceId: "L0UR33D",
@@ -381,7 +381,7 @@ describe("deploy/application", () => {
                     owner: "loureed",
                 },
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 details: {
                     environment: "NewYork",
                 },
@@ -395,7 +395,7 @@ describe("deploy/application", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeploymentRegistration = {} as any;
+            const r: KubernetesDeployV2Registration = {} as any;
             const rc: RepoContext = {
                 context: {
                     workspaceId: "L0UR33D",
@@ -457,7 +457,7 @@ describe("deploy/application", () => {
                 },
                 sha: "ca19881989",
             } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 sdm: {
                     configuration: {
                         environment: "NewYork",
@@ -477,7 +477,7 @@ describe("deploy/application", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeploymentRegistration = {
+            const r: KubernetesDeployV2Registration = {
                 applicationData: (rp: GitProject, ra: KubernetesApplication) => Promise.resolve({
                     ...ra,
                     replicas: 5640,

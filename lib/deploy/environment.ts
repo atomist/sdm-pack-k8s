@@ -20,7 +20,7 @@ import {
     SdmGoalEvent,
     StagingEnvironment,
 } from "@atomist/sdm";
-import { KubernetesDeployment } from "./goal";
+import { KubernetesDeployV2 } from "./goal";
 
 /**
  * Determine the best default value for the environment property for
@@ -38,7 +38,7 @@ import { KubernetesDeployment } from "./goal";
  * @param k8Deploy Kubernetes deployment goal object
  * @return best value for the environment property
  */
-export function defaultEnvironment(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeployment): string | undefined {
+export function defaultEnvironment(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeployV2): string | undefined {
     if (k8Deploy.details && k8Deploy.details.environment) {
         return k8Deploy.details.environment;
     } else if (goalEvent.environment) {

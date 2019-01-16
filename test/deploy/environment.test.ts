@@ -26,7 +26,7 @@ import {
     defaultEnvironment,
     getEnvironmentLabel,
 } from "../../lib/deploy/environment";
-import { KubernetesDeployment } from "../../lib/deploy/goal";
+import { KubernetesDeployV2 } from "../../lib/deploy/goal";
 
 describe("deploy/environment", () => {
 
@@ -34,7 +34,7 @@ describe("deploy/environment", () => {
 
         it("should return the detail environment", () => {
             const g: SdmGoalEvent = { environment: "messiaen" } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 details: { environment: "goehr" },
                 environment: ProjectDisposalEnvironment,
                 sdm: {
@@ -49,7 +49,7 @@ describe("deploy/environment", () => {
 
         it("should return the event environment", () => {
             const g: SdmGoalEvent = { environment: "messiaen" } as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 environment: ProjectDisposalEnvironment,
                 sdm: {
                     configuration: {
@@ -63,7 +63,7 @@ describe("deploy/environment", () => {
 
         it("should return the goal environment", () => {
             const g: SdmGoalEvent = {} as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 environment: ProjectDisposalEnvironment,
                 sdm: {
                     configuration: {
@@ -77,7 +77,7 @@ describe("deploy/environment", () => {
 
         it("should return the configuration environment", () => {
             const g: SdmGoalEvent = {} as any;
-            const k: KubernetesDeployment = {
+            const k: KubernetesDeployV2 = {
                 sdm: {
                     configuration: {
                         environment: "boulez",
@@ -90,7 +90,7 @@ describe("deploy/environment", () => {
 
         it("should return undefined if no environment available", () => {
             const g: SdmGoalEvent = {} as any;
-            const k: KubernetesDeployment = {} as any;
+            const k: KubernetesDeployV2 = {} as any;
             const e = defaultEnvironment(g, k);
             assert(e === undefined);
         });

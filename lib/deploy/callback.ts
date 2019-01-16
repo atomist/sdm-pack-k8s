@@ -39,8 +39,8 @@ import { KubernetesApplication } from "../kubernetes/request";
 import { defaultEnvironment } from "./environment";
 import {
     goalEventSlug,
-    KubernetesDeployment,
-    KubernetesDeploymentRegistration,
+    KubernetesDeployV2,
+    KubernetesDeployV2Registration,
 } from "./goal";
 import { loadKubernetesSpec } from "./spec";
 
@@ -65,7 +65,7 @@ export const sdmPackK8 = "sdm-pack-k8";
  * @param registration Goal registration/configuration for `k8Deploy`
  * @return Function that augments the SdmGoalEvent data with [[KubernetesApplication]]
  */
-export function kubernetesApplicationCallback(k8Deploy: KubernetesDeployment, registration: KubernetesDeploymentRegistration)
+export function kubernetesApplicationCallback(k8Deploy: KubernetesDeployV2, registration: KubernetesDeployV2Registration)
     : (e: SdmGoalEvent, c: RepoContext) => Promise<SdmGoalEvent> {
 
     return async (goalEvent, ctx) => {
@@ -185,7 +185,7 @@ function dockerImageNameComponent(name: string, hubOwner: boolean = false): stri
  * @param context Handler context
  * @return best value for the environment property
  */
-export async function defaultImage(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeployment, context: HandlerContext): Promise<string> {
+export async function defaultImage(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeployV2, context: HandlerContext): Promise<string> {
     if (goalEvent.push && goalEvent.push.after && goalEvent.push.after.images && goalEvent.push.after.images.length > 0) {
         return goalEvent.push.after.images[0].imageName;
     }
@@ -216,7 +216,7 @@ export async function defaultImage(goalEvent: SdmGoalEvent, k8Deploy: Kubernetes
  * @param k8Deploy Kubernetes deployment goal object
  * @return best value for the environment property
  */
-export async function defaultIngress(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeployment): Promise<Partial<KubernetesApplication>> {
+export async function defaultIngress(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeployV2): Promise<Partial<KubernetesApplication>> {
     if (!isInLocalMode()) {
         return undefined;
     }
@@ -266,7 +266,7 @@ export async function defaultIngress(goalEvent: SdmGoalEvent, k8Deploy: Kubernet
 export async function defaultDeploymentData(
     p: GitProject,
     goalEvent: SdmGoalEvent,
-    k8Deploy: KubernetesDeployment,
+    k8Deploy: KubernetesDeployV2,
     context: HandlerContext,
 ): Promise<KubernetesApplication> {
 

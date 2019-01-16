@@ -41,13 +41,13 @@ export function goalEventSlug(goalEvent: SdmGoalEvent): string {
  * KubernetesApplication object.
  */
 export type ApplicationDataCallback =
-    (p: GitProject, a: KubernetesApplication, g: KubernetesDeployment, e: SdmGoalEvent) => Promise<KubernetesApplication>;
+    (p: GitProject, a: KubernetesApplication, g: KubernetesDeployV2, e: SdmGoalEvent) => Promise<KubernetesApplication>;
 
 /**
  * Registration object to pass to KubernetesDeployment goal to
  * configure how deployment works.
  */
-export interface KubernetesDeploymentRegistration extends FulfillmentRegistration {
+export interface KubernetesDeployV2Registration extends FulfillmentRegistration {
     /**
      * Allows the user of this pack to modify the default application
      * data before execution of deployment.
@@ -101,7 +101,7 @@ function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDe
  * You can always access `details.environment` via the `details`
  * property.
  */
-export class KubernetesDeployment extends FulfillableGoalWithRegistrations<KubernetesDeploymentRegistration> {
+export class KubernetesDeployV2 extends FulfillableGoalWithRegistrations<KubernetesDeployV2Registration> {
 
     public readonly details: FulfillableGoalDetails;
 
@@ -115,7 +115,7 @@ export class KubernetesDeployment extends FulfillableGoalWithRegistrations<Kuber
     /**
      * Register a deployment with all required callbacks.
      */
-    public with(registration: KubernetesDeploymentRegistration): this {
+    public with(registration: KubernetesDeployV2Registration): this {
         if (registration.fulfillment) {
             this.addFulfillment({
                 name: registration.fulfillment,
