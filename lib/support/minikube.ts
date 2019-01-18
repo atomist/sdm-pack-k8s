@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,40 @@ import {
     execPromise,
     StartupListener,
 } from "@atomist/sdm";
+import { isInLocalMode } from "@atomist/sdm-core";
+import { kubeConfigContext } from "../kubernetes/config";
+
+/**
+ * If the SDM is running in local mode, the `DOCKER_HOST` environment
+ * variable are not set, and using a minikube cluster, use `minikube
+ * docker-env` to set the Docker environment variables.
+ */
+export const minikubeStartupListener: StartupListener = async context => {
+    if (!isInLocalMode()) {
+        logger.debug(`Not in local mode, not executing minikube startup listener`);
+        return;
+    }
+
+    if (process.env.DOCKER_HOST) {
+        logger.info(`Using provided Docker environment variables: DOCKER_HOST=${process.env.DOCKER_HOST}`);
+        return;
+    }
+
+    const configContext = kubeConfigContext(context.sdm);
+    if (configContext !== "minikube") {
+        logger.debug(`Context '${configContext}' is not minikube, not executing minikube startup listener`);
+        return;
+    }
+
+    try {
+        const result = await execPromise("minikube", ["docker-env"]);
+        const envVars = processMinikubeDockeEnv(result.stdout);
+        Object.keys(envVars).forEach(e => process.env[e] = envVars[e]);
+        logger.info("Configured local minikube Docker environment");
+    } catch (e) {
+        logger.warn(`Failed to configure local minikube Docker environment: ${e.message}`);
+    }
+};
 
 /**
  * Parse output of `minikube docker-env` and return an object of
@@ -40,22 +74,3 @@ export function processMinikubeDockeEnv(env: string): Record<string, string> {
     });
     return dockerEnv;
 }
-
-/**
- * If the `DOCKER_HOST` environment variable is not set, try to Use
- * `minikube docker-env` to set the Docker environment variables.
- */
-export const minikubeStartupListener: StartupListener = async () => {
-    if (process.env.DOCKER_HOST) {
-        logger.info(`Using provided Docker environment variables: DOCKER_HOST=${process.env.DOCKER_HOST}`);
-        return;
-    }
-    try {
-        const result = await execPromise("minikube", ["docker-env"]);
-        const envVars = processMinikubeDockeEnv(result.stdout);
-        Object.keys(envVars).forEach(e => process.env[e] = envVars[e]);
-        logger.info("Configured local minikube Docker environment");
-    } catch (e) {
-        logger.warn(`Failed to configure local minikube Docker environment: ${e.message}`);
-    }
-};

@@ -15,9 +15,11 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { makeApiClients } from "./clients";
+import { loadKubeConfig } from "./config";
 import {
     deleteDeployment,
     upsertDeployment,
@@ -32,8 +34,8 @@ import {
     upsertRbac,
 } from "./rbac";
 import {
-    KubernetesApplicationRequest,
-    KubernetesDeleteRequest,
+    KubernetesApplication,
+    KubernetesDelete,
 } from "./request";
 import {
     deleteSecrets,
@@ -44,29 +46,23 @@ import {
     upsertService,
 } from "./service";
 
-/** Stringify filter for a Kubernetes request object. */
-function reqFilter<T>(k: string, v: T): T | undefined {
-    if (k === "config" || k === "clients") {
-        return undefined;
-    }
-    return v;
-}
-
-/** Stringify a Kubernetes request object. */
-function reqString(req: any): string {
-    return stringify(req, reqFilter);
-}
-
 /**
  * Create or update all the resources for an application in a
  * Kubernetes cluster if it does not exist.
  *
  * @param req application creation request
  */
-export async function upsertApplication(upReq: KubernetesApplicationRequest): Promise<void> {
-
-    const clients = makeApiClients(upReq.config);
-    const req = { ...upReq, clients };
+export async function upsertApplication(app: KubernetesApplication): Promise<void> {
+    let config: k8s.KubeConfig;
+    try {
+        config = loadKubeConfig();
+    } catch (e) {
+        e.message(`Failed to load Kubernetes config to deploy ${app.ns}/${app.name}: ${e.message}`);
+        logger.error(e.message);
+        throw e;
+    }
+    const clients = makeApiClients(config);
+    const req = { ...app, clients };
 
     try {
         await upsertNamespace(req);
@@ -89,10 +85,18 @@ export async function upsertApplication(upReq: KubernetesApplicationRequest): Pr
  *
  * @param req delete application request object
  */
-export async function deleteApplication(delReq: KubernetesDeleteRequest): Promise<void> {
-    const clients = makeApiClients(delReq.config);
-    const req = { ...delReq, clients };
-    const slug = `${req.ns}/${req.name}`;
+export async function deleteApplication(del: KubernetesDelete): Promise<void> {
+    const slug = `${del.ns}/${del.name}`;
+    let config: k8s.KubeConfig;
+    try {
+        config = loadKubeConfig();
+    } catch (e) {
+        e.message(`Failed to load Kubernetes config to delete ${slug}: ${e.message}`);
+        logger.error(e.message);
+        throw e;
+    }
+    const clients = makeApiClients(config);
+    const req = { ...del, clients };
 
     const errs: Error[] = [];
     try {
@@ -130,4 +134,17 @@ export async function deleteApplication(delReq: KubernetesDeleteRequest): Promis
         logger.error(msg);
         throw new Error(msg);
     }
+}
+
+/** Stringify filter for a Kubernetes request object. */
+function reqFilter<T>(k: string, v: T): T | undefined {
+    if (k === "config" || k === "clients") {
+        return undefined;
+    }
+    return v;
+}
+
+/** Stringify a Kubernetes request object. */
+function reqString(req: any): string {
+    return stringify(req, reqFilter);
 }

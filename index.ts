@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,14 @@
  */
 
 export {
-    KubernetesOptions,
-    kubernetesSupport,
-} from "./lib/k8";
-export * from "./lib/support/api";
-export {
-    createKubernetesData,
-    readKubernetesSpec,
-} from "./lib/support/goal";
-export {
     KubernetesDeploy,
-    defaultDeploymentData,
     KubernetesDeployRegistration,
-} from "./lib/support/KubernetesDeploy";
+} from "./lib/deploy/goal";
 export {
-    KubernetesApplicationOptions,
-    KubernetesDeploymentOptions,
-} from "./lib/support/options";
-import * as k8 from "./lib/typings/kubernetes";
-export { k8 };
+    SdmPackK8sOptions,
+    k8sSupport,
+} from "./lib/k8s";
+export {
+    KubernetesApplication,
+    KubernetesDelete,
+} from "./lib/kubernetes/request";

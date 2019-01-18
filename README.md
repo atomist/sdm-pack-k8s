@@ -2,13 +2,14 @@
   <img src="https://images.atomist.com/sdm/SDM-Logo-Dark.png">
 </p>
 
-# @atomist/sdm-pack-k8
+# @atomist/sdm-pack-k8s
 
 [![atomist sdm goals](http://badge.atomist.com/T29E48P34/atomist/sdm-pack-k8/36919e92-7d10-4e4c-87b7-a0fd58bca349)](https://app.atomist.com/workspace/T29E48P34)
-[![npm version](https://img.shields.io/npm/v/@atomist/sdm-pack-k8.svg)](https://www.npmjs.com/package/@atomist/sdm-pack-k8)
+[![npm version](https://img.shields.io/npm/v/@atomist/sdm-pack-k8s.svg)](https://www.npmjs.com/package/@atomist/sdm-pack-k8s)
 
 [Atomist][atomist] software delivery machine (SDM) extension Pack for
-an Atomist SDM to integrate [Kubernetes][kubernetes] deployments.
+an Atomist SDM to enable deploying applications to
+[Kubernetes][kubernetes] (K8s) clusters.
 
 See also: [API Documentation][apidoc]
 
@@ -52,28 +53,27 @@ Also see the TypeScript [API Doc][apidoc] for this pack.
 
 [atomist-doc-sdm]: https://docs.atomist.com/developer/sdm/ (Atomist Documentation - SDM Developer)
 [atomist-doc-k8-pack]: https://docs.atomist.com/pack/kubernetes/ (Atomist K8s Pack Documentation)
-[apidoc]: https://atomist.github.io/sdm-pack-k8
+[apidoc]: https://atomist.github.io/sdm-pack-k8s
 
 ## Connect
 
-Follow [@atomist][atomist-twitter] and [The Composition][atomist-blog]
-blog related to SDM.
+Follow [@atomist][atomist-twitter] and the [Atomist blog][atomist-blog].
 
 [atomist-twitter]: https://twitter.com/atomist (Atomist on Twitter)
-[atomist-blog]: https://the-composition.com/ (The Composition - The Official Atomist Blog)
+[atomist-blog]: https://blog.atomist.com/ (The Official Atomist Blog)
 
 ## Usage
 
 1. First install the dependency in your SDM project
 
 ```
-$ npm install @atomist/sdm-pack-k8
+$ npm install @atomist/sdm-pack-k8s
 ```
 
 2. Install the support
 
 ```
-import { kubernetesSupport } from "@atomist/sdm-pack-k8";
+import { kubernetesSupport } from "@atomist/sdm-pack-k8s";
 
 sdm.addExtensionPacks(kubernetesSupport({
         deployments: [{
@@ -101,7 +101,7 @@ channel in the [Atomist community Slack workspace][slack].
 
 If you find a problem, please create an [issue][].
 
-[issue]: https://github.com/atomist/sdm-pack-k8/issues
+[issue]: https://github.com/atomist/sdm-pack-k8s/issues
 
 ## Development
 

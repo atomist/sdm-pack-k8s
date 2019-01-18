@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,27 +137,6 @@ export type KubernetesDelete = Pick<KubernetesApplication, "name" | "ns" | "work
  * Intermediate interface for use in combination with other
  * interfaces.
  */
-export interface KubernetesConfigContainer {
-    /** Kubernetes configuration */
-    config: k8s.KubeConfig;
-}
-
-/**
- * Information needed to create an application in a Kubernetes
- * cluster.
- */
-export type KubernetesApplicationRequest = KubernetesApplication & KubernetesConfigContainer;
-
-/**
- * Information needed to delete an application from a Kubernetes
- * cluster.
- */
-export type KubernetesDeleteRequest = KubernetesDelete & KubernetesConfigContainer;
-
-/**
- * Intermediate interface for use in combination with other
- * interfaces.
- */
 export interface KubernetesClientsContainer {
     /** Kubernetes API group clients. */
     clients: KubernetesClients;
@@ -178,4 +157,20 @@ export type KubernetesDeleteResourceRequest = KubernetesDelete & KubernetesClien
 /** Qualified name of Kubernetes application */
 export function appName(k: Pick<KubernetesApplication, "name" | "ns">): string {
     return `${k.ns}/${k.name}`;
+}
+
+/**
+ * Test if the object is a valid [[KubernetesApplication]] by checking
+ * if it has all required properties.
+ *
+ * @param o Putative Kubernetes application data
+ * @return `true` if all required properties are present, `false` otherwise.
+ */
+export function isKubernetesApplication(o: { [key: string]: any }): o is KubernetesApplication {
+    if (!o) {
+        return false;
+    }
+    const required = ["environment", "image", "name", "ns", "workspaceId"];
+    return required.every(k => o[k]);
+
 }

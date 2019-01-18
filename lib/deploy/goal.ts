@@ -29,7 +29,7 @@ import {
 import { KubernetesApplication } from "../kubernetes/request";
 import { kubernetesApplicationCallback } from "./callback";
 import { getEnvironmentLabel } from "./environment";
-// import { executeKubernetesDeployment } from "./execute";
+import { executeGoalKubernetesDeploy } from "./execute";
 
 /** Return repository slug for SDM goal event. */
 export function goalEventSlug(goalEvent: SdmGoalEvent): string {
@@ -41,13 +41,13 @@ export function goalEventSlug(goalEvent: SdmGoalEvent): string {
  * KubernetesApplication object.
  */
 export type ApplicationDataCallback =
-    (p: GitProject, a: KubernetesApplication, g: KubernetesDeployV2, e: SdmGoalEvent) => Promise<KubernetesApplication>;
+    (p: GitProject, a: KubernetesApplication, g: KubernetesDeploy, e: SdmGoalEvent) => Promise<KubernetesApplication>;
 
 /**
  * Registration object to pass to KubernetesDeployment goal to
  * configure how deployment works.
  */
-export interface KubernetesDeployV2Registration extends FulfillmentRegistration {
+export interface KubernetesDeployRegistration extends FulfillmentRegistration {
     /**
      * Allows the user of this pack to modify the default application
      * data before execution of deployment.
@@ -64,13 +64,6 @@ export interface KubernetesDeployV2Registration extends FulfillmentRegistration 
      * goal's namespace, i.e., [[KubernetesApplication.ns]].
      */
     fulfillment?: string;
-    /**
-     * The namespaces to manage application deployments in.  If it is
-     * `undefined`, deployments to all namespaces are managed by this
-     * SDM.  If set to an empty array, this SDM will only schedule
-     * deployment goals, not fulfill them.
-     */
-    namespaces?: string[];
 }
 
 function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDetails {
@@ -101,21 +94,20 @@ function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDe
  * You can always access `details.environment` via the `details`
  * property.
  */
-export class KubernetesDeployV2 extends FulfillableGoalWithRegistrations<KubernetesDeployV2Registration> {
+export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {
 
     public readonly details: FulfillableGoalDetails;
 
     constructor(details?: FulfillableGoalDetails, ...dependsOn: Goal[]) {
         const deets = defaultDetails(details);
-        super(getGoalDefinitionFrom(deets, DefaultGoalNameGenerator.generateName("kubernetes-deployment")),
-            ...dependsOn);
+        super(getGoalDefinitionFrom(deets, DefaultGoalNameGenerator.generateName("kubernetes-deploy")), ...dependsOn);
         this.details = deets;
     }
 
     /**
      * Register a deployment with all required callbacks.
      */
-    public with(registration: KubernetesDeployV2Registration): this {
+    public with(registration: KubernetesDeployRegistration): this {
         if (registration.fulfillment) {
             this.addFulfillment({
                 name: registration.fulfillment,
@@ -124,7 +116,7 @@ export class KubernetesDeployV2 extends FulfillableGoalWithRegistrations<Kuberne
         } else {
             this.addFulfillment({
                 name: registration.name,
-                // goalExecutor: executeKubernetesDeployment(this, registration),
+                goalExecutor: executeGoalKubernetesDeploy,
                 pushTest: registration.pushTest,
             });
         }

@@ -19,7 +19,7 @@ import {
     processMinikubeDockeEnv,
 } from "../../lib/support/minikube";
 
-describe("minikube", () => {
+describe("support/minikube", () => {
 
     describe("parseMinikubeDockerEnv", () => {
 

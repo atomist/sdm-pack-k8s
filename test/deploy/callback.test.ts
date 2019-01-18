@@ -29,11 +29,12 @@ import {
     defaultImage,
     defaultIngress,
     dockerPort,
+    getKubernetesGoalEventData,
     kubernetesApplicationCallback,
 } from "../../lib/deploy/callback";
 import {
-    KubernetesDeployV2,
-    KubernetesDeployV2Registration,
+    KubernetesDeploy,
+    KubernetesDeployRegistration,
 } from "../../lib/deploy/goal";
 import { KubernetesApplication } from "../../lib/kubernetes/request";
 
@@ -85,7 +86,7 @@ describe("deploy/application", () => {
                     },
                 },
             } as any;
-            const k: KubernetesDeployV2 = {} as any;
+            const k: KubernetesDeploy = {} as any;
             const c: HandlerContext = {} as any;
             const i = await defaultImage(e, k, c);
             assert(i === "miller/rhett:instigator");
@@ -104,7 +105,7 @@ describe("deploy/application", () => {
                 },
                 sha: "abcdef0123456789",
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 sdm: {
                     configuration: {
                         sdm: {
@@ -130,7 +131,7 @@ describe("deploy/application", () => {
                     owner: "rhettmiller",
                 },
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 sdm: {
                     configuration: {
                         sdm: {
@@ -159,7 +160,7 @@ describe("deploy/application", () => {
                 },
                 sha: "abcdef0123456789",
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 sdm: {
                     configuration: {},
                 },
@@ -179,7 +180,7 @@ describe("deploy/application", () => {
                     owner: "rhett-miller",
                 },
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 sdm: {
                     configuration: {},
                 },
@@ -195,7 +196,7 @@ describe("deploy/application", () => {
 
         it("should not return anything if not in local mode", async () => {
             const e: SdmGoalEvent = {} as any;
-            const k: KubernetesDeployV2 = {} as any;
+            const k: KubernetesDeploy = {} as any;
             const i = await defaultIngress(e, k);
             assert(i === undefined);
         });
@@ -215,7 +216,7 @@ describe("deploy/application", () => {
                     owner: "loureed",
                 },
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 details: {
                     environment: "NewYork",
                 },
@@ -264,7 +265,7 @@ describe("deploy/application", () => {
                 },
                 sha: "ca19881989",
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 sdm: {
                     configuration: {
                         environment: "NewYork",
@@ -272,10 +273,12 @@ describe("deploy/application", () => {
                             docker: {
                                 registry: "lou.reed.com",
                             },
-                            k8: {
-                                ns: "romeo-juliet",
-                                host: "dirty.blvd.org",
-                                tlsSecret: "star-blvd-org",
+                            k8s: {
+                                app: {
+                                    ns: "romeo-juliet",
+                                    host: "dirty.blvd.org",
+                                    tlsSecret: "star-blvd-org",
+                                },
                             },
                         },
                     },
@@ -333,7 +336,7 @@ describe("deploy/application", () => {
                     owner: "loureed",
                 },
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 details: {
                     environment: "NewYork",
                 },
@@ -347,7 +350,7 @@ describe("deploy/application", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeployV2Registration = {} as any;
+            const r: KubernetesDeployRegistration = {} as any;
             const rc: RepoContext = {
                 context: {
                     workspaceId: "L0UR33D",
@@ -366,7 +369,7 @@ describe("deploy/application", () => {
                 ns: "NewYork",
                 image: "loureed/new-york:latest",
             };
-            assert.deepStrictEqual(gd["sdm-pack-k8"], exp);
+            assert.deepStrictEqual(gd["sdm-pack-k8s"], exp);
         });
 
         it("should return goal when data is guff", async () => {
@@ -381,7 +384,7 @@ describe("deploy/application", () => {
                     owner: "loureed",
                 },
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 details: {
                     environment: "NewYork",
                 },
@@ -395,7 +398,7 @@ describe("deploy/application", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeployV2Registration = {} as any;
+            const r: KubernetesDeployRegistration = {} as any;
             const rc: RepoContext = {
                 context: {
                     workspaceId: "L0UR33D",
@@ -414,7 +417,7 @@ describe("deploy/application", () => {
                 ns: "NewYork",
                 image: "loureed/new-york:latest",
             };
-            assert.deepStrictEqual(gd["sdm-pack-k8"], exp);
+            assert.deepStrictEqual(gd["sdm-pack-k8s"], exp);
         });
 
         it("should merge all provided data properly", async () => {
@@ -430,7 +433,7 @@ describe("deploy/application", () => {
                 branch: "rock",
                 data: JSON.stringify({
                     "Xmas": "in February",
-                    "sdm-pack-k8": {
+                    "sdm-pack-k8s": {
                         host: "sick.of.you",
                         path: "/hold/on",
                         replicas: 14,
@@ -457,7 +460,7 @@ describe("deploy/application", () => {
                 },
                 sha: "ca19881989",
             } as any;
-            const k: KubernetesDeployV2 = {
+            const k: KubernetesDeploy = {
                 sdm: {
                     configuration: {
                         environment: "NewYork",
@@ -465,10 +468,12 @@ describe("deploy/application", () => {
                             docker: {
                                 registry: "lou.reed.com",
                             },
-                            k8: {
-                                ns: "romeo-juliet",
-                                host: "dirty.blvd.org",
-                                tlsSecret: "star-blvd-org",
+                            k8s: {
+                                app: {
+                                    ns: "romeo-juliet",
+                                    host: "dirty.blvd.org",
+                                    tlsSecret: "star-blvd-org",
+                                },
                             },
                             projectLoader: {
                                 doWithProject: (x: any, a: (gp: GitProject) => Promise<SdmGoalEvent>) => a(p),
@@ -477,7 +482,7 @@ describe("deploy/application", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeployV2Registration = {
+            const r: KubernetesDeployRegistration = {
                 applicationData: (rp: GitProject, ra: KubernetesApplication) => Promise.resolve({
                     ...ra,
                     replicas: 5640,
@@ -555,7 +560,46 @@ describe("deploy/application", () => {
                     ],
                 },
             };
-            assert.deepStrictEqual(gd["sdm-pack-k8"], exp);
+            assert.deepStrictEqual(gd["sdm-pack-k8s"], exp);
+        });
+
+    });
+
+    describe("getKubernetesGoalEventData", () => {
+
+        it("should return undefined if no goal event", () => {
+            const k = getKubernetesGoalEventData(undefined);
+            assert(k === undefined);
+        });
+
+        it("should return undefined if no data", async () => {
+            const g: SdmGoalEvent = {} as any;
+            const k = getKubernetesGoalEventData(g);
+            assert(k === undefined);
+        });
+
+        it("should return undefined if no kubernetes application", () => {
+            const g: SdmGoalEvent = { data: "{}" } as any;
+            const k = getKubernetesGoalEventData(g);
+            assert(k === undefined);
+        });
+
+        it("should throw an exception if data cannot be parsed", () => {
+            const g: SdmGoalEvent = { data: "}{" } as any;
+            assert.throws(() => getKubernetesGoalEventData(g), /Failed to parse goal event data/);
+        });
+
+        it("should return application data", () => {
+            const g: SdmGoalEvent = {
+                data: `{"sdm-pack-k8s":{"name":"nowhere-man","ns":"rubber-soul","workspaceId":"EM15TUD105"}}`,
+            } as any;
+            const k = getKubernetesGoalEventData(g);
+            const e = {
+                name: "nowhere-man",
+                ns: "rubber-soul",
+                workspaceId: "EM15TUD105",
+            };
+            assert.deepStrictEqual(k, e);
         });
 
     });

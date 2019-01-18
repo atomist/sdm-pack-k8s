@@ -1,5 +1,5 @@
 {
-  "name": "@atomist/sdm-pack-k8",
+  "name": "@atomist/sdm-pack-k8s",
   "version": "1.1.0",
   "description": "Extension Pack for an Atomist SDM to integrate Kubernetes deployments",
   "author": {
@@ -8,13 +8,13 @@
     "url": "https://atomist.com/"
   },
   "license": "Apache-2.0",
-  "homepage": "https://github.com/atomist/sdm-pack-k8#readme",
+  "homepage": "https://github.com/atomist/sdm-pack-k8s#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/atomist/sdm-pack-k8.git"
+    "url": "git+https://github.com/atomist/sdm-pack-k8s.git"
   },
   "bugs": {
-    "url": "https://github.com/atomist/sdm-pack-k8/issues"
+    "url": "https://github.com/atomist/sdm-pack-k8s/issues"
   },
   "keywords": [
     "atomist",

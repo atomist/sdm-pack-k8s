@@ -15,12 +15,14 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import { SoftwareDeliveryMachine } from "@atomist/sdm";
 import * as k8s from "@kubernetes/client-node";
-import * as _ from "lodash";
 
 /**
- * Get Kubernetes configuration either from the creds directory or the
- * in-cluster client.
+ * Get Kubernetes configuration.  It first tries to
+ * `loadFromDefault()`, which looks in the standard locations for a
+ * Kubernetes config file.  If that fails, it attempts to load the
+ * in-cluster client credentials.
  */
 export function loadKubeConfig(): k8s.KubeConfig {
     const kc = new k8s.KubeConfig();
@@ -31,4 +33,44 @@ export function loadKubeConfig(): k8s.KubeConfig {
         kc.loadFromCluster();
     }
     return kc;
+}
+
+/**
+ * If the SDM configuration contains a Kubernetes config context,
+ * validate it exists in the default Kubernetes config.  If the SDM
+ * context is not available in the Kubernetes config, an error is
+ * thrown.
+ *
+ * If there is no context in the SDM configuration, read the current
+ * context from the default Kubernetes config and set it in the SDM
+ * configuration.
+ *
+ * If this function is unable to read the default Kubernetes config,
+ * it throws an error.
+ *
+ * @param sdm Running Software Delivery Machine.
+ * @return Valid Kubernetes config context.
+ */
+export function kubeConfigContext(sdm: SoftwareDeliveryMachine): string | undefined {
+    const kc = new k8s.KubeConfig();
+    try {
+        kc.loadFromDefault();
+    } catch (e) {
+        e.message = `Failed to to load default Kubernetes config: ${e.message}`;
+        logger.error(e.message);
+        throw e;
+    }
+
+    if (sdm.configuration.sdm.k8s.options.context) {
+        if (!kc.contexts.some(c => c.name === sdm.configuration.sdm.k8s.options.context)) {
+            const msg = `Kubernetes config context in SDM configuration does not exist in default Kubernetes config`;
+            logger.error(msg);
+            logger.error(`Available Kubernetes config contexts: ${kc.contexts.map(c => c.name).join(",")}`);
+            throw new Error(msg);
+        }
+    } else if (kc.currentContext) {
+        sdm.configuration.sdm.k8s.options.context = kc.currentContext;
+    }
+
+    return sdm.configuration.sdm.k8s.options.context as string;
 }
