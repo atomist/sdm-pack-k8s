@@ -102,7 +102,7 @@ export async function deleteApplication(del: KubernetesDelete): Promise<void> {
     try {
         await deleteIngress(req);
     } catch (e) {
-        e.message = `Failed to remove rule for ${slug} from ingress: ${e.message}`;
+        e.message = `Failed to delete ingress ${slug}: ${e.message}`;
         errs.push(e);
     }
     try {

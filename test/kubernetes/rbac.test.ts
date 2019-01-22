@@ -16,17 +16,33 @@
 
 import * as assert from "power-assert";
 import {
+    clusterRoleBindingTemplate,
+    clusterRoleTemplate,
     roleBindingTemplate,
     roleTemplate,
     serviceAccountTemplate,
+    upsertRbac,
 } from "../../lib/kubernetes/rbac";
+import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
 import { pkgInfo } from "./pkg";
+
+/* tslint:disable:max-file-line-count */
 
 describe("kubernetes/rbac", () => {
 
     let pv: string;
     before(async () => {
         pv = await pkgInfo();
+    });
+
+    describe("upsertRbac", () => {
+
+        it("should return nothing", async () => {
+            const r: KubernetesResourceRequest = {} as any;
+            const v = await upsertRbac(r);
+            assert.deepStrictEqual(v, {});
+        });
+
     });
 
     describe("roleTemplate", () => {
@@ -103,6 +119,123 @@ describe("kubernetes/rbac", () => {
             const e = {
                 apiVersion: "rbac.authorization.k8s.io/v1",
                 kind: "Role",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+                rules: [
+                    {
+                        apiGroups: [""],
+                        resources: ["services"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: [""],
+                        resources: ["pods"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: ["extensions"],
+                        resources: ["ingresses"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: [""],
+                        resources: ["nodes"],
+                        verbs: ["list"],
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+    });
+
+    describe("clusterRoleTemplate", () => {
+
+        it("should create a cluster role spec", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                roleSpec: { kind: "ClusterRole" },
+            };
+            const s = await clusterRoleTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "ClusterRole",
+                metadata: {
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                rules: [] as any,
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should merge in provided role spec", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                roleSpec: {
+                    kind: "ClusterRole",
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                    },
+                    rules: [
+                        {
+                            apiGroups: [""],
+                            resources: ["services"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["pods"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: ["extensions"],
+                            resources: ["ingresses"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["nodes"],
+                            verbs: ["list"],
+                        },
+                    ],
+                },
+            };
+            const s = await clusterRoleTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "ClusterRole",
                 metadata: {
                     annotation: {
                         "music.com/genre": "Art Rock",
@@ -379,6 +512,143 @@ describe("kubernetes/rbac", () => {
                 roleRef: {
                     apiGroup: "rbac.authorization.k8s.io",
                     kind: "Role",
+                    name: r.name,
+                },
+                subjects: [
+                    {
+                        kind: "ServiceAccount",
+                        name: "peter-gabriel",
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+    });
+
+    describe("clusterRoleBindingTemplate", () => {
+
+        it("should create a cluster role binding spec", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                roleSpec: {},
+            };
+            const s = await clusterRoleBindingTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "ClusterRoleBinding",
+                metadata: {
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                roleRef: {
+                    apiGroup: "rbac.authorization.k8s.io",
+                    kind: "ClusterRole",
+                    name: r.name,
+                },
+                subjects: [
+                    {
+                        kind: "ServiceAccount",
+                        name: r.name,
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should merge in provided cluster role binding spec", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                roleBindingSpec: {
+                    kind: "ClusterRoleBinding",
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                    },
+                },
+            };
+            const s = await clusterRoleBindingTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "ClusterRoleBinding",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+                roleRef: {
+                    apiGroup: "rbac.authorization.k8s.io",
+                    kind: "ClusterRole",
+                    name: r.name,
+                },
+                subjects: [
+                    {
+                        kind: "ServiceAccount",
+                        name: r.name,
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should create a cluster role binding spec with provided service account", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                roleSpec: {},
+                serviceAccountSpec: {
+                    metadata: {
+                        name: "peter-gabriel",
+                    },
+                },
+            };
+            const s = await clusterRoleBindingTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "ClusterRoleBinding",
+                metadata: {
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/environment": r.environment,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                roleRef: {
+                    apiGroup: "rbac.authorization.k8s.io",
+                    kind: "ClusterRole",
                     name: r.name,
                 },
                 subjects: [

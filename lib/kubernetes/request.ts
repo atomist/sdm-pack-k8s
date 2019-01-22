@@ -103,7 +103,7 @@ export interface KubernetesApplication {
      * defined, this deployment will not create a role and therefore
      * not bind a role to a service account.
      */
-    roleSpec?: DeepPartial<k8s.V1Role>;
+    roleSpec?: DeepPartial<k8s.V1Role> | DeepPartial<k8s.V1ClusterRole>;
     /**
      * Partial service account spec to create and use in the
      * deployment.  This partial spec is overlaid onto the default
@@ -124,7 +124,7 @@ export interface KubernetesApplication {
      * names.  The role binding is only created if the `roleSpec` is
      * also provided.
      */
-    roleBindingSpec?: DeepPartial<k8s.V1RoleBinding>;
+    roleBindingSpec?: DeepPartial<k8s.V1RoleBinding> | DeepPartial<k8s.V1ClusterRoleBinding>;
 }
 
 /**
