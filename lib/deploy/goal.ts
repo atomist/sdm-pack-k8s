@@ -18,18 +18,21 @@ import { GitProject } from "@atomist/automation-client";
 import {
     AnyPush,
     DefaultGoalNameGenerator,
+    ExecuteGoal,
+    ExecuteGoalResult,
     FulfillableGoalDetails,
     FulfillableGoalWithRegistrations,
     FulfillmentRegistration,
     getGoalDefinitionFrom,
     Goal,
+    GoalInvocation,
     SdmGoalEvent,
+    SdmGoalState,
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import { KubernetesApplication } from "../kubernetes/request";
-import { kubernetesApplicationCallback } from "./callback";
+import { generateKubernetesGoalEventData } from "./data";
 import { getEnvironmentLabel } from "./environment";
-import { executeGoalKubernetesDeploy } from "./execute";
 
 /** Return repository slug for SDM goal event. */
 export function goalEventSlug(goalEvent: SdmGoalEvent): string {
@@ -66,24 +69,6 @@ export interface KubernetesDeployRegistration extends FulfillmentRegistration {
     fulfillment?: string;
 }
 
-function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDetails {
-    const envLabel = getEnvironmentLabel(details);
-    if (!details.displayName) {
-        details.displayName = `deploy${envLabel}`;
-    }
-    details.descriptions = details.descriptions || {};
-    if (!details.descriptions.completed) {
-        details.descriptions.completed = `Deployed${envLabel}`;
-    }
-    if (!details.descriptions.failed) {
-        details.descriptions.failed = `Deployment${envLabel} failed`;
-    }
-    if (!details.descriptions.waitingForApproval) {
-        details.descriptions.waitingForApproval = `Successfully deployed${envLabel}`;
-    }
-    return details;
-}
-
 /**
  * Goal that deploys an application to a Kubernetes cluster either
  * directly or requesting its fulfillment by a side effect.
@@ -108,22 +93,10 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
      * Register a deployment with all required callbacks.
      */
     public with(registration: KubernetesDeployRegistration): this {
-        if (registration.fulfillment) {
-            this.addFulfillment({
-                name: registration.fulfillment,
-                pushTest: registration.pushTest,
-            });
-        } else {
-            this.addFulfillment({
-                name: registration.name,
-                goalExecutor: executeGoalKubernetesDeploy,
-                pushTest: registration.pushTest,
-            });
-        }
-
-        this.addFulfillmentCallback({
-            goal: this,
-            callback: kubernetesApplicationCallback(this, registration),
+        this.addFulfillment({
+            name: registration.fulfillment || registration.name,
+            goalExecutor: initiateKubernetesDeploy(this, registration),
+            pushTest: registration.pushTest,
         });
 
         return this;
@@ -143,4 +116,42 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
             }
         });
     }
+}
+
+function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDetails {
+    const envLabel = getEnvironmentLabel(details);
+    if (!details.displayName) {
+        details.displayName = `deploy${envLabel}`;
+    }
+    details.descriptions = details.descriptions || {};
+    if (!details.descriptions.completed) {
+        details.descriptions.completed = `Deployed${envLabel}`;
+    }
+    if (!details.descriptions.failed) {
+        details.descriptions.failed = `Deployment${envLabel} failed`;
+    }
+    if (!details.descriptions.waitingForApproval) {
+        details.descriptions.waitingForApproval = `Successfully deployed${envLabel}`;
+    }
+    return details;
+}
+
+/**
+ * Goal executor that generates and stores the Kubernetes application
+ * data for deploying an application to Kubernetes.  It returns the
+ * augmented SdmGoalEvent with the Kubernetes application informatikon
+ * in the `data` property and the state of the SdmGoalEvent set to
+ * "in_process".  The actual deployment is done by the
+ * [[kubernetesDeployHandler]] event handler.
+ *
+ * @param k8Deploy
+ * @param registration
+ * @return An ExecuteGoal result that is not really a result, but an intermediate state.
+ */
+export function initiateKubernetesDeploy(k8Deploy: KubernetesDeploy, registration: KubernetesDeployRegistration): ExecuteGoal {
+    return async (goalInvocation: GoalInvocation): Promise<ExecuteGoalResult> => {
+        const goalEvent = await generateKubernetesGoalEventData(k8Deploy, registration, goalInvocation);
+        goalEvent.state = SdmGoalState.in_process;
+        return goalEvent;
+    };
 }

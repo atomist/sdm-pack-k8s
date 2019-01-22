@@ -1,5 +1,5 @@
 subscription KubernetesDeployRequestedSdmGoal($fulfillmentName: String!) {
-  SdmGoal(state: [requested]) {
+  SdmGoal(state: [in_process]) {
     uniqueName
     name
     id
@@ -52,7 +52,7 @@ subscription KubernetesDeployRequestedSdmGoal($fulfillmentName: String!) {
       owner
       providerId
     }
-    fulfillment(name: [$fulfillmentName], method: ["side-effect"]) @required {
+    fulfillment(name: [$fulfillmentName]) @required {
       method
       name
     }

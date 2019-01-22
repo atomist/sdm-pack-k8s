@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ describe("events/kubernetesDeploy", () => {
 
         it("should reject a goal with no fulfillment", async () => {
             const g: SdmGoalEvent = {
-                state: "requested",
+                state: "in_process",
             } as any;
             const p = {
                 name: "@bowie/spiders-from-mars",
@@ -42,9 +42,8 @@ describe("events/kubernetesDeploy", () => {
             const g: SdmGoalEvent = {
                 fulfillment: {
                     name: "Quicksand",
-                    method: "side-effect",
                 },
-                state: "requested",
+                state: "in_process",
             } as any;
             const p = {
                 name: "@bowie/spiders-from-mars",
@@ -53,26 +52,10 @@ describe("events/kubernetesDeploy", () => {
             assert(!await eligibleDeployGoal(g, p));
         });
 
-        it("should reject a goal with non-side-effect fulfillment", async () => {
+        it("should reject a goal with non-in_process state", async () => {
             const g: SdmGoalEvent = {
                 fulfillment: {
                     name: "@bowie/spiders-from-mars",
-                    method: "other",
-                },
-                state: "requested",
-            } as any;
-            const p = {
-                name: "@bowie/spiders-from-mars",
-                environment: "stardust",
-            };
-            assert(!await eligibleDeployGoal(g, p));
-        });
-
-        it("should reject a goal with non-requested state", async () => {
-            const g: SdmGoalEvent = {
-                fulfillment: {
-                    name: "@bowie/spiders-from-mars",
-                    method: "side-effect",
                 },
                 state: "skipped",
             } as any;
@@ -83,13 +66,12 @@ describe("events/kubernetesDeploy", () => {
             assert(!await eligibleDeployGoal(g, p));
         });
 
-        it("should accept a goal side-effect fulfillment with same name", async () => {
+        it("should accept a goal fulfillment with same name", async () => {
             const g: SdmGoalEvent = {
                 fulfillment: {
                     name: "@bowie/spiders-from-mars",
-                    method: "side-effect",
                 },
-                state: "requested",
+                state: "in_process",
             } as any;
             const p = {
                 name: "@bowie/spiders-from-mars",

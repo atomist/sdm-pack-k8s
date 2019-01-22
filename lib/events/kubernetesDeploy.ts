@@ -35,11 +35,11 @@ import {
     UpdateSdmGoalParams,
 } from "@atomist/sdm";
 import * as stringify from "json-stringify-safe";
-import { getKubernetesGoalEventData } from "../deploy/callback";
+import { getKubernetesGoalEventData } from "../deploy/data";
 import {
     deployAppId,
     deployApplication,
-} from "../deploy/execute";
+} from "../deploy/deploy";
 import { KubernetesApplication } from "../kubernetes/request";
 import { KubernetesDeployRequestedSdmGoal } from "../typings/types";
 
@@ -176,12 +176,7 @@ export async function eligibleDeployGoal(goalEvent: SdmGoalEvent, params: Kubern
         logger.debug(`SDM goal contains no fulfillment: ${stringify(goalEvent)}`);
         return false;
     }
-    const atmMethod = "side-effect";
-    if (goalEvent.fulfillment.method !== atmMethod) {
-        logger.debug(`SDM goal fulfillment method '${goalEvent.fulfillment.method}' is not '${atmMethod}'`);
-        return false;
-    }
-    if (goalEvent.state !== "requested") {
+    if (goalEvent.state !== SdmGoalState.in_process) {
         logger.debug(`SDM goal state '${goalEvent.state}' is not 'requested'`);
         return false;
     }

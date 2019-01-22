@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import {
 } from "@atomist/automation-client";
 import {
     ExecuteGoalResult,
-    GoalInvocation,
     ProgressLog,
     SdmGoalEvent,
 } from "@atomist/sdm";
@@ -32,15 +31,7 @@ import {
     isKubernetesApplication,
     KubernetesApplication,
 } from "../kubernetes/request";
-import { getKubernetesGoalEventData } from "./callback";
-
-/**
- * Goal executor wrapper for deploying an application to Kubernetes.
- */
-export async function executeGoalKubernetesDeploy(goalInvocation: GoalInvocation): Promise<ExecuteGoalResult> {
-    const { context, goalEvent, progressLog } = goalInvocation;
-    return deployApplication(goalEvent, context, progressLog);
-}
+import { getKubernetesGoalEventData } from "./data";
 
 /**
  * Execute a Kubernetes deployment within the context of an SDM goal.

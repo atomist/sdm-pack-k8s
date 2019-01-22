@@ -20,7 +20,7 @@ import {
     InMemoryProject,
 } from "@atomist/automation-client";
 import {
-    RepoContext,
+    GoalInvocation,
     SdmGoalEvent,
 } from "@atomist/sdm";
 import * as assert from "power-assert";
@@ -29,9 +29,9 @@ import {
     defaultImage,
     defaultIngress,
     dockerPort,
+    generateKubernetesGoalEventData,
     getKubernetesGoalEventData,
-    kubernetesApplicationCallback,
-} from "../../lib/deploy/callback";
+} from "../../lib/deploy/data";
 import {
     KubernetesDeploy,
     KubernetesDeployRegistration,
@@ -323,17 +323,22 @@ describe("deploy/application", () => {
 
     });
 
-    describe("kubernetesApplicationCallback", () => {
+    describe("generateKubernetesGoalEventData", () => {
 
         it("should return goal with data", async () => {
             const p: GitProject = InMemoryProject.of() as any;
-            const e: SdmGoalEvent = {
-                push: {
-                    after: {},
+            const g: GoalInvocation = {
+                context: {
+                    workspaceId: "L0UR33D",
                 },
-                repo: {
-                    name: "new-york",
-                    owner: "loureed",
+                goalEvent: {
+                    push: {
+                        after: {},
+                    },
+                    repo: {
+                        name: "new-york",
+                        owner: "loureed",
+                    },
                 },
             } as any;
             const k: KubernetesDeploy = {
@@ -351,12 +356,7 @@ describe("deploy/application", () => {
                 },
             } as any;
             const r: KubernetesDeployRegistration = {} as any;
-            const rc: RepoContext = {
-                context: {
-                    workspaceId: "L0UR33D",
-                },
-            } as any;
-            const sge = await kubernetesApplicationCallback(k, r)(e, rc);
+            const sge = await generateKubernetesGoalEventData(k, r, g);
             assert(Object.keys(sge).length === 3);
             assert.deepStrictEqual(sge.push, { after: {} });
             assert.deepStrictEqual(sge.repo, { name: "new-york", owner: "loureed" });
@@ -374,14 +374,19 @@ describe("deploy/application", () => {
 
         it("should return goal when data is guff", async () => {
             const p: GitProject = InMemoryProject.of() as any;
-            const e: SdmGoalEvent = {
-                data: ["there", "is", "no", "time"],
-                push: {
-                    after: {},
+            const g: GoalInvocation = {
+                context: {
+                    workspaceId: "L0UR33D",
                 },
-                repo: {
-                    name: "new-york",
-                    owner: "loureed",
+                goalEvent: {
+                    data: ["there", "is", "no", "time"],
+                    push: {
+                        after: {},
+                    },
+                    repo: {
+                        name: "new-york",
+                        owner: "loureed",
+                    },
                 },
             } as any;
             const k: KubernetesDeploy = {
@@ -399,12 +404,7 @@ describe("deploy/application", () => {
                 },
             } as any;
             const r: KubernetesDeployRegistration = {} as any;
-            const rc: RepoContext = {
-                context: {
-                    workspaceId: "L0UR33D",
-                },
-            } as any;
-            const sge = await kubernetesApplicationCallback(k, r)(e, rc);
+            const sge = await generateKubernetesGoalEventData(k, r, g);
             assert(Object.keys(sge).length === 3);
             assert.deepStrictEqual(sge.push, { after: {} });
             assert.deepStrictEqual(sge.repo, { name: "new-york", owner: "loureed" });
@@ -429,36 +429,41 @@ describe("deploy/application", () => {
                 { path: ".atomist/kubernetes/service.yml", content: `spec:\n  metadata:\n    annotation:\n      halloween: parade\n` },
                 { path: "Dockerfile", content: "EXPOSE 8080/udp\n" },
             ) as any;
-            const e: SdmGoalEvent = {
-                branch: "rock",
-                data: JSON.stringify({
-                    "Xmas": "in February",
-                    "sdm-pack-k8s": {
-                        host: "sick.of.you",
-                        path: "/hold/on",
-                        replicas: 14,
-                        deploymentSpec: {
-                            spec: {
-                                template: {
-                                    spec: {
-                                        dnsPolicy: "Default",
+            const g: GoalInvocation = {
+                context: {
+                    workspaceId: "L0UR33D",
+                },
+                goalEvent: {
+                    branch: "rock",
+                    data: JSON.stringify({
+                        "Xmas": "in February",
+                        "sdm-pack-k8s": {
+                            host: "sick.of.you",
+                            path: "/hold/on",
+                            replicas: 14,
+                            deploymentSpec: {
+                                spec: {
+                                    template: {
+                                        spec: {
+                                            dnsPolicy: "Default",
+                                        },
                                     },
                                 },
                             },
                         },
+                    }),
+                    push: {
+                        after: {
+                            images: [{ imageName: "docker.lou-reed.com/newyork:1989" }],
+                        },
                     },
-                }),
-                push: {
-                    after: {
-                        images: [{ imageName: "docker.lou-reed.com/newyork:1989" }],
+                    repo: {
+                        name: "new-york",
+                        owner: "loureed",
+                        providerId: "sire",
                     },
+                    sha: "ca19881989",
                 },
-                repo: {
-                    name: "new-york",
-                    owner: "loureed",
-                    providerId: "sire",
-                },
-                sha: "ca19881989",
             } as any;
             const k: KubernetesDeploy = {
                 sdm: {
@@ -505,12 +510,7 @@ describe("deploy/application", () => {
                     },
                 }),
             } as any;
-            const rc: RepoContext = {
-                context: {
-                    workspaceId: "L0UR33D",
-                },
-            } as any;
-            const sge = await kubernetesApplicationCallback(k, r)(e, rc);
+            const sge = await generateKubernetesGoalEventData(k, r, g);
             assert(Object.keys(sge).length === 5);
             assert(sge.branch === "rock");
             assert(sge.sha === "ca19881989");
