@@ -22,7 +22,7 @@ import {
 } from "@atomist/automation-client";
 import {
     execPromise,
-    RepoContext,
+    GoalInvocation,
     SdmGoalEvent,
 } from "@atomist/sdm";
 import {
@@ -52,50 +52,50 @@ import { loadKubernetesSpec } from "./spec";
 export const sdmPackK8s = "sdm-pack-k8s";
 
 /**
- * Generate KubernetesApplication from project and goal.  This
- * function used [[defaultDeploymentData]] to produce initial
+ * Generate KubernetesApplication from project and goal invocation.
+ * This function used [[defaultDeploymentData]] to produce initial
  * [[KubernetesApplication]] data.  It then merges in any object
  * provided by `goalEvent.data[[[sdmPackk8]]]`, with the latter taking
  * precedence.  Then, if `registration.applicationData` is truthy, it
- * calls that function and merges the results into
- * `goalEvent.data[[[sdmPackk8]]]`, with the function result taking
- * precedence.
+ * calls that function, passing the merged value of the Kubernetes
+ * application, and uses its return value as
+ * `goalEvent.data[[[sdmPackk8]]]`.
  *
  * @param k8Deploy Kubernetes deployment goal
  * @param registration Goal registration/configuration for `k8Deploy`
- * @return Function that augments the SdmGoalEvent data with [[KubernetesApplication]]
+ * @param goalInvocation The Kubernetes deployment goal currently triggered.
+ * @return The SdmGoalEvent augmented with [[KubernetesApplication]] in the data
  */
-export function kubernetesApplicationCallback(k8Deploy: KubernetesDeploy, registration: KubernetesDeployRegistration)
-    : (e: SdmGoalEvent, c: RepoContext) => Promise<SdmGoalEvent> {
+export function generateKubernetesGoalEventData(
+    k8Deploy: KubernetesDeploy,
+    registration: KubernetesDeployRegistration,
+    goalInvocation: GoalInvocation,
+): Promise<SdmGoalEvent> {
+    return k8Deploy.sdm.configuration.sdm.projectLoader.doWithProject({ ...goalInvocation, readOnly: true }, async p => {
 
-    return async (goalEvent, ctx) => {
-        return k8Deploy.sdm.configuration.sdm.projectLoader.doWithProject({
-            credentials: ctx.credentials, id: ctx.id, context: ctx.context, readOnly: true,
-        }, async p => {
+        const { context, goalEvent } = goalInvocation;
+        const defaultData: any = {};
+        defaultData[sdmPackK8s] = await defaultDeploymentData(p, goalEvent, k8Deploy, context);
 
-            const defaultData: any = {};
-            defaultData[sdmPackK8s] = await defaultDeploymentData(p, goalEvent, k8Deploy, ctx.context);
+        const slug = goalEventSlug(goalEvent);
+        let eventData: any;
+        try {
+            eventData = JSON.parse(goalEvent.data || "{}");
+        } catch (e) {
+            logger.warn(`Failed to parse goal event data for ${slug} as JSON: ${e.message}`);
+            logger.warn(`Ignoring current value of goal event data: ${goalEvent.data}`);
+            eventData = {};
+        }
+        const mergedData = _.merge(defaultData, eventData);
 
-            const slug = goalEventSlug(goalEvent);
-            let eventData: any;
-            try {
-                eventData = JSON.parse(goalEvent.data || "{}");
-            } catch (e) {
-                logger.warn(`Failed to parse goal event data for ${slug} as JSON: ${e.message}`);
-                logger.warn(`Ignoring current value of goal event data: ${goalEvent.data}`);
-                eventData = {};
-            }
-            const mergedData = _.merge(defaultData, eventData);
+        if (registration.applicationData) {
+            const callbackData = await registration.applicationData(p, mergedData[sdmPackK8s], k8Deploy, goalEvent);
+            mergedData[sdmPackK8s] = callbackData;
+        }
 
-            if (registration.applicationData) {
-                const callbackData = await registration.applicationData(p, mergedData[sdmPackK8s], k8Deploy, goalEvent);
-                mergedData[sdmPackK8s] = callbackData;
-            }
-
-            goalEvent.data = JSON.stringify(mergedData);
-            return goalEvent;
-        });
-    };
+        goalEvent.data = JSON.stringify(mergedData);
+        return goalEvent;
+    });
 }
 
 /**

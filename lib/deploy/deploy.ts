@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import {
 } from "@atomist/automation-client";
 import {
     ExecuteGoalResult,
-    GoalInvocation,
     ProgressLog,
     SdmGoalEvent,
 } from "@atomist/sdm";
@@ -32,26 +31,17 @@ import {
     isKubernetesApplication,
     KubernetesApplication,
 } from "../kubernetes/request";
-import { getKubernetesGoalEventData } from "./callback";
+import { getKubernetesGoalEventData } from "./data";
 
 /**
- * Goal executor wrapper for deploying an application to Kubernetes.
- */
-export async function executeGoalKubernetesDeploy(goalInvocation: GoalInvocation): Promise<ExecuteGoalResult> {
-    const { context, goalEvent, progressLog } = goalInvocation;
-    return deployApplication(goalEvent, context, progressLog);
-}
-
-/**
- * Execute a Kubernetes deployment within the context of an SDM goal.
- * This function is able to be called for internal or side-effect goal
- * fulfillments.
+ * Given an SdmGoalEvent with the appropriate Kubernetes application
+ * data, deploy an application to a Kubernetes cluster.
  *
  * @param goalEvent The Kubernetes deployment goal
  * @param context A standard handler context available from goal executions
  *                or event handlers
  * @param log     SDM goal progress log
- * @return goal success or failure, with endpoint URL(s) on success if
+ * @return Goal success or failure, with endpoint URL(s) on success if
  *         ingress properties are set
  */
 export async function deployApplication(goalEvent: SdmGoalEvent, context: HandlerContext, log?: ProgressLog): Promise<ExecuteGoalResult> {

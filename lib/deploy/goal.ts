@@ -18,18 +18,21 @@ import { GitProject } from "@atomist/automation-client";
 import {
     AnyPush,
     DefaultGoalNameGenerator,
+    ExecuteGoal,
+    ExecuteGoalResult,
     FulfillableGoalDetails,
     FulfillableGoalWithRegistrations,
     FulfillmentRegistration,
     getGoalDefinitionFrom,
     Goal,
+    GoalInvocation,
     SdmGoalEvent,
+    SdmGoalState,
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import { KubernetesApplication } from "../kubernetes/request";
-import { kubernetesApplicationCallback } from "./callback";
+import { generateKubernetesGoalEventData } from "./data";
 import { getEnvironmentLabel } from "./environment";
-import { executeGoalKubernetesDeploy } from "./execute";
 
 /** Return repository slug for SDM goal event. */
 export function goalEventSlug(goalEvent: SdmGoalEvent): string {
@@ -38,7 +41,7 @@ export function goalEventSlug(goalEvent: SdmGoalEvent): string {
 
 /**
  * Function signature for callback that can modify and return the
- * KubernetesApplication object.
+ * [[KubernetesApplication]] object.
  */
 export type ApplicationDataCallback =
     (p: GitProject, a: KubernetesApplication, g: KubernetesDeploy, e: SdmGoalEvent) => Promise<KubernetesApplication>;
@@ -55,17 +58,71 @@ export interface KubernetesDeployRegistration extends FulfillmentRegistration {
     applicationData?: ApplicationDataCallback;
     /**
      * It not set (falsey), this SDM will fulfill its own Kubernetes
-     * deployment goals using [[executeKubernetesDeployment]].  If
-     * set, its value defines the name of the side-effect that will
-     * fulfill the goal.  In this case, there should be another SDM
-     * running whose name, i.e., its name as defined in its
-     * package.json, is the same as the value of fulfillment and who
-     * is configured to manage deploying resources to the requested
-     * goal's namespace, i.e., [[KubernetesApplication.ns]].
+     * deployment goals using.  If set, its value defines the name of
+     * the SDM that will fulfill the goal.  In this case, there should
+     * be another SDM running whose name, i.e., its name as defined in
+     * its registration/package.json, is the same as the value of
+     * fulfillment and who is configured to manage deploying resources
+     * to the requested goal's namespace, i.e.,
+     * [[KubernetesApplication.ns]].
      */
     fulfillment?: string;
 }
 
+/**
+ * Goal that initiates deploying an application to a Kubernetes
+ * cluster either directly or by another SDM.  Deploying the
+ * application is completed by the [[kubernetesDeployHandler]] event
+ * handler.
+ *
+ * Note: the `details.environment` property is mapped to a
+ * `GoalEnvironment` and that value becomes the goal environment.  So
+ * the `goal.details.environment` and `goal.environment` may differ.
+ * You can always access `details.environment` via the `details`
+ * property.
+ */
+export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {
+
+    public readonly details: FulfillableGoalDetails;
+
+    constructor(details?: FulfillableGoalDetails, ...dependsOn: Goal[]) {
+        const deets = defaultDetails(details);
+        super(getGoalDefinitionFrom(deets, DefaultGoalNameGenerator.generateName("kubernetes-deploy")), ...dependsOn);
+        this.details = deets;
+    }
+
+    /**
+     * Register a deployment with the initiator fulfillment.
+     */
+    public with(registration: KubernetesDeployRegistration): this {
+        this.addFulfillment({
+            name: registration.fulfillment || registration.name,
+            goalExecutor: initiateKubernetesDeploy(this, registration),
+            pushTest: registration.pushTest,
+        });
+
+        return this;
+    }
+
+    /**
+     * Called by the SDM on initialization.
+     */
+    public register(sdm: SoftwareDeliveryMachine): void {
+        super.register(sdm);
+
+        // register a startup listener to add the default deployment if no dedicated got registered
+        sdm.addStartupListener(async () => {
+            if (this.fulfillments.length === 0 && this.callbacks.length === 0) {
+                // register the default deployment
+                this.with({ name: "default-" + this.name, pushTest: AnyPush });
+            }
+        });
+    }
+}
+
+/**
+ * Provide reasonable defaults for the various goal descriptions.
+ */
 function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDetails {
     const envLabel = getEnvironmentLabel(details);
     if (!details.displayName) {
@@ -85,62 +142,21 @@ function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDe
 }
 
 /**
- * Goal that deploys an application to a Kubernetes cluster either
- * directly or requesting its fulfillment by a side effect.
+ * Goal executor that generates and stores the Kubernetes application
+ * data for deploying an application to Kubernetes.  It returns the
+ * augmented SdmGoalEvent with the Kubernetes application informatikon
+ * in the `data` property and the state of the SdmGoalEvent set to
+ * "in_process".  The actual deployment is done by the
+ * [[kubernetesDeployHandler]] event handler.
  *
- * Note: the `details.environment` property is mapped to a
- * `GoalEnvironment` and that value becomes the goal environment.  So
- * the `goal.details.environment` and `goal.environment` may differ.
- * You can always access `details.environment` via the `details`
- * property.
+ * @param k8Deploy
+ * @param registration
+ * @return An ExecuteGoal result that is not really a result, but an intermediate state.
  */
-export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {
-
-    public readonly details: FulfillableGoalDetails;
-
-    constructor(details?: FulfillableGoalDetails, ...dependsOn: Goal[]) {
-        const deets = defaultDetails(details);
-        super(getGoalDefinitionFrom(deets, DefaultGoalNameGenerator.generateName("kubernetes-deploy")), ...dependsOn);
-        this.details = deets;
-    }
-
-    /**
-     * Register a deployment with all required callbacks.
-     */
-    public with(registration: KubernetesDeployRegistration): this {
-        if (registration.fulfillment) {
-            this.addFulfillment({
-                name: registration.fulfillment,
-                pushTest: registration.pushTest,
-            });
-        } else {
-            this.addFulfillment({
-                name: registration.name,
-                goalExecutor: executeGoalKubernetesDeploy,
-                pushTest: registration.pushTest,
-            });
-        }
-
-        this.addFulfillmentCallback({
-            goal: this,
-            callback: kubernetesApplicationCallback(this, registration),
-        });
-
-        return this;
-    }
-
-    /**
-     * Called by the SDM on initialization
-     */
-    public register(sdm: SoftwareDeliveryMachine): void {
-        super.register(sdm);
-
-        // Register a startup listener to add the default deployment if no dedicated got registered
-        sdm.addStartupListener(async () => {
-            if (this.fulfillments.length === 0 && this.callbacks.length === 0) {
-                // Register the default deployment
-                this.with({ name: "default-" + this.name, pushTest: AnyPush });
-            }
-        });
-    }
+export function initiateKubernetesDeploy(k8Deploy: KubernetesDeploy, registration: KubernetesDeployRegistration): ExecuteGoal {
+    return async (goalInvocation: GoalInvocation): Promise<ExecuteGoalResult> => {
+        const goalEvent = await generateKubernetesGoalEventData(k8Deploy, registration, goalInvocation);
+        goalEvent.state = SdmGoalState.in_process;
+        return goalEvent;
+    };
 }
