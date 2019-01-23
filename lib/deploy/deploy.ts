@@ -87,10 +87,8 @@ export function deployAppId(g: SdmGoalEvent, c: HandlerContext, a?: KubernetesAp
  * @param ll Levelled log method like `logger.debug()`
  * @param log goal progress log
  */
-function llog(message: string, ll: LeveledLogMethod, log?: ProgressLog): void {
-    if (log) {
-        log.write(message);
-    }
+export function llog(message: string, ll: LeveledLogMethod, log: ProgressLog): void {
+    log.write(message);
     ll(message);
 }
 

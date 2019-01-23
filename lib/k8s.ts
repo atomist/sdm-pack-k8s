@@ -74,9 +74,20 @@ export interface SdmPackK8sOptions {
 /**
  * Register Kubernetes deployment support for provided goals.  Any
  * provided `options` are merged with any found in the SDM
- * configuration at `sdm.k8s.options`, or
+ * configuration at `sdm.k8s.options`, i.e.,
  * `sdm.configuration.sdm.k8s.options` if accessing from the SDM
  * object, with those passed in taking precedence.
+ *
+ * If the merged options result in a truthy `addCommands`, then the
+ * [[kubernetesUndeploy]] command is added to the SDM.
+ *
+ * If the options `namespaces` is `undefined` or an array with
+ * non-zero elements, the [[kubernetesDeployHandler]] event handler is
+ * added to the SDM.
+ *
+ * The [[minikubeStartupListener]] is added to the SDM to assist
+ * running in local mode against a
+ * [minikube](https://kubernetes.io/docs/setup/minikube/) cluster.
  *
  * @param options SDM Pack K8s options, see [[SdmPackK8sOptions]].
  * @returns SDM extension pack.
@@ -86,13 +97,14 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
         ...metadata(),
         configure: sdm => {
 
-            if (!sdm.configuration.sdm.k8s) {
-                sdm.configuration.sdm.k8s = {};
-            }
-            if (!sdm.configuration.sdm.k8s.options) {
-                sdm.configuration.sdm.k8s.options = {};
-            }
-            _.merge(sdm.configuration.sdm.k8s.options, options);
+            const k8sOptions = {
+                configuration: {
+                    sdm: {
+                        k8s: options,
+                    },
+                },
+            };
+            _.merge(sdm, k8sOptions);
 
             if (sdm.configuration.sdm.k8s.options.addCommands) {
                 sdm.addCommand(kubernetesUndeploy);
