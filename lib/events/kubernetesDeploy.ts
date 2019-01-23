@@ -29,56 +29,60 @@ import {
 import {
     EventHandlerRegistration,
     ExecuteGoalResult,
+    LoggingProgressLog,
+    ProgressLog,
     SdmGoalEvent,
     SdmGoalState,
+    SoftwareDeliveryMachineConfiguration,
     updateGoal,
     UpdateSdmGoalParams,
+    WriteToAllProgressLog,
 } from "@atomist/sdm";
 import * as stringify from "json-stringify-safe";
 import { getKubernetesGoalEventData } from "../deploy/data";
 import {
     deployAppId,
     deployApplication,
+    llog,
 } from "../deploy/deploy";
 import { KubernetesApplication } from "../kubernetes/request";
 import { KubernetesDeployRequestedSdmGoal } from "../typings/types";
 
 /**
- * Parameters for the side-effect fulfillment of the Kubernetes
- * deployment via an event subscription.
+ * Parameters for the deploying an application to a Kubernetes cluster
+ * via an event subscription.
  */
 @Parameters()
 export class KubernetesDeployParameters {
     /**
-     * Environment to deploy applications to.  Only requested SDM
-     * Kubernetes deployment goals whose Kubernetes application
-     * environment match this environment are deployed by this SDM.
+     * Make the entire SDM configuration available to this event
+     * handler.  The specific prooperties used are:
+     *
+     * `environment`: Environment to deploy applications to.  Only
+     * requested SDM Kubernetes deployment goals whose Kubernetes
+     * application environment match this environment are deployed by
+     * this SDM.
+     *
+     * `name`: Name of this SDM.  Only requested SDM Kubernetes
+     * deployment goals whose side-effect fulfillment name match this
+     * name are deployed by this SDM.
+     *
+     * `sdm.k8s.namespaces`: The namespaces to manage application
+     * deploys.  If falsey, all namespaces are managed.
+     *
+     * `sdm.logFactory`: Used to generate a log sink to send progress
+     * logs to.
      */
-    @Value("environment")
-    public environment: string;
-
-    /**
-     * Name of this SDM.  Only requested SDM Kubernetes deployment
-     * goals whose side-effect fulfillment name match this name are
-     * deployed by this SDM.
-     */
-    @Value("name")
-    public name: string;
-
-    /**
-     * The namespaces to manage application deploys.  If falsey, all
-     * namespaces are managed.
-     */
-    @Value({
-        path: "sdm.k8s.namespaces",
-        required: false,
-    })
-    public namespaces?: string[];
+    @Value("") // empty path returns the entire configuration
+    public configuration: SoftwareDeliveryMachineConfiguration;
 }
 
 /**
- * Event handler for side-effect fulfillment mode, allowing this SDM
- * to execute Kubernetes deployments requested by another SDM.
+ * Event handler for deploying an application to a Kubernetes cluster.
+ * The definition of the application to be deployed is handled by the
+ * [[KubernetesDeploy]] goal of this or another SDM.  This SDM will
+ * execute deployments configured for it, see [[eligibleDeployGoal]]
+ * and [[verifyKubernetesApplicationDeploy]] for details.
  */
 export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Subscription, KubernetesDeployParameters> = async (
     ef: EventFired<KubernetesDeployRequestedSdmGoal.Subscription>,
@@ -93,9 +97,13 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
 
     return Promise.all(ef.data.SdmGoal.map(async g => {
         const goalEvent = g as SdmGoalEvent;
+
+        const progressLog = new WriteToAllProgressLog(goalEvent.name, new LoggingProgressLog(goalEvent.name, "debug"),
+            await params.configuration.sdm.logFactory(context, goalEvent));
+
         const eligible = await eligibleDeployGoal(goalEvent, params);
         if (!eligible) {
-            logger.info("SDM goal event is not eligible for Kubernetes deploy");
+            llog("SDM goal event is not eligible for Kubernetes deploy", logger.info, progressLog);
             return Success;
         }
 
@@ -104,16 +112,17 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
             app = getKubernetesGoalEventData(goalEvent);
         } catch (e) {
             e.message = `Invalid SDM goal event data: ${e.message}`;
+            llog(e.message, logger.error, progressLog);
             throw e;
         }
         if (!app) {
-            logger.info("SDM goal event has no Kubernetes application data");
+            llog("SDM goal event has no Kubernetes application data", logger.info, progressLog);
             return Success;
         }
         const appId = deployAppId(goalEvent, context, app);
 
         if (!verifyKubernetesApplicationDeploy(app, params)) {
-            logger.debug(`Kubernetes application data did not match parameters for ${appId}`);
+            llog(`Kubernetes application data did not match parameters for ${appId}`, logger.debug, progressLog);
             return Success;
         }
 
@@ -131,7 +140,7 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
             } catch (e) {
                 const msg = `Failed to update SDM goal '${stringify(goalEvent)}' with params ` +
                     `'${stringify(updateParams)}': ${e.message}`;
-                logger.error(msg);
+                llog(msg, logger.error, progressLog);
                 result.message = `${e.message}; ${msg}`;
             }
             if (!result.code) {
@@ -140,7 +149,7 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
             return result as ExecuteGoalResult & HandlerResult;
         } catch (e) {
             const msg = `Failed to deploy ${appId}: ${e.message}`;
-            return failGoal(context, goalEvent, msg);
+            return failGoal(context, goalEvent, msg, progressLog);
         }
     }))
         .then(reduceResults);
@@ -164,8 +173,10 @@ export function kubernetesDeployHandler(self: string)
 
 /**
  * Determine if SDM goal event should trigger a deployment to
- * Kubernetes.  Since we have improved the subscription to select for
- * all of these values, these checks should no longer be necessary.
+ * Kubernetes.  Specifically, is the name of the goal fulfillment
+ * equal to the name of this SDM and is the goal in the "in_process"
+ * state.  Since we have improved the subscription to select for all
+ * of these values, these checks should no longer be necessary.
  *
  * @param goalEvent SDM goal event
  * @param params information about this SDM
@@ -180,8 +191,9 @@ export async function eligibleDeployGoal(goalEvent: SdmGoalEvent, params: Kubern
         logger.debug(`SDM goal state '${goalEvent.state}' is not 'requested'`);
         return false;
     }
-    if (goalEvent.fulfillment.name !== params.name) {
-        logger.debug(`SDM goal fulfillment name '${goalEvent.fulfillment.name}' is not '${params.name}'`);
+    const name = params.configuration.name;
+    if (goalEvent.fulfillment.name !== name) {
+        logger.debug(`SDM goal fulfillment name '${goalEvent.fulfillment.name}' is not '${name}'`);
         return false;
     }
     return true;
@@ -213,12 +225,15 @@ export async function eligibleDeployGoal(goalEvent: SdmGoalEvent, params: Kubern
  * @return verified Kubernetes application options if deployment should proceed, `undefined` otherwise.
  */
 export function verifyKubernetesApplicationDeploy(app: KubernetesApplication, params: KubernetesDeployParameters): boolean {
-    if (app.environment !== params.environment) {
-        logger.debug(`Kubernetes application environment '${app.environment}' is not SDM environment '${params.environment}'`);
+    const env = params.configuration.environment;
+    if (app.environment !== env) {
+        logger.debug(`Kubernetes application environment '${app.environment}' is not SDM environment '${env}'`);
         return false;
     }
-    if (params.namespaces && !params.namespaces.includes(app.ns)) {
-        logger.debug(`Kubernetes application namespace '${app.ns}' is not in managed namespaces '${params.namespaces.join(",")}'`);
+    const namespaces: string[] = (params.configuration.sdm && params.configuration.sdm.k8s && params.configuration.sdm.k8s.namespaces) ?
+        params.configuration.sdm.k8s.namespaces : undefined;
+    if (namespaces && !namespaces.includes(app.ns)) {
+        logger.debug(`Kubernetes application namespace '${app.ns}' is not in managed namespaces '${namespaces.join(",")}'`);
         return false;
     }
     return true;
@@ -233,8 +248,8 @@ export function verifyKubernetesApplicationDeploy(app: KubernetesApplication, pa
  * @param message informative error message
  * @return a failure handler result using the provided error message
  */
-async function failGoal(context: HandlerContext, goalEvent: SdmGoalEvent, message: string): Promise<HandlerResult> {
-    logger.error(message);
+async function failGoal(context: HandlerContext, goalEvent: SdmGoalEvent, message: string, log: ProgressLog): Promise<HandlerResult> {
+    llog(message, logger.error, log);
     const params: UpdateSdmGoalParams = {
         state: SdmGoalState.failure,
         description: message,
@@ -244,7 +259,7 @@ async function failGoal(context: HandlerContext, goalEvent: SdmGoalEvent, messag
         await updateGoal(context, goalEvent, params);
     } catch (e) {
         const msg = `Failed to update SDM goal '${stringify(goalEvent)}' with params '${stringify(params)}': ${e.message}`;
-        logger.error(msg);
+        llog(msg, logger.error, log);
         return { code: 2, message: `${message}; ${msg}` };
     }
     return { code: 1, message };
