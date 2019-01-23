@@ -44,7 +44,7 @@ export function goalEventSlug(goalEvent: SdmGoalEvent): string {
  * [[KubernetesApplication]] object.
  */
 export type ApplicationDataCallback =
-    (p: GitProject, a: KubernetesApplication, g: KubernetesDeploy, e: SdmGoalEvent) => Promise<KubernetesApplication>;
+    (a: KubernetesApplication, p: GitProject, g: KubernetesDeploy, e: SdmGoalEvent) => Promise<KubernetesApplication>;
 
 /**
  * Registration object to pass to KubernetesDeployment goal to
