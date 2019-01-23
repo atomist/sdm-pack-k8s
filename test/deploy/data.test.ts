@@ -40,7 +40,7 @@ import { KubernetesApplication } from "../../lib/kubernetes/request";
 
 /* tslint:disable:max-file-line-count */
 
-describe("deploy/application", () => {
+describe("deploy/data", () => {
 
     describe("dockerPort", () => {
 
@@ -488,7 +488,7 @@ describe("deploy/application", () => {
                 },
             } as any;
             const r: KubernetesDeployRegistration = {
-                applicationData: (rp: GitProject, ra: KubernetesApplication) => Promise.resolve({
+                applicationData: (ra: KubernetesApplication, rp: GitProject) => Promise.resolve({
                     ...ra,
                     replicas: 5640,
                     tlsSecret: "sickofyou",

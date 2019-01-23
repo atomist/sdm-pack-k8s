@@ -89,7 +89,7 @@ export function generateKubernetesGoalEventData(
         const mergedData = _.merge(defaultData, eventData);
 
         if (registration.applicationData) {
-            const callbackData = await registration.applicationData(p, mergedData[sdmPackK8s], k8Deploy, goalEvent);
+            const callbackData = await registration.applicationData(mergedData[sdmPackK8s], p, k8Deploy, goalEvent);
             mergedData[sdmPackK8s] = callbackData;
         }
 
