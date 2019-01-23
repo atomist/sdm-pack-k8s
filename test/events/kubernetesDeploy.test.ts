@@ -31,9 +31,11 @@ describe("events/kubernetesDeploy", () => {
             const g: SdmGoalEvent = {
                 state: "in_process",
             } as any;
-            const p = {
-                name: "@bowie/spiders-from-mars",
-                environment: "stardust",
+            const p: KubernetesDeployParameters = {
+                configuration: {
+                    name: "@bowie/spiders-from-mars",
+                    environment: "stardust",
+                } as any,
             };
             assert(!await eligibleDeployGoal(g, p));
         });
@@ -45,9 +47,11 @@ describe("events/kubernetesDeploy", () => {
                 },
                 state: "in_process",
             } as any;
-            const p = {
-                name: "@bowie/spiders-from-mars",
-                environment: "stardust",
+            const p: KubernetesDeployParameters = {
+                configuration: {
+                    name: "@bowie/spiders-from-mars",
+                    environment: "stardust",
+                } as any,
             };
             assert(!await eligibleDeployGoal(g, p));
         });
@@ -59,9 +63,11 @@ describe("events/kubernetesDeploy", () => {
                 },
                 state: "skipped",
             } as any;
-            const p = {
-                name: "@bowie/spiders-from-mars",
-                environment: "stardust",
+            const p: KubernetesDeployParameters = {
+                configuration: {
+                    name: "@bowie/spiders-from-mars",
+                    environment: "stardust",
+                } as any,
             };
             assert(!await eligibleDeployGoal(g, p));
         });
@@ -73,9 +79,11 @@ describe("events/kubernetesDeploy", () => {
                 },
                 state: "in_process",
             } as any;
-            const p = {
-                name: "@bowie/spiders-from-mars",
-                environment: "stardust",
+            const p: KubernetesDeployParameters = {
+                configuration: {
+                    name: "@bowie/spiders-from-mars",
+                    environment: "stardust",
+                } as any,
             };
             assert(await eligibleDeployGoal(g, p));
         });
@@ -93,8 +101,10 @@ describe("events/kubernetesDeploy", () => {
                 workspaceId: "B0W13",
             };
             const p: KubernetesDeployParameters = {
-                name: "@bowie/spiders-from-mars",
-                environment: "stardust",
+                configuration: {
+                    name: "@bowie/spiders-from-mars",
+                    environment: "stardust",
+                } as any,
             };
             assert(verifyKubernetesApplicationDeploy(a, p));
         });
@@ -108,9 +118,15 @@ describe("events/kubernetesDeploy", () => {
                 workspaceId: "B0W13",
             };
             const p: KubernetesDeployParameters = {
-                environment: "stardust",
-                name: "@bowie/spiders-from-mars",
-                namespaces: ["five-years", "soul-love", "moonage-daydream", "ziggy", "starman"],
+                configuration: {
+                    environment: "stardust",
+                    name: "@bowie/spiders-from-mars",
+                    sdm: {
+                        k8s: {
+                            namespaces: ["five-years", "soul-love", "moonage-daydream", "ziggy", "starman"],
+                        },
+                    },
+                } as any,
             };
             assert(verifyKubernetesApplicationDeploy(a, p));
         });
@@ -124,9 +140,15 @@ describe("events/kubernetesDeploy", () => {
                 workspaceId: "B0W13",
             };
             const p: KubernetesDeployParameters = {
-                environment: "stardust",
-                name: "@bowie/spiders-from-mars",
-                namespaces: ["five-years", "soul-love", "moonage-daydream", "ziggy", "starman"],
+                configuration: {
+                    environment: "stardust",
+                    name: "@bowie/spiders-from-mars",
+                    sdm: {
+                        k8s: {
+                            namespaces: ["five-years", "soul-love", "moonage-daydream", "ziggy", "starman"],
+                        },
+                    },
+                } as any,
             };
             assert(!verifyKubernetesApplicationDeploy(a, p));
         });
@@ -140,9 +162,15 @@ describe("events/kubernetesDeploy", () => {
                 workspaceId: "B0W13",
             };
             const p: KubernetesDeployParameters = {
-                environment: "stardust",
-                name: "@bowie/spiders-from-mars",
-                namespaces: ["five-years", "soul-love", "moonage-daydream", "starman"],
+                configuration: {
+                    environment: "stardust",
+                    name: "@bowie/spiders-from-mars",
+                    sdm: {
+                        k8s: {
+                            namespaces: ["five-years", "soul-love", "moonage-daydream", "starman"],
+                        },
+                    },
+                } as any,
             };
             assert(!verifyKubernetesApplicationDeploy(a, p));
         });
@@ -156,9 +184,15 @@ describe("events/kubernetesDeploy", () => {
                 workspaceId: "B0W13",
             };
             const p: KubernetesDeployParameters = {
-                environment: "stardust",
-                name: "@bowie/spiders-from-mars",
-                namespaces: [],
+                configuration: {
+                    environment: "stardust",
+                    name: "@bowie/spiders-from-mars",
+                    sdm: {
+                        k8s: {
+                            namespaces: [],
+                        },
+                    },
+                } as any,
             };
             assert(!verifyKubernetesApplicationDeploy(a, p));
         });
