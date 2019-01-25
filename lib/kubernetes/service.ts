@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
     applicationLabels,
@@ -56,7 +57,7 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
     try {
         await req.clients.core.readNamespacedService(req.name, req.ns);
     } catch (e) {
-        logger.debug(`Failed to read service ${slug}, creating: ${e.message}`);
+        logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
         const svc = await serviceTemplate(req);
         logger.debug(`Creating service ${slug} using '${stringify(svc)}'`);
         return logRetry(() => req.clients.core.createNamespacedService(req.ns, svc), `create service ${slug}`);
@@ -81,7 +82,7 @@ export async function deleteService(req: KubernetesDeleteResourceRequest): Promi
     try {
         await req.clients.core.readNamespacedService(req.name, req.ns);
     } catch (e) {
-        logger.debug(`Service ${slug} does not exist: ${e.message}`);
+        logger.debug(`Service ${slug} does not exist: ${errMsg(e)}`);
         return;
     }
     const body: k8s.V1DeleteOptions = {} as any;

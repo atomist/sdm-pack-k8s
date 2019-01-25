@@ -19,6 +19,7 @@ import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import { DeepPartial } from "ts-essentials";
+import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
@@ -45,7 +46,7 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<U
         logger.debug(`Namespace ${req.ns} exists`);
         return resp;
     } catch (e) {
-        logger.debug(`Failed to get namespace ${req.ns}, creating: ${e.message}`);
+        logger.debug(`Failed to get namespace ${req.ns}, creating: ${errMsg(e)}`);
         const ns = await namespaceTemplate(req);
         logger.debug(`Creating namespace ${req.ns} using '${stringify(ns)}'`);
         return logRetry(() => req.clients.core.createNamespace(ns), `create namespace ${req.ns}`);

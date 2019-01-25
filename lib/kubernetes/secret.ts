@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
     applicationLabels,
@@ -58,7 +59,7 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
         try {
             await req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns);
         } catch (e) {
-            logger.debug(`Failed to read secret ${secretName}, creating: ${e.message}`);
+            logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
             const secretSpec = await secretTemplate(req, secret);
             return logRetry(() => req.clients.core.createNamespacedSecret(req.ns, secretSpec),
                 `create secret ${secretName} for ${slug}`);
@@ -82,7 +83,7 @@ export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promi
         const listResp = await req.clients.core.listNamespacedSecret(req.ns);
         secrets = listResp.body;
     } catch (e) {
-        logger.debug(`Failed to list secrets in namespace ${req.ns}, not deleting secrets for ${slug}: ${e.message}`);
+        logger.debug(`Failed to list secrets in namespace ${req.ns}, not deleting secrets for ${slug}: ${errMsg(e)}`);
         return;
     }
     const appSecrets = applicationSecrets(req, secrets.items);

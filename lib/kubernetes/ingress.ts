@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
@@ -53,7 +54,7 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<Ups
     try {
         await req.clients.ext.readNamespacedIngress(req.name, req.ns);
     } catch (e) {
-        logger.debug(`Failed to read ingress ${slug}, creating: ${e.message}`);
+        logger.debug(`Failed to read ingress ${slug}, creating: ${errMsg(e)}`);
         const ing = await ingressTemplate(req);
         logger.debug(`Creating ingress ${slug} using '${stringify(ing)}'`);
         return logRetry(() => req.clients.ext.createNamespacedIngress(req.ns, ing), `create ingress ${slug}`);
@@ -78,7 +79,7 @@ export async function deleteIngress(req: KubernetesDeleteResourceRequest): Promi
     try {
         await req.clients.ext.readNamespacedIngress(req.name, req.ns);
     } catch (e) {
-        logger.debug(`Ingress ${slug} does not exist: ${e.message}`);
+        logger.debug(`Ingress ${slug} does not exist: ${errMsg(e)}`);
         return;
     }
     const body: k8s.V1DeleteOptions = {} as any;

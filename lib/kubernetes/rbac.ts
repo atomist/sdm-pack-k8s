@@ -20,6 +20,7 @@ import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
@@ -95,13 +96,13 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
         await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
         roleBindingExists = true;
     } catch (e) {
-        logger.debug(`Role binding ${slug} does not exist: ${e.message}`);
+        logger.debug(`Role binding ${slug} does not exist: ${errMsg(e)}`);
     }
     if (roleBindingExists) {
         try {
             await logRetry(() => req.clients.rbac.deleteNamespacedRoleBinding(req.name, req.ns, body), `delete role binding ${slug}`);
         } catch (e) {
-            e.message = `Failed to delete role binding ${slug}: ${e.message}`;
+            e.message = `Failed to delete role binding ${slug}: ${errMsg(e)}`;
             errs.push(e);
         }
     }
@@ -111,13 +112,13 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
         await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
         serviceAccountExists = true;
     } catch (e) {
-        logger.debug(`Service account ${slug} does not exist: ${e.message}`);
+        logger.debug(`Service account ${slug} does not exist: ${errMsg(e)}`);
     }
     if (serviceAccountExists) {
         try {
             await logRetry(() => req.clients.core.deleteNamespacedServiceAccount(req.name, req.ns, body), `delete service account ${slug}`);
         } catch (e) {
-            e.message = `Failed to delete service account ${slug}: ${e.message}`;
+            e.message = `Failed to delete service account ${slug}: ${errMsg(e)}`;
             errs.push(e);
         }
     }
@@ -127,13 +128,13 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
         await req.clients.rbac.readNamespacedRole(req.name, req.ns);
         roleExists = true;
     } catch (e) {
-        logger.debug(`Role ${slug} does not exist: ${e.message}`);
+        logger.debug(`Role ${slug} does not exist: ${errMsg(e)}`);
     }
     if (roleExists) {
         try {
             await logRetry(() => req.clients.rbac.deleteNamespacedRole(req.name, req.ns, body), `delete role ${slug}`);
         } catch (e) {
-            e.message = `Failed to delete role ${slug}: ${e.message}`;
+            e.message = `Failed to delete role ${slug}: ${errMsg(e)}`;
             errs.push(e);
         }
     }
@@ -158,7 +159,7 @@ async function upsertServiceAccount(req: KubernetesResourceRequest): Promise<Ups
     try {
         await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
     } catch (e) {
-        logger.debug(`Failed to read service account ${slug}, creating: ${e.message}`);
+        logger.debug(`Failed to read service account ${slug}, creating: ${errMsg(e)}`);
         const spec = await serviceAccountTemplate(req);
         return logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, spec),
             `create service account ${slug}`);
@@ -183,12 +184,13 @@ async function upsertRole(req: KubernetesResourceRequest): Promise<UpsertRoleRes
             await req.clients.rbac.readNamespacedRole(req.name, req.ns);
         }
     } catch (e) {
-        logger.debug(`Failed to read role ${slug}, creating: ${e.message}`);
         if (req.roleSpec.kind === "ClusterRole") {
+            logger.debug(`Failed to read cluster role ${slug}, creating: ${errMsg(e)}`);
             const spec = await clusterRoleTemplate(req);
             logger.debug(`Creating cluster role ${slug} using '${stringify(spec)}'`);
             return logRetry(() => req.clients.rbac.createClusterRole(spec), `create cluster role ${slug}`);
         } else {
+            logger.debug(`Failed to read role ${slug}, creating: ${errMsg(e)}`);
             const spec = await roleTemplate(req);
             return logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, spec), `create role ${slug}`);
         }
@@ -219,12 +221,13 @@ async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<Upsert
             await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
         }
     } catch (e) {
-        logger.debug(`Failed to read role binding ${slug}, creating: ${e.message}`);
         if (req.roleSpec.kind === "ClusterRole") {
+            logger.debug(`Failed to read cluster role binding ${slug}, creating: ${errMsg(e)}`);
             const spec = await clusterRoleBindingTemplate(req);
             return logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
                 `create cluster role binding ${slug}`);
         } else {
+            logger.debug(`Failed to read role binding ${slug}, creating: ${errMsg(e)}`);
             const spec = await roleBindingTemplate(req);
             return logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),
                 `create role binding ${slug}`);

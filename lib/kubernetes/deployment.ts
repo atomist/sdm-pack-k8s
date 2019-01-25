@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
     applicationLabels,
@@ -52,7 +53,7 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
     try {
         await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
     } catch (e) {
-        logger.debug(`Failed to read deployment ${slug}, creating: ${e.message}`);
+        logger.debug(`Failed to read deployment ${slug}, creating: ${errMsg(e)}`);
         const dep = await deploymentTemplate(req);
         logger.debug(`Creating deployment ${slug} using '${stringify(dep)}'`);
         return logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, dep),
@@ -75,7 +76,7 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
     try {
         await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
     } catch (e) {
-        logger.debug(`Deployment ${slug} does not exist: ${e.message}`);
+        logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
         return;
     }
     const body: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
