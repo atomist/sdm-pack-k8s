@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,6 @@ describe("kubernetes/ingress", () => {
                 kind: "Ingress",
                 metadata: {
                     name: "cloudbusting",
-                    annotations: {
-                        "kubernetes.io/ingress.class": "nginx",
-                        "nginx.ingress.kubernetes.io/rewrite-target": "/",
-                        "nginx.ingress.kubernetes.io/client-body-buffer-size": "1m",
-                    },
                     labels: {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
@@ -95,11 +90,6 @@ describe("kubernetes/ingress", () => {
                 apiVersion: "extensions/v1beta1",
                 kind: "Ingress",
                 metadata: {
-                    annotations: {
-                        "kubernetes.io/ingress.class": "nginx",
-                        "nginx.ingress.kubernetes.io/rewrite-target": "/",
-                        "nginx.ingress.kubernetes.io/client-body-buffer-size": "1m",
-                    },
                     labels: {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
@@ -154,6 +144,7 @@ describe("kubernetes/ingress", () => {
                 ingressSpec: {
                     metadata: {
                         annotations: {
+                            "kubernetes.io/ingress.class": "nginx",
                             "nginx.ingress.kubernetes.io/client-body-buffer-size": "512k",
                             "nginx.ingress.kubernetes.io/limit-connections": "100",
                             "nginx.ingress.kubernetes.io/limit-rps": "25",
