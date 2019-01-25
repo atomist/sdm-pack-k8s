@@ -15,153 +15,12 @@
  */
 
 import * as assert from "power-assert";
-import {
-    deploymentPatch,
-    deploymentTemplate,
-} from "../../lib/kubernetes/deployment";
+import { deploymentTemplate } from "../../lib/kubernetes/deployment";
 import { pkgInfo } from "./pkg";
 
 /* tslint:disable:max-file-line-count */
 
 describe("kubernetes/deployment", () => {
-
-    describe("deploymentPatch", () => {
-
-        it("should create a simple deployment patch", () => {
-            const r = {
-                workspaceId: "KAT3BU5H",
-                environment: "new-wave",
-                ns: "hounds-of-love",
-                name: "cloudbusting",
-                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-            };
-            const d = deploymentPatch(r);
-            const e = {
-                spec: {
-                    template: {
-                        spec: {
-                            containers: [
-                                {
-                                    name: r.name,
-                                    image: r.image,
-                                },
-                            ],
-                        },
-                    },
-                },
-            };
-            assert.deepStrictEqual(d, e);
-        });
-
-        it("should create a custom deployment patch", () => {
-            const r = {
-                workspaceId: "KAT3BU5H",
-                environment: "new-wave",
-                ns: "hounds-of-love",
-                name: "cloudbusting",
-                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                deploymentSpec: {
-                    spec: {
-                        revisionHistoryLimit: 5,
-                        template: {
-                            spec: {
-                                dnsPolicy: "ClusterFirstWithHostNet",
-                            },
-                        },
-                    },
-                },
-            };
-            const d = deploymentPatch(r);
-            const e = {
-                spec: {
-                    revisionHistoryLimit: 5,
-                    template: {
-                        spec: {
-                            containers: [
-                                {
-                                    name: r.name,
-                                    image: r.image,
-                                },
-                            ],
-                            dnsPolicy: "ClusterFirstWithHostNet",
-                        },
-                    },
-                },
-            };
-            assert.deepStrictEqual(d, e);
-        });
-
-        it("should create a deployment patch with replicas", () => {
-            const r = {
-                workspaceId: "KAT3BU5H",
-                environment: "new-wave",
-                ns: "hounds-of-love",
-                name: "cloudbusting",
-                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                replicas: 12,
-            };
-            const d = deploymentPatch(r);
-            const e = {
-                spec: {
-                    replicas: r.replicas,
-                    template: {
-                        spec: {
-                            containers: [
-                                {
-                                    name: r.name,
-                                    image: r.image,
-                                },
-                            ],
-                        },
-                    },
-                },
-            };
-            assert.deepStrictEqual(d, e);
-        });
-
-        it("should create a custom replicas deployment patch", () => {
-            const r = {
-                workspaceId: "KAT3BU5H",
-                environment: "new-wave",
-                ns: "hounds-of-love",
-                name: "cloudbusting",
-                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                deploymentSpec: {
-                    spec:
-                    {
-                        replicas: 2,
-                        revisionHistoryLimit: 5,
-                        template: {
-                            spec: {
-                                dnsPolicy: "ClusterFirstWithHostNet",
-                            },
-                        },
-                    },
-                },
-                replicas: 12,
-            };
-            const d = deploymentPatch(r);
-            const e = {
-                spec: {
-                    replicas: 2,
-                    revisionHistoryLimit: 5,
-                    template: {
-                        spec: {
-                            containers: [
-                                {
-                                    name: r.name,
-                                    image: r.image,
-                                },
-                            ],
-                            dnsPolicy: "ClusterFirstWithHostNet",
-                        },
-                    },
-                },
-            };
-            assert.deepStrictEqual(d, e);
-        });
-
-    });
 
     describe("deploymentTemplate", () => {
 
@@ -253,7 +112,7 @@ describe("kubernetes/deployment", () => {
             };
             const d = await deploymentTemplate(r);
             const e = {
-                apiVersion: "extensions/v1beta1",
+                apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
@@ -372,7 +231,7 @@ describe("kubernetes/deployment", () => {
             };
             const d = await deploymentTemplate(r);
             const e = {
-                apiVersion: "extensions/v1beta1",
+                apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
@@ -485,7 +344,7 @@ describe("kubernetes/deployment", () => {
             };
             const d = await deploymentTemplate(r);
             const e = {
-                apiVersion: "extensions/v1beta1",
+                apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
@@ -562,7 +421,7 @@ describe("kubernetes/deployment", () => {
             };
             const d = await deploymentTemplate(r);
             const e = {
-                apiVersion: "extensions/v1beta1",
+                apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
@@ -653,7 +512,7 @@ describe("kubernetes/deployment", () => {
             };
             const d = await deploymentTemplate(r);
             const e = {
-                apiVersion: "extensions/v1beta1",
+                apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
                     name: r.name,

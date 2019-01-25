@@ -156,16 +156,16 @@ interface UpsertServiceAccountResponse {
 /** Create or patch service account. */
 async function upsertServiceAccount(req: KubernetesResourceRequest): Promise<UpsertServiceAccountResponse> {
     const slug = appName(req);
+    const spec = await serviceAccountTemplate(req);
     try {
         await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read service account ${slug}, creating: ${errMsg(e)}`);
-        const spec = await serviceAccountTemplate(req);
         return logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, spec),
             `create service account ${slug}`);
     }
     logger.debug(`Service account ${slug} exists, patching using '${stringify(req.serviceAccountSpec)}'`);
-    return logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, req.serviceAccountSpec),
+    return logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, spec),
         `patch service account ${slug}`);
 }
 
@@ -177,32 +177,27 @@ interface UpsertRoleResponse {
 /** Create or patch role or cluster role. */
 async function upsertRole(req: KubernetesResourceRequest): Promise<UpsertRoleResponse> {
     const slug = appName(req);
-    try {
-        if (req.roleSpec.kind === "ClusterRole") {
+    if (req.roleSpec.kind === "ClusterRole") {
+        const spec = await clusterRoleTemplate(req);
+        try {
             await req.clients.rbac.readClusterRole(req.name);
-        } else {
-            await req.clients.rbac.readNamespacedRole(req.name, req.ns);
-        }
-    } catch (e) {
-        if (req.roleSpec.kind === "ClusterRole") {
+        } catch (e) {
             logger.debug(`Failed to read cluster role ${slug}, creating: ${errMsg(e)}`);
-            const spec = await clusterRoleTemplate(req);
             logger.debug(`Creating cluster role ${slug} using '${stringify(spec)}'`);
             return logRetry(() => req.clients.rbac.createClusterRole(spec), `create cluster role ${slug}`);
-        } else {
+        }
+        logger.debug(`Cluster role ${slug} exists, patching using '${stringify(req.roleSpec)}'`);
+        return logRetry(() => req.clients.rbac.patchClusterRole(req.name, spec), `patch cluster role ${slug}`);
+    } else {
+        const spec = await roleTemplate(req);
+        try {
+            await req.clients.rbac.readNamespacedRole(req.name, req.ns);
+        } catch (e) {
             logger.debug(`Failed to read role ${slug}, creating: ${errMsg(e)}`);
-            const spec = await roleTemplate(req);
             return logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, spec), `create role ${slug}`);
         }
-    }
-    if (req.roleSpec.kind === "ClusterRole") {
-        logger.debug(`Cluster role ${slug} exists, patching using '${stringify(req.roleSpec)}'`);
-        return logRetry(() => req.clients.rbac.patchClusterRole(req.name, req.roleSpec),
-            `patch cluster role ${slug}`);
-    } else {
         logger.debug(`Role ${slug} exists, patching using '${stringify(req.roleSpec)}'`);
-        return logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, req.roleSpec),
-            `patch role ${slug}`);
+        return logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, spec), `patch role ${slug}`);
     }
 }
 
@@ -214,32 +209,29 @@ interface UpsertRoleBindingResponse {
 /** Create or patch role binding. */
 async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<UpsertRoleBindingResponse> {
     const slug = appName(req);
-    try {
-        if (req.roleSpec.kind === "ClusterRole") {
+    if (req.roleSpec.kind === "ClusterRole") {
+        const spec = await clusterRoleBindingTemplate(req);
+        try {
             await req.clients.rbac.readClusterRoleBinding(req.name);
-        } else {
-            await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
-        }
-    } catch (e) {
-        if (req.roleSpec.kind === "ClusterRole") {
+        } catch (e) {
             logger.debug(`Failed to read cluster role binding ${slug}, creating: ${errMsg(e)}`);
-            const spec = await clusterRoleBindingTemplate(req);
             return logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
                 `create cluster role binding ${slug}`);
-        } else {
+        }
+        logger.debug(`Cluster role binding ${slug} exists, patching using '${stringify(req.roleBindingSpec)}'`);
+        return logRetry(() => req.clients.rbac.patchClusterRoleBinding(req.name, spec),
+            `patch cluster role binding ${slug}`);
+    } else {
+        const spec = await roleBindingTemplate(req);
+        try {
+            await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
+        } catch (e) {
             logger.debug(`Failed to read role binding ${slug}, creating: ${errMsg(e)}`);
-            const spec = await roleBindingTemplate(req);
             return logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),
                 `create role binding ${slug}`);
         }
-    }
-    if (req.roleSpec.kind === "ClusterRole") {
-        logger.debug(`Cluster role binding ${slug} exists, patching using '${stringify(req.roleBindingSpec)}'`);
-        return logRetry(() => req.clients.rbac.patchClusterRoleBinding(req.name, req.roleBindingSpec),
-            `patch cluster role binding ${slug}`);
-    } else {
         logger.debug(`Role binding ${slug} exists, patching using '${stringify(req.roleBindingSpec)}'`);
-        return logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, req.roleBindingSpec),
+        return logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, spec),
             `patch role binding ${slug}`);
     }
 }

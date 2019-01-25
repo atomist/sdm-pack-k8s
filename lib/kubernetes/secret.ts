@@ -41,8 +41,9 @@ export interface UpsertSecretResponse {
 
 /**
  * Create application secrets if they do not exist.  If a secret in
- * `req.secrets`, the secret is patched.  If `req.secrets` is false or
- * any empty array, no secrets are modified.
+ * `req.secrets` exists, the secret is patched.  The provided secrets
+ * are merged through [[secretTemplate]] before creating/patching.  If
+ * `req.secrets` is false or any empty array, no secrets are modified.
  *
  * @param req Kuberenetes application request
  * @return Response from Kubernetes API if resource is created or patched,
@@ -56,16 +57,16 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
     }
     return Promise.all(req.secrets.map(async secret => {
         const secretName = `${req.ns}/${secret.metadata.name}`;
+        const spec = await secretTemplate(req, secret);
         try {
             await req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
-            const secretSpec = await secretTemplate(req, secret);
-            return logRetry(() => req.clients.core.createNamespacedSecret(req.ns, secretSpec),
+            return logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),
                 `create secret ${secretName} for ${slug}`);
         }
         logger.debug(`Secret ${secretName} exists, patching`);
-        return logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, secret),
+        return logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, spec),
             `patch secret ${secretName} for ${slug}`);
     }));
 }

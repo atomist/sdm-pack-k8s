@@ -43,25 +43,26 @@ export interface UpsertDeploymentResponse {
 }
 
 /**
- * Create or update a deployment for a Kubernetes application.
+ * Create or update a deployment for a Kubernetes application.  Any
+ * provided `req.deploymentSpec` is merged using
+ * [[deploymentTemplate]] before creating/patching.
  *
  * @param req Kuberenetes application request
  * @return response from the Kubernetes API.
  */
 export async function upsertDeployment(req: KubernetesResourceRequest): Promise<UpsertDeploymentResponse> {
     const slug = appName(req);
+    const spec = await deploymentTemplate(req);
     try {
         await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read deployment ${slug}, creating: ${errMsg(e)}`);
-        const dep = await deploymentTemplate(req);
-        logger.debug(`Creating deployment ${slug} using '${stringify(dep)}'`);
-        return logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, dep),
+        logger.debug(`Creating deployment ${slug} using '${stringify(spec)}'`);
+        return logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, spec),
             `create deployment ${slug}`);
     }
-    const patch = deploymentPatch(req);
-    logger.debug(`Updating deployment ${slug} using '${stringify(patch)}'`);
-    return logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, patch),
+    logger.debug(`Updating deployment ${slug} using '${stringify(spec)}'`);
+    return logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec),
         `patch deployment ${slug}`);
 }
 
@@ -83,38 +84,6 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
     await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, body),
         `delete deployment ${slug}`);
     return;
-}
-
-/**
- * Create deployment patch for a repo and image.  If the request has a
- * `deploymentSpec`, it is merged into the patch created by this
- * function using `lodash.merge(default, req.deploymentSpec)`.
- *
- * @param req deployment template request
- * @return deployment resource patch
- */
-export function deploymentPatch(req: KubernetesApplication): DeepPartial<k8s.V1Deployment> {
-    const patch: DeepPartial<k8s.V1Deployment> = {
-        spec: {
-            template: {
-                spec: {
-                    containers: [
-                        {
-                            name: req.name,
-                            image: req.image,
-                        },
-                    ],
-                },
-            },
-        },
-    };
-    if (req.replicas) {
-        patch.spec.replicas = req.replicas;
-    }
-    if (req.deploymentSpec) {
-        _.merge(patch, req.deploymentSpec);
-    }
-    return patch;
 }
 
 /**
@@ -148,7 +117,7 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
     } as any;
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const d: DeepPartial<k8s.V1Deployment> = {
-        apiVersion: "extensions/v1beta1",
+        apiVersion: "apps/v1",
         kind: "Deployment",
         metadata,
         spec: {

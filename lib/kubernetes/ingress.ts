@@ -37,9 +37,9 @@ export interface UpsertIngressResponse {
 }
 
 /**
- * Create or update an ingress for a Kubernetes application.  If
- * `req.path` is false, not ingress is created.  If ingress exists and
- * `req.ingressSpec` is provided, the ingress is patched.
+ * If `req.path` is truthy, create or patch an ingress for a
+ * Kubernetes application.  Any provided `req.ingressSpec` is merged
+ * using [[ingressTemplate]] before creating/patching.
  *
  * @param req Kuberenetes resource request
  * @return Response from Kubernetes API is ingress is created or patched,
@@ -51,21 +51,16 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<Ups
         logger.debug(`Path not provided, will not upsert ingress ${slug}`);
         return;
     }
+    const spec = await ingressTemplate(req);
     try {
         await req.clients.ext.readNamespacedIngress(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read ingress ${slug}, creating: ${errMsg(e)}`);
-        const ing = await ingressTemplate(req);
-        logger.debug(`Creating ingress ${slug} using '${stringify(ing)}'`);
-        return logRetry(() => req.clients.ext.createNamespacedIngress(req.ns, ing), `create ingress ${slug}`);
+        logger.debug(`Creating ingress ${slug} using '${stringify(spec)}'`);
+        return logRetry(() => req.clients.ext.createNamespacedIngress(req.ns, spec), `create ingress ${slug}`);
     }
-    logger.debug(`Ingress ${slug} exists`);
-    if (req.ingressSpec) {
-        logger.debug(`Patching ingress ${slug} using '${stringify(req.ingressSpec)}'`);
-        return logRetry(() => req.clients.ext.patchNamespacedIngress(req.name, req.ns, req.ingressSpec),
-            `patch ingress ${slug}`);
-    }
-    return;
+    logger.debug(`Ingress ${slug} exists, patching using '${stringify(spec)}'`);
+    return logRetry(() => req.clients.ext.patchNamespacedIngress(req.name, req.ns, spec), `patch ingress ${slug}`);
 }
 
 /**
@@ -117,11 +112,6 @@ export async function ingressTemplate(req: KubernetesApplication): Promise<k8s.V
     const metadata = metadataTemplate({
         name: req.name,
         labels,
-        annotations: {
-            "kubernetes.io/ingress.class": "nginx",
-            "nginx.ingress.kubernetes.io/rewrite-target": "/",
-            "nginx.ingress.kubernetes.io/client-body-buffer-size": "1m",
-        },
     });
     const httpPath = httpIngressPath(req);
     const rule: k8s.V1beta1IngressRule = {

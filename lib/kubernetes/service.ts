@@ -40,9 +40,9 @@ export interface UpsertServiceResponse {
 }
 
 /**
- * Create a service if it does not exist.  If `req.port` is false, no
- * service is created.  If service exists and `req.serviceSpec` is
- * provided, the service is patched.
+ * If `req.port` is truthy, create a service if it does not exist and
+ * patch it if it does.  Any provided `req.serviceSpec` is merged
+ * using [[serviceTemplate]] before creating/patching.
  *
  * @param req Kuberenetes application request
  * @return Response from Kubernetes API if service is created or patched,
@@ -54,21 +54,17 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
         logger.debug(`Port not provided, will not create service ${slug}`);
         return;
     }
+    const spec = await serviceTemplate(req);
     try {
         await req.clients.core.readNamespacedService(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
-        const svc = await serviceTemplate(req);
-        logger.debug(`Creating service ${slug} using '${stringify(svc)}'`);
-        return logRetry(() => req.clients.core.createNamespacedService(req.ns, svc), `create service ${slug}`);
+        logger.debug(`Creating service ${slug} using '${stringify(spec)}'`);
+        return logRetry(() => req.clients.core.createNamespacedService(req.ns, spec), `create service ${slug}`);
     }
-    logger.debug(`Service ${slug} exists`);
-    if (req.serviceSpec) {
-        logger.debug(`Patching service ${slug} using '${stringify(req.serviceSpec)}'`);
-        return logRetry(() => req.clients.core.patchNamespacedService(req.name, req.ns, req.serviceSpec),
-            `patch service ${slug}`);
-    }
-    return;
+    logger.debug(`Service ${slug} exists, patching using '${stringify(spec)}'`);
+    return logRetry(() => req.clients.core.patchNamespacedService(req.name, req.ns, spec),
+        `patch service ${slug}`);
 }
 
 /**
