@@ -30,8 +30,10 @@ import {
     SdmGoalState,
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
+import { isInLocalMode } from "@atomist/sdm-core";
 import { KubernetesApplication } from "../kubernetes/request";
 import { generateKubernetesGoalEventData } from "./data";
+import { deployApplication } from "./deploy";
 import { getEnvironmentLabel } from "./environment";
 
 /** Return repository slug for SDM goal event. */
@@ -174,21 +176,29 @@ function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDe
 }
 
 /**
- * Goal executor that generates and stores the Kubernetes application
- * data for deploying an application to Kubernetes.  It returns the
- * augmented SdmGoalEvent with the Kubernetes application informatikon
- * in the `data` property and the state of the SdmGoalEvent set to
- * "in_process".  The actual deployment is done by the
- * [[kubernetesDeployHandler]] event handler.
+ * If in SDM team mode, this goal executor that generates and stores
+ * the Kubernetes application data for deploying an application to
+ * Kubernetes.  It returns the augmented SdmGoalEvent with the
+ * Kubernetes application informatikon in the `data` property and the
+ * state of the SdmGoalEvent set to "in_process".  The actual
+ * deployment is done by the [[kubernetesDeployHandler]] event
+ * handler.
  *
- * @param k8Deploy
- * @param registration
+ * If in SDM local mode, generate the Kubernetes application data and
+ * deploy the application.
+ *
+ * @param k8Deploy Kubernetes deploy object
+ * @param registration Kubernetes deploy object registration
  * @return An ExecuteGoal result that is not really a result, but an intermediate state.
  */
 export function initiateKubernetesDeploy(k8Deploy: KubernetesDeploy, registration: KubernetesDeployRegistration): ExecuteGoal {
     return async (goalInvocation: GoalInvocation): Promise<ExecuteGoalResult> => {
         const goalEvent = await generateKubernetesGoalEventData(k8Deploy, registration, goalInvocation);
-        goalEvent.state = SdmGoalState.in_process;
-        return goalEvent;
+        if (isInLocalMode()) {
+            return deployApplication(goalEvent, goalInvocation.context, goalInvocation.progressLog);
+        } else {
+            goalEvent.state = SdmGoalState.in_process;
+            return goalEvent;
+        }
     };
 }
