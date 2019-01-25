@@ -15,9 +15,7 @@
  */
 
 import * as assert from "power-assert";
-import {
-    processMinikubeDockeEnv,
-} from "../../lib/support/minikube";
+import { processMinikubeDockeEnv } from "../../lib/support/minikube";
 
 describe("support/minikube", () => {
 
