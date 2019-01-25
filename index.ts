@@ -26,3 +26,6 @@ export {
     KubernetesApplication,
     KubernetesDelete,
 } from "./lib/kubernetes/request";
+export {
+    encodeSecret,
+} from "./lib/kubernetes/secret";
