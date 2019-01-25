@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import * as stringify from "json-stringify-safe";
 import * as pRetry from "p-retry";
 
 const defaultRetryOptions: pRetry.Options = {
@@ -30,7 +31,10 @@ const defaultRetryOptions: pRetry.Options = {
  */
 export async function logRetry<T>(f: () => Promise<T>, desc: string, options: pRetry.Options = defaultRetryOptions): Promise<T> {
     const opts: pRetry.Options = {
-        onFailedAttempt: e => logger.debug(`Error in ${desc} attempt ${e.attemptNumber}: ${e.message}`),
+        onFailedAttempt: e => {
+            const msg = e.message || (((e as any).body && (e as any).body.message) ? (e as any).body.message : stringify(e));
+            logger.debug(`Error in ${desc} attempt ${e.attemptNumber}: ${msg}`);
+        },
         ...options,
     };
     return pRetry(count => {

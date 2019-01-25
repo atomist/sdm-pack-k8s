@@ -20,5 +20,5 @@ import * as path from "path";
 /** Get this projects package information. */
 export async function pkgInfo(): Promise<string> {
     const p = await fs.readJson(path.join(__dirname, "..", "..", "package.json"));
-    return `${p.name}:${p.version}`;
+    return `${p.name}_${p.version}`.replace(/^@/, "").replace(/[^-A-Za-z0-9_.]+/g, "_");
 }

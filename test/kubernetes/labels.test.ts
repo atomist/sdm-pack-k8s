@@ -19,6 +19,7 @@ import {
     applicationLabels,
     getCreator,
     matchLabels,
+    safeLabelValue,
 } from "../../lib/kubernetes/labels";
 import { pkgInfo } from "./pkg";
 
@@ -27,6 +28,34 @@ describe("kubernetes/labels", () => {
     let pv: string;
     before(async () => {
         pv = await pkgInfo();
+    });
+
+    describe("safeLabelValue", () => {
+
+        const validation = /^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$/;
+
+        it("should not change a valid value", () => {
+            const v = "Kat3Bu5h-Cloudbusting.5";
+            const s = safeLabelValue(v);
+            assert(validation.test(s));
+            assert(s === v);
+        });
+
+        it("should not change an empty value", () => {
+            const v = "";
+            const s = safeLabelValue(v);
+            assert(validation.test(s));
+            assert(s === v);
+        });
+
+        it("should fix an invalid value", () => {
+            const v = "@atomist/sdm-pack-k8s:1.1.0-k8s.20190125173349?";
+            const s = safeLabelValue(v);
+            const e = "atomist_sdm-pack-k8s_1.1.0-k8s.20190125173349";
+            assert(validation.test(s));
+            assert(s === e);
+        });
+
     });
 
     describe("getCreator", () => {
