@@ -386,6 +386,7 @@ export async function clusterRoleBindingTemplate(req: KubernetesApplication): Pr
             {
                 kind: "ServiceAccount",
                 name: req.name,
+                namespace: req.ns,
             },
         ],
     };

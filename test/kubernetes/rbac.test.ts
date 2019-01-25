@@ -560,6 +560,7 @@ describe("kubernetes/rbac", () => {
                     {
                         kind: "ServiceAccount",
                         name: r.name,
+                        namespace: r.ns,
                     },
                 ],
             };
@@ -612,6 +613,7 @@ describe("kubernetes/rbac", () => {
                     {
                         kind: "ServiceAccount",
                         name: r.name,
+                        namespace: r.ns,
                     },
                 ],
             };
@@ -655,6 +657,7 @@ describe("kubernetes/rbac", () => {
                     {
                         kind: "ServiceAccount",
                         name: "peter-gabriel",
+                        namespace: r.ns,
                     },
                 ],
             };
