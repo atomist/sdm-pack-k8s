@@ -160,9 +160,7 @@ export async function defaultDeploymentData(
     context: HandlerContext,
 ): Promise<KubernetesApplication> {
 
-    const configAppData: Partial<KubernetesApplication> =
-        (k8Deploy.sdm.configuration.sdm && k8Deploy.sdm.configuration.sdm.k8s && k8Deploy.sdm.configuration.sdm.k8s.app) ?
-            k8Deploy.sdm.configuration.sdm.k8s.app : {};
+    const configAppData: Partial<KubernetesApplication> = _.get(k8Deploy, "sdm.configuration.sdm.k8s.app", {});
 
     const workspaceId = context.workspaceId;
     const environment = defaultEnvironment(goalEvent, k8Deploy);

@@ -75,6 +75,25 @@ export interface KubernetesDeployRegistration extends FulfillmentRegistration {
  * application is completed by the [[kubernetesDeployHandler]] event
  * handler.
  *
+ * To have this goal be executed by the SDM that creates it, set the
+ * environment of this goal to the SDM's environment in the first argument
+ * to the constructor, the `details` property, i.e.,
+ *
+ *     const deploy = new KubernetesDeploy({ environment: configuration.environment });
+ *
+ * and either do not set the [[SdmPackK8sOptions.namespaces]] property
+ * when adding [[k8sSupport]] in that SDM or deploy the application to
+ * one of the namespaces in that property.
+ *
+ * To have this goal be executed by another SDM, set the environment
+ * to the environment of that SDM in the first constructor argument
+ * and set the fulfillment to the name of that SDM, i.e.,
+ *
+ *     const deploy = new KubernetesDeploy({ environment: otherSdm.configuration.environment })
+ *         .with({ fulfillment: otherSdm.name });
+ *
+ * and deploy to a namespace managed by that SDM.
+ *
  * Note: the `details.environment` property is mapped to a
  * `GoalEnvironment` and that value becomes the goal environment.  So
  * the `goal.details.environment` and `goal.environment` may differ.
@@ -83,8 +102,21 @@ export interface KubernetesDeployRegistration extends FulfillmentRegistration {
  */
 export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {
 
+    /**
+     * Standard SDM FulfillableGoalDetails.  The environment is
+     * particularly important as it plays a role in what SDM executes
+     * this deployment.  An SDM will only execute a Kubernetes
+     * deployment if the environment set in the goal details of the
+     * KubernetesDeploy goal match that of the SDM itself.
+     */
     public readonly details: FulfillableGoalDetails;
 
+    /**
+     * Create a KubernetesDeploy object.
+     *
+     * @param details Define unique aspects of this Kubernetes deployment, see [[KubernetesDeploy.details]].
+     * @param dependsOn Other goals that must complete successfully before scheduling this goal.
+     */
     constructor(details?: FulfillableGoalDetails, ...dependsOn: Goal[]) {
         const deets = defaultDetails(details);
         super(getGoalDefinitionFrom(deets, DefaultGoalNameGenerator.generateName("kubernetes-deploy")), ...dependsOn);
@@ -96,7 +128,7 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
      */
     public with(registration: KubernetesDeployRegistration): this {
         this.addFulfillment({
-            name: registration.fulfillment || registration.name,
+            name: registration.fulfillment || this.sdm.configuration.name,
             goalExecutor: initiateKubernetesDeploy(this, registration),
             pushTest: registration.pushTest,
         });
