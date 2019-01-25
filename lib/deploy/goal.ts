@@ -33,8 +33,8 @@ import {
 import { isInLocalMode } from "@atomist/sdm-core";
 import { KubernetesApplication } from "../kubernetes/request";
 import { generateKubernetesGoalEventData } from "./data";
-import { getEnvironmentLabel } from "./environment";
 import { deployApplication } from "./deploy";
+import { getEnvironmentLabel } from "./environment";
 
 /** Return repository slug for SDM goal event. */
 export function goalEventSlug(goalEvent: SdmGoalEvent): string {
