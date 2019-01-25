@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import * as readPkgUp from "read-pkg-up";
+import * as appRoot from "app-root-path";
+import * as fs from "fs-extra";
+import * as path from "path";
 import { KubernetesApplication } from "./request";
 
 /**
@@ -23,30 +25,35 @@ import { KubernetesApplication } from "./request";
  */
 export async function getCreator(): Promise<string> {
     try {
-        const mePkgInfo = await readPkgUp({ cwd: __dirname });
-        if (mePkgInfo && mePkgInfo.pkg && mePkgInfo.pkg.name) {
-            const v = (mePkgInfo.pkg.version) ? `:${mePkgInfo.pkg.version}` : "";
-            return mePkgInfo.pkg.name + v;
+        const pkgPath = path.join(appRoot.path, "package.json");
+        const pkg: { name: string, version: string } = await fs.readJson(pkgPath);
+        if (pkg.name) {
+            const v = (pkg.version) ? `_${pkg.version}` : "";
+            return safeLabelValue(pkg.name + v);
         }
         logger.warn(`Failed to read SDM package.json, returning default`);
     } catch (e) {
         logger.warn(`Failed to read SDM package.json, returning default: ${e.message}`);
     }
-    return "sdm-pack-k8";
+    return "sdm-pack-k8s";
+}
+
+/**
+ * Remove objectionable characters from a Kubernetes label value.
+ * The validation regular expression for a label value is
+ * /^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$/.
+ *
+ * @param value The label value
+ * @return A valid label value based on the input
+ */
+export function safeLabelValue(value: string): string {
+    return value.replace(/^[^A-Za-z0-9]+/, "")
+        .replace(/[^A-Za-z0-9]+$/, "")
+        .replace(/[^-A-Za-z0-9_.]/g, "_");
 }
 
 /** Input type for matchLabels function. */
 export type MatchLabelInput = Pick<KubernetesApplication, "name" | "workspaceId">;
-
-/**
- * Return type for the matchLabels function.  This is not used since
- * the @kubernetes/client-node wants `{ [key: string]: string }` as
- * its labels.
- */
-export interface MatchLabelOutput {
-    "app.kubernetes.io/name": string;
-    "atomist.com/workspaceId": string;
-}
 
 /**
  * Returns the subset of the default set of labels for that should be
@@ -76,27 +83,6 @@ export interface KubernetesLabelInput {
 
 /** Input type for the labels function. */
 export type ApplicationLabelInput = KubernetesApplicationLabelInput & KubernetesLabelInput;
-
-/**
- * Additional properties for the labels function output.  This is not
- * used since the @kubernetes/client-node wants `{ [key: string]:
- * string }` as its labels.
- */
-export interface ApplicationLabelPartialOutput {
-    "app.kubernetes.io/part-of": string;
-    "app.kubernetes.io/managed-by": string;
-    "atomist.com/environment": string;
-    "app.kubernetes.io/component"?: string;
-    "app.kubernetes.io/instance"?: string;
-    "app.kubernetes.io/version"?: string;
-}
-
-/**
- * Return type for the labels function.  This is not used since the
- * @kubernetes/client-node wants `{ [key: string]: string }` as its
- * labels.
- */
-export type ApplicationLabelOutput = MatchLabelOutput & ApplicationLabelPartialOutput;
 
 /**
  * Create a default set of labels for a resource.  The returned set
