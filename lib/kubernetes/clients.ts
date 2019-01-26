@@ -86,21 +86,13 @@ class RbacAuthorization_v1Api_Patch extends k8s.RbacAuthorization_v1Api {
  */
 export interface KubernetesClients {
     /** Kubernetes Core client */
-    // core: k8s.Core_v1Api;
-    /** Kubernetes Apps client */
-    // apps: k8s.Apps_v1Api;
+    core: k8s.Core_v1Api;
+    /** Kubernetes Apps client, GA in Kubernetes 1.9 */
+    apps: k8s.Apps_v1Api;
     /** Kubernetes Extension client */
-    // ext: k8s.Extensions_v1beta1Api;
-    /** Kubernetes RBAC client */
-    // rbac: k8s.RbacAuthorization_v1Api;
-    /** Kubernetes Core client with patch headers */
-    core: Core_v1Api_Patch;
-    /** Kubernetes Apps client with patch headers */
-    apps: Apps_v1Api_Patch;
-    /** Kubernetes Extension client with patch headers */
-    ext: Extensions_v1beta1Api_Patch;
-    /** Kubernetes RBAC client with patch headers */
-    rbac: RbacAuthorization_v1Api_Patch;
+    ext: k8s.Extensions_v1beta1Api;
+    /** Kubernetes RBAC client, GA in Kubernetes 1.8 */
+    rbac: k8s.RbacAuthorization_v1Api;
 }
 
 /**
@@ -108,12 +100,12 @@ export interface KubernetesClients {
  */
 export function makeApiClients(kc: k8s.KubeConfig): KubernetesClients {
     // const core = kc.makeApiClient(k8s.Core_v1Api);
-    // const apps = kc.makeApiClient(k8s.Apps_v1Api); // GA in Kubernetes 1.9
-    // const rbac = kc.makeApiClient(k8s.RbacAuthorization_v1Api); // GA in Kubernetes 1.8
+    // const apps = kc.makeApiClient(k8s.Apps_v1Api);
+    // const rbac = kc.makeApiClient(k8s.RbacAuthorization_v1Api);
     // const ext = kc.makeApiClient(k8s.Extensions_v1beta1Api);
     const core = kc.makeApiClient(Core_v1Api_Patch);
-    const apps = kc.makeApiClient(Apps_v1Api_Patch); // GA in Kubernetes 1.9
-    const rbac = kc.makeApiClient(RbacAuthorization_v1Api_Patch); // GA in Kubernetes 1.8
+    const apps = kc.makeApiClient(Apps_v1Api_Patch);
+    const rbac = kc.makeApiClient(RbacAuthorization_v1Api_Patch);
     const ext = kc.makeApiClient(Extensions_v1beta1Api_Patch);
     return { core, apps, rbac, ext };
 }
