@@ -92,7 +92,6 @@ export interface KubernetesClients {
     // ext: k8s.Extensions_v1beta1Api;
     /** Kubernetes RBAC client */
     // rbac: k8s.RbacAuthorization_v1Api;
-
     /** Kubernetes Core client with patch headers */
     core: Core_v1Api_Patch;
     /** Kubernetes Apps client with patch headers */
@@ -107,9 +106,13 @@ export interface KubernetesClients {
  * Create the KubernetesClients structure.
  */
 export function makeApiClients(kc: k8s.KubeConfig): KubernetesClients {
-    const core = kc.makeApiClient(k8s.Core_v1Api);
-    const apps = kc.makeApiClient(k8s.Apps_v1Api); // GA in Kubernetes 1.9
-    const rbac = kc.makeApiClient(k8s.RbacAuthorization_v1Api); // GA in Kubernetes 1.8
-    const ext = kc.makeApiClient(k8s.Extensions_v1beta1Api);
+    // const core = kc.makeApiClient(k8s.Core_v1Api);
+    // const apps = kc.makeApiClient(k8s.Apps_v1Api); // GA in Kubernetes 1.9
+    // const rbac = kc.makeApiClient(k8s.RbacAuthorization_v1Api); // GA in Kubernetes 1.8
+    // const ext = kc.makeApiClient(k8s.Extensions_v1beta1Api);
+    const core = kc.makeApiClient(Core_v1Api_Patch);
+    const apps = kc.makeApiClient(Apps_v1Api_Patch); // GA in Kubernetes 1.9
+    const rbac = kc.makeApiClient(RbacAuthorization_v1Api_Patch); // GA in Kubernetes 1.8
+    const ext = kc.makeApiClient(Extensions_v1beta1Api_Patch);
     return { core, apps, rbac, ext };
 }
