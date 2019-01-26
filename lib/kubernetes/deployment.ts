@@ -88,8 +88,8 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
 
 /**
  * Create deployment spec for a Kubernetes application.  If the
- * request has a `deploymentSpec`, it is merged into the patch created
- * by this function using `lodash.merge(default, req.deploymentSpec)`.
+ * request has a `deploymentSpec`, it is merged into the default spec
+ * created by this function using `lodash.merge(default, req.deploymentSpec)`.
  *
  * @param req Kubernetes application request
  * @return deployment resource specification
