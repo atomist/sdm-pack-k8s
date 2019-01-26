@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
+import * as stringify from "json-stringify-safe";
 
 /* tslint:disable */
 // see https://github.com/kubernetes-client/javascript/issues/19
@@ -24,7 +26,15 @@ async function patchWithHeaders(api: any, patcher: any, ...args: any[]) {
         ...api.defaultHeaders,
         "Content-Type": "application/strategic-merge-patch+json",
     };
-    const returnValue = await patcher.apply(api, args as any);
+    logger.debug(`Set defaultHeaders: ${stringify(api.defaultHeaders)}`);
+    let returnValue: any;
+    try {
+        returnValue = await patcher.apply(api, args as any);
+    } catch (e) {
+        logger.error(`Failed to patch: ${stringify(e)}`);
+        api.defaultHeaders = oldDefaultHeaders;
+        throw e;
+    }
     api.defaultHeaders = oldDefaultHeaders;
     return returnValue;
 }

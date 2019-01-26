@@ -164,7 +164,7 @@ async function upsertServiceAccount(req: KubernetesResourceRequest): Promise<Ups
         return logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, spec),
             `create service account ${slug}`);
     }
-    logger.debug(`Service account ${slug} exists, patching using '${stringify(req.serviceAccountSpec)}'`);
+    logger.debug(`Service account ${slug} exists, patching using '${stringify(spec)}'`);
     return logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, spec),
         `patch service account ${slug}`);
 }
@@ -186,7 +186,7 @@ async function upsertRole(req: KubernetesResourceRequest): Promise<UpsertRoleRes
             logger.debug(`Creating cluster role ${slug} using '${stringify(spec)}'`);
             return logRetry(() => req.clients.rbac.createClusterRole(spec), `create cluster role ${slug}`);
         }
-        logger.debug(`Cluster role ${slug} exists, patching using '${stringify(req.roleSpec)}'`);
+        logger.debug(`Cluster role ${slug} exists, patching using '${stringify(spec)}'`);
         return logRetry(() => req.clients.rbac.patchClusterRole(req.name, spec), `patch cluster role ${slug}`);
     } else {
         const spec = await roleTemplate(req);
@@ -196,7 +196,7 @@ async function upsertRole(req: KubernetesResourceRequest): Promise<UpsertRoleRes
             logger.debug(`Failed to read role ${slug}, creating: ${errMsg(e)}`);
             return logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, spec), `create role ${slug}`);
         }
-        logger.debug(`Role ${slug} exists, patching using '${stringify(req.roleSpec)}'`);
+        logger.debug(`Role ${slug} exists, patching using '${stringify(spec)}'`);
         return logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, spec), `patch role ${slug}`);
     }
 }
@@ -218,7 +218,7 @@ async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<Upsert
             return logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
                 `create cluster role binding ${slug}`);
         }
-        logger.debug(`Cluster role binding ${slug} exists, patching using '${stringify(req.roleBindingSpec)}'`);
+        logger.debug(`Cluster role binding ${slug} exists, patching using '${stringify(spec)}'`);
         return logRetry(() => req.clients.rbac.patchClusterRoleBinding(req.name, spec),
             `patch cluster role binding ${slug}`);
     } else {
@@ -230,7 +230,7 @@ async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<Upsert
             return logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),
                 `create role binding ${slug}`);
         }
-        logger.debug(`Role binding ${slug} exists, patching using '${stringify(req.roleBindingSpec)}'`);
+        logger.debug(`Role binding ${slug} exists, patching using '${stringify(spec)}'`);
         return logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, spec),
             `patch role binding ${slug}`);
     }
