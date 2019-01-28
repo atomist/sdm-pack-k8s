@@ -71,7 +71,8 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     llog(message, logger.info, log);
     const description = `Deployed to Kubernetes environment \`${app.environment}\` and namespace \`${app.ns}\``;
     const label = `Kubernetes ${app.environment}:${app.ns}`;
-    const externalUrls = (app.path && app.host) ? [{ label, url: endpointBaseUrl(app) }] : undefined;
+    const endpointUrl = await endpointBaseUrl(app);
+    const externalUrls = (endpointUrl) ? [{ label, url: endpointUrl }] : undefined;
     return { code: 0, message, description, externalUrls };
 }
 

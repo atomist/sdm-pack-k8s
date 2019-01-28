@@ -59,7 +59,8 @@ export interface KubernetesApplication {
     port?: number;
     /**
      * Ingress rule URL path, if not provided no ingress rule is
-     * added.
+     * added.  Typically ingress paths start with a forward slash
+     * ("/") but do not end with one, unless the path is just "/".
      */
     path?: string;
     /**
