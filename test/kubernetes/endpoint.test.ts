@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ describe("kubernetes/endpoint", () => {
 
     describe("endpointBaseUrl", () => {
 
-        it("should return the default", () => {
+        it("should return undefined", async () => {
             const r: KubernetesApplication = {
                 workspaceId: "KAT3BU5H",
                 environment: "new-wave",
@@ -31,12 +31,11 @@ describe("kubernetes/endpoint", () => {
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 port: 5510,
             };
-            const u = endpointBaseUrl(r);
-            const e = "http://localhost/";
-            assert(u === e);
+            const u = await endpointBaseUrl(r);
+            assert(u === undefined);
         });
 
-        it("should return the host and path", () => {
+        it("should return the host and path", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
                 environment: "new-wave",
@@ -48,12 +47,12 @@ describe("kubernetes/endpoint", () => {
                 host: "emi.com",
                 protocol: "https" as "https",
             };
-            const u = endpointBaseUrl(r);
+            const u = await endpointBaseUrl(r);
             const e = `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`;
             assert(u === e);
         });
 
-        it("should return http protocol with no tlsSecret", () => {
+        it("should return http protocol with no tlsSecret", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
                 environment: "new-wave",
@@ -64,12 +63,12 @@ describe("kubernetes/endpoint", () => {
                 path: "/bush/kate/hounds-of-love/cloudbusting",
                 host: "emi.com",
             };
-            const u = endpointBaseUrl(r);
+            const u = await endpointBaseUrl(r);
             const e = `http://emi.com/bush/kate/hounds-of-love/cloudbusting/`;
             assert(u === e);
         });
 
-        it("should return https protocol with tslSecret", () => {
+        it("should return https protocol with tslSecret", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
                 environment: "new-wave",
@@ -81,9 +80,115 @@ describe("kubernetes/endpoint", () => {
                 host: "emi.com",
                 tlsSecret: "wickham",
             };
-            const u = endpointBaseUrl(r);
+            const u = await endpointBaseUrl(r);
             const e = `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`;
             assert(u === e);
+        });
+
+        it("should not add / to path that already has it", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/bush/kate/hounds-of-love/cloudbusting/",
+                host: "emi.com",
+                protocol: "https" as "https",
+            };
+            const u = await endpointBaseUrl(r);
+            const e = `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`;
+            assert(u === e);
+        });
+
+        it("should prepend / to path that is missing it", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "bush/kate/hounds-of-love/cloudbusting",
+                host: "emi.com",
+                protocol: "https" as "https",
+            };
+            const u = await endpointBaseUrl(r);
+            const e = `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`;
+            assert(u === e);
+        });
+
+        it("should return undefined in local mode", async () => {
+            let mode: string;
+            if (process.env.ATOMIST_MODE) {
+                mode = process.env.ATOMIST_MODE;
+            }
+            process.env.ATOMIST_MODE = "local";
+            const r: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+            };
+            const u = await endpointBaseUrl(r);
+            if (mode) {
+                process.env.ATOMIST_MODE = mode;
+            } else {
+                delete process.env.ATOMIST_MODE;
+            }
+            assert(u === undefined);
+        });
+
+        it("should return default-like endpoint in local mode", async () => {
+            let mode: string;
+            if (process.env.ATOMIST_MODE) {
+                mode = process.env.ATOMIST_MODE;
+            }
+            process.env.ATOMIST_MODE = "local";
+            const r: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/",
+            };
+            const u = await endpointBaseUrl(r);
+            if (mode) {
+                process.env.ATOMIST_MODE = mode;
+            } else {
+                delete process.env.ATOMIST_MODE;
+            }
+            assert(/^http:\/\/\d+\.\d+\.\d+\.\d+\/$/.test(u));
+        });
+
+        it("should return endpoint in local mode", async () => {
+            let mode: string;
+            if (process.env.ATOMIST_MODE) {
+                mode = process.env.ATOMIST_MODE;
+            }
+            process.env.ATOMIST_MODE = "local";
+            const r: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                environment: "new-wave",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/bush/kate/hounds-of-love/cloudbusting",
+                tlsSecret: "wickham",
+            };
+            const u = await endpointBaseUrl(r);
+            if (mode) {
+                process.env.ATOMIST_MODE = mode;
+            } else {
+                delete process.env.ATOMIST_MODE;
+            }
+            assert(/^https:\/\/\d+\.\d+\.\d+\.\d+\/bush\/kate\/hounds-of-love\/cloudbusting\/$/.test(u));
         });
 
     });

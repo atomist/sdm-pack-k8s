@@ -21,7 +21,6 @@ import {
     Project,
 } from "@atomist/automation-client";
 import {
-    execPromise,
     GoalInvocation,
     SdmGoalEvent,
 } from "@atomist/sdm";
@@ -320,19 +319,10 @@ export async function defaultIngress(goalEvent: SdmGoalEvent, k8Deploy: Kubernet
     if (!isInLocalMode()) {
         return undefined;
     }
-    let host: string;
-    try {
-        const minikubeIpResult = await execPromise("minikube", ["ip"]);
-        host = minikubeIpResult.stdout.trim();
-    } catch (e) {
-        logger.debug(`Failed to run 'minikube ip': ${e.message}`);
-    }
-    host = host || "127.0.0.1";
     const environment = defaultEnvironment(goalEvent, k8Deploy);
     const slug = goalEventSlug(goalEvent);
     const path = `/${environment}/${slug}`;
     return {
-        host,
         protocol: "http",
         path,
     };
