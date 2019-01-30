@@ -88,7 +88,6 @@ export async function upsertRbac(req: KubernetesResourceRequest): Promise<Upsert
  */
 export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<void> {
     const slug = appName(req);
-    const body: k8s.V1DeleteOptions = {} as any;
     const errs: Error[] = [];
 
     let roleBindingExists = false;
@@ -100,7 +99,7 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
     }
     if (roleBindingExists) {
         try {
-            await logRetry(() => req.clients.rbac.deleteNamespacedRoleBinding(req.name, req.ns, body), `delete role binding ${slug}`);
+            await logRetry(() => req.clients.rbac.deleteNamespacedRoleBinding(req.name, req.ns), `delete role binding ${slug}`);
         } catch (e) {
             e.message = `Failed to delete role binding ${slug}: ${errMsg(e)}`;
             errs.push(e);
@@ -116,7 +115,7 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
     }
     if (serviceAccountExists) {
         try {
-            await logRetry(() => req.clients.core.deleteNamespacedServiceAccount(req.name, req.ns, body), `delete service account ${slug}`);
+            await logRetry(() => req.clients.core.deleteNamespacedServiceAccount(req.name, req.ns), `delete service account ${slug}`);
         } catch (e) {
             e.message = `Failed to delete service account ${slug}: ${errMsg(e)}`;
             errs.push(e);
@@ -132,7 +131,7 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
     }
     if (roleExists) {
         try {
-            await logRetry(() => req.clients.rbac.deleteNamespacedRole(req.name, req.ns, body), `delete role ${slug}`);
+            await logRetry(() => req.clients.rbac.deleteNamespacedRole(req.name, req.ns), `delete role ${slug}`);
         } catch (e) {
             e.message = `Failed to delete role ${slug}: ${errMsg(e)}`;
             errs.push(e);

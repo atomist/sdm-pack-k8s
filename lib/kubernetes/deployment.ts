@@ -81,7 +81,7 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
         return;
     }
     const body: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
-    await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, body),
+    await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, "", body),
         `delete deployment ${slug}`);
     return;
 }

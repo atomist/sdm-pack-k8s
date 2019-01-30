@@ -77,8 +77,7 @@ export async function deleteIngress(req: KubernetesDeleteResourceRequest): Promi
         logger.debug(`Ingress ${slug} does not exist: ${errMsg(e)}`);
         return;
     }
-    const body: k8s.V1DeleteOptions = {} as any;
-    await logRetry(() => req.clients.ext.deleteNamespacedIngress(req.name, req.ns, body), `delete ingress ${slug}`);
+    await logRetry(() => req.clients.ext.deleteNamespacedIngress(req.name, req.ns), `delete ingress ${slug}`);
     return;
 }
 

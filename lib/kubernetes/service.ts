@@ -81,8 +81,7 @@ export async function deleteService(req: KubernetesDeleteResourceRequest): Promi
         logger.debug(`Service ${slug} does not exist: ${errMsg(e)}`);
         return;
     }
-    const body: k8s.V1DeleteOptions = {} as any;
-    await logRetry(() => req.clients.core.deleteNamespacedService(req.name, req.ns, body), `delete service ${slug}`);
+    await logRetry(() => req.clients.core.deleteNamespacedService(req.name, req.ns), `delete service ${slug}`);
     return;
 }
 

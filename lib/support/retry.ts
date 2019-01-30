@@ -15,6 +15,7 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import Bluebird = require("bluebird"); // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/11027
 import * as pRetry from "p-retry";
 import { errMsg } from "./error";
 
@@ -29,7 +30,7 @@ const defaultRetryOptions: pRetry.Options = {
 /**
  * Add logging to promise-based retry.
  */
-export async function logRetry<T>(f: () => Promise<T>, desc: string, options: pRetry.Options = defaultRetryOptions): Promise<T> {
+export async function logRetry<T>(f: () => Bluebird<T>, desc: string, options: pRetry.Options = defaultRetryOptions): Promise<T> {
     const opts: pRetry.Options = {
         onFailedAttempt: e => {
             logger.debug(`Error in ${desc} attempt ${e.attemptNumber}: ${errMsg(e)}`);

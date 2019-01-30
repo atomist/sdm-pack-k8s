@@ -88,10 +88,9 @@ export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promi
         return;
     }
     const appSecrets = applicationSecrets(req, secrets.items);
-    const body: k8s.V1DeleteOptions = {} as any;
     for (const secret of appSecrets) {
         const secretName = `${req.ns}/${secret.metadata.name}`;
-        await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns, body),
+        await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns),
             `delete secret ${secretName}`);
     }
     return;

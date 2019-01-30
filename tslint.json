@@ -14,7 +14,9 @@
       "options": ["ban-single-arg-parens"]
     },
     "arrow-return-shorthand": true,
-    "await-promise": true,
+    "await-promise": {
+      "options": ["Bluebird"]
+    },
     "ban-types": {
       "options": [
         ["Object", "Avoid using the `Object` type. Did you mean `object`?"],
