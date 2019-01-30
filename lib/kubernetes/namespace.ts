@@ -42,7 +42,7 @@ export interface UpsertNamespaceResponse {
  */
 export async function upsertNamespace(req: KubernetesResourceRequest): Promise<UpsertNamespaceResponse> {
     try {
-        const resp = await req.clients.core.readNamespace(req.ns);
+        const resp = await Promise.resolve(req.clients.core.readNamespace(req.ns));
         logger.debug(`Namespace ${req.ns} exists`);
         return resp;
     } catch (e) {

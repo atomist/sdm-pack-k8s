@@ -56,7 +56,7 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
     }
     const spec = await serviceTemplate(req);
     try {
-        await req.clients.core.readNamespacedService(req.name, req.ns);
+        await Promise.resolve(req.clients.core.readNamespacedService(req.name, req.ns));
     } catch (e) {
         logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
         logger.debug(`Creating service ${slug} using '${stringify(spec)}'`);
@@ -76,13 +76,12 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
 export async function deleteService(req: KubernetesDeleteResourceRequest): Promise<void> {
     const slug = appName(req);
     try {
-        await req.clients.core.readNamespacedService(req.name, req.ns);
+        await Promise.resolve(req.clients.core.readNamespacedService(req.name, req.ns));
     } catch (e) {
         logger.debug(`Service ${slug} does not exist: ${errMsg(e)}`);
         return;
     }
-    const body: k8s.V1DeleteOptions = {} as any;
-    await logRetry(() => req.clients.core.deleteNamespacedService(req.name, req.ns, body), `delete service ${slug}`);
+    await logRetry(() => req.clients.core.deleteNamespacedService(req.name, req.ns), `delete service ${slug}`);
     return;
 }
 

@@ -53,7 +53,7 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<Ups
     }
     const spec = await ingressTemplate(req);
     try {
-        await req.clients.ext.readNamespacedIngress(req.name, req.ns);
+        await Promise.resolve(req.clients.ext.readNamespacedIngress(req.name, req.ns));
     } catch (e) {
         logger.debug(`Failed to read ingress ${slug}, creating: ${errMsg(e)}`);
         logger.debug(`Creating ingress ${slug} using '${stringify(spec)}'`);
@@ -72,13 +72,12 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<Ups
 export async function deleteIngress(req: KubernetesDeleteResourceRequest): Promise<void> {
     const slug = appName(req);
     try {
-        await req.clients.ext.readNamespacedIngress(req.name, req.ns);
+        await Promise.resolve(req.clients.ext.readNamespacedIngress(req.name, req.ns));
     } catch (e) {
         logger.debug(`Ingress ${slug} does not exist: ${errMsg(e)}`);
         return;
     }
-    const body: k8s.V1DeleteOptions = {} as any;
-    await logRetry(() => req.clients.ext.deleteNamespacedIngress(req.name, req.ns, body), `delete ingress ${slug}`);
+    await logRetry(() => req.clients.ext.deleteNamespacedIngress(req.name, req.ns), `delete ingress ${slug}`);
     return;
 }
 

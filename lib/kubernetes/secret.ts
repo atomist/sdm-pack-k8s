@@ -59,7 +59,7 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
         const secretName = `${req.ns}/${secret.metadata.name}`;
         const spec = await secretTemplate(req, secret);
         try {
-            await req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns);
+            await Promise.resolve(req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns));
         } catch (e) {
             logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
             return logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),
@@ -81,17 +81,16 @@ export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promi
     const slug = appName(req);
     let secrets: k8s.V1SecretList;
     try {
-        const listResp = await req.clients.core.listNamespacedSecret(req.ns);
+        const listResp = await Promise.resolve(req.clients.core.listNamespacedSecret(req.ns));
         secrets = listResp.body;
     } catch (e) {
         logger.debug(`Failed to list secrets in namespace ${req.ns}, not deleting secrets for ${slug}: ${errMsg(e)}`);
         return;
     }
     const appSecrets = applicationSecrets(req, secrets.items);
-    const body: k8s.V1DeleteOptions = {} as any;
     for (const secret of appSecrets) {
         const secretName = `${req.ns}/${secret.metadata.name}`;
-        await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns, body),
+        await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns),
             `delete secret ${secretName}`);
     }
     return;

@@ -16,6 +16,7 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
+import Bluebird = require("bluebird"); // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/11027
 import * as stringify from "json-stringify-safe";
 import { errMsg } from "../support/error";
 
@@ -42,40 +43,40 @@ async function patchWithHeaders(api: any, patcher: any, args: any[]) {
 
 class Core_v1Api_Patch extends k8s.Core_v1Api {
     patchNamespacedSecret(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedSecret, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchNamespacedSecret, args));
     }
     patchNamespacedService(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedService, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchNamespacedService, args));
     }
     patchNamespacedServiceAccount(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedServiceAccount, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchNamespacedServiceAccount, args));
     }
 }
 
 class Apps_v1Api_Patch extends k8s.Apps_v1Api {
     patchNamespacedDeployment(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedDeployment, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchNamespacedDeployment, args));
     }
 }
 
 class Extensions_v1beta1Api_Patch extends k8s.Extensions_v1beta1Api {
     patchNamespacedIngress(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedIngress, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchNamespacedIngress, args));
     }
 }
 
 class RbacAuthorization_v1Api_Patch extends k8s.RbacAuthorization_v1Api {
     patchClusterRole(...args: any[]) {
-        return patchWithHeaders(this, super.patchClusterRole, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchClusterRole, args));
     }
     patchNamespacedRole(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedRole, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchNamespacedRole, args));
     }
     patchClusterRoleBinding(...args: any[]) {
-        return patchWithHeaders(this, super.patchClusterRoleBinding, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchClusterRoleBinding, args));
     }
     patchNamespacedRoleBinding(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedRoleBinding, args);
+        return Bluebird.resolve(patchWithHeaders(this, super.patchNamespacedRoleBinding, args));
     }
 }
 /* tslint:enable */
