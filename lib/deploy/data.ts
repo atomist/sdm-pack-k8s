@@ -74,7 +74,7 @@ export function generateKubernetesGoalEventData(
 
         const { context, goalEvent } = goalInvocation;
         const defaultData: any = {};
-        defaultData[sdmPackK8s] = await defaultDeploymentData(p, goalEvent, k8Deploy, context);
+        defaultData[sdmPackK8s] = await defaultKubernetesApplication(p, goalEvent, k8Deploy, context);
 
         const slug = goalEventSlug(goalEvent);
         let eventData: any;
@@ -152,7 +152,7 @@ export function getKubernetesGoalEventData(goalEvent: SdmGoalEvent): KubernetesA
  * @param context Handler context
  * @return a valid default KubernetesApplication for this SDM goal deployment event
  */
-export async function defaultDeploymentData(
+export async function defaultKubernetesApplication(
     p: GitProject,
     goalEvent: SdmGoalEvent,
     k8Deploy: KubernetesDeploy,
@@ -167,7 +167,7 @@ export async function defaultDeploymentData(
     const ns = configAppData.ns || environment || defaultNamespace;
     const image = await defaultImage(goalEvent, k8Deploy, context);
     const port = await dockerPort(p);
-    const appIngress = await defaultIngress(goalEvent, k8Deploy);
+    const appIngress = (port) ? await defaultIngress(goalEvent, k8Deploy, ns) : undefined;
 
     const deploymentSpec: DeepPartial<k8s.V1Deployment> = await loadKubernetesSpec(p, "deployment");
     const serviceSpec: DeepPartial<k8s.V1Service> = await loadKubernetesSpec(p, "service");
@@ -315,13 +315,13 @@ export async function defaultImage(goalEvent: SdmGoalEvent, k8Deploy: Kubernetes
  * @param k8Deploy Kubernetes deployment goal object
  * @return best value for the environment property
  */
-export async function defaultIngress(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeploy): Promise<Partial<KubernetesApplication>> {
+export async function defaultIngress(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeploy, ns: string): Promise<Partial<KubernetesApplication>> {
     if (!isInLocalMode()) {
         return undefined;
     }
-    const environment = defaultEnvironment(goalEvent, k8Deploy);
+    const env = defaultEnvironment(goalEvent, k8Deploy);
     const slug = goalEventSlug(goalEvent);
-    const path = `/${environment}/${slug}`;
+    const path = `/${env}/${ns}/${slug}`;
     return {
         protocol: "http",
         path,

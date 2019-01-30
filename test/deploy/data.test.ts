@@ -25,9 +25,9 @@ import {
 } from "@atomist/sdm";
 import * as assert from "power-assert";
 import {
-    defaultDeploymentData,
     defaultImage,
     defaultIngress,
+    defaultKubernetesApplication,
     dockerPort,
     generateKubernetesGoalEventData,
     getKubernetesGoalEventData,
@@ -194,11 +194,57 @@ describe("deploy/data", () => {
 
     describe("defaultIngress", () => {
 
+        let atmMode: string;
+        before(() => {
+            if (process.env.ATOMIST_MODE) {
+                atmMode = process.env.ATOMIST_MODE;
+                delete process.env.ATOMIST_MODE;
+            }
+        });
+        after(() => {
+            if (atmMode) {
+                process.env.ATOMIST_MODE = atmMode;
+            } else {
+                delete process.env.ATOMIST_MODE;
+            }
+        });
+
         it("should not return anything if not in local mode", async () => {
+            process.env.ATOMIST_MODE = "nonlocal";
             const e: SdmGoalEvent = {} as any;
             const k: KubernetesDeploy = {} as any;
-            const i = await defaultIngress(e, k);
+            const n = "default";
+            const i = await defaultIngress(e, k, n);
             assert(i === undefined);
+        });
+
+        it("should return path and protocol when in local mode", async () => {
+            process.env.ATOMIST_MODE = "local";
+            const e: SdmGoalEvent = {
+                environment: "instigator",
+                repo: {
+                    name: "messenger",
+                    owner: "dreamer",
+                },
+            } as any;
+            const k: KubernetesDeploy = {
+                details: {
+                    environment: "interpreter",
+                },
+                environment: "2-production/",
+                sdm: {
+                    configuation: {
+                        environment: "believer",
+                    },
+                },
+            } as any;
+            const n = "traveler";
+            const i = await defaultIngress(e, k, n);
+            const x = {
+                protocol: "http",
+                path: "/interpreter/traveler/dreamer/messenger",
+            };
+            assert.deepStrictEqual(i, x);
         });
 
     });
@@ -227,7 +273,7 @@ describe("deploy/data", () => {
                 },
             } as any;
             const c: HandlerContext = { workspaceId: "L0UR33D" } as any;
-            const d = await defaultDeploymentData(p, e, k, c);
+            const d = await defaultKubernetesApplication(p, e, k, c);
             const r = {
                 workspaceId: "L0UR33D",
                 environment: "NewYork",
@@ -285,7 +331,7 @@ describe("deploy/data", () => {
                 },
             } as any;
             const c: HandlerContext = { workspaceId: "L0UR33D" } as any;
-            const d = await defaultDeploymentData(p, e, k, c);
+            const d = await defaultKubernetesApplication(p, e, k, c);
             const r = {
                 workspaceId: "L0UR33D",
                 environment: "NewYork",
