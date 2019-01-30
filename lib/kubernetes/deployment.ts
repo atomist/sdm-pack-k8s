@@ -180,11 +180,7 @@ export async function deploymentTemplate(req: KubernetesApplication): Promise<k8
         d.spec.template.spec.imagePullSecrets = [{ name: req.imagePullSecret }];
     }
     if (req.roleSpec) {
-        if (req.serviceAccountSpec && req.serviceAccountSpec.metadata && req.serviceAccountSpec.metadata.name) {
-            d.spec.template.spec.serviceAccountName = req.serviceAccountSpec.metadata.name;
-        } else {
-            d.spec.template.spec.serviceAccountName = req.name;
-        }
+        d.spec.template.spec.serviceAccountName = _.get(req, "serviceAccountSpec.metadata.name", req.name);
     }
     if (req.deploymentSpec) {
         _.merge(d, req.deploymentSpec);
