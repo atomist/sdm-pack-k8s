@@ -9,7 +9,7 @@
 
 [Atomist][atomist] software delivery machine (SDM) extension Pack for
 an Atomist SDM to enable deploying applications to
-[Kubernetes][kubernetes] (K8s) clusters.
+[Kubernetes][kubernetes] (k8s) clusters.
 
 See also: [API Documentation][apidoc]
 
@@ -64,35 +64,9 @@ Follow [@atomist][atomist-twitter] and the [Atomist blog][atomist-blog].
 
 ## Usage
 
-1. First install the dependency in your SDM project
+See the [SDM Kubernetes extension documentation][k8s-docs].
 
-```
-$ npm install @atomist/sdm-pack-k8s
-```
-
-2. Install the support
-
-```
-import { kubernetesSupport } from "@atomist/sdm-pack-k8s";
-
-sdm.addExtensionPacks(kubernetesSupport({
-        deployments: [{
-            goal: StagingDeploymentGoal,
-            pushTest: IsNode,
-            callback: kubernetesDataCallback(sdm.configuration),
-        }, {
-            goal: ProductionDeploymentGoal,
-            pushTest: IsNode,
-            callback: kubernetesDataCallback(sdm.configuration),
-        }],
-    }));
-```
-
-3. Add configuration to your client configuration
-
-```
-// no configuration needed
-```
+[k8s-docs]: https://docs.atomist.com/pack/kubernetes/ (Atomist SDM Kubernetes Extension)
 
 ## Support
 
