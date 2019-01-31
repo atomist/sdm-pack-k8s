@@ -16,14 +16,8 @@
 
 import * as assert from "power-assert";
 import { namespaceTemplate } from "../../lib/kubernetes/namespace";
-import { pkgInfo } from "./pkg";
 
 describe("kubernetes/namespace", () => {
-
-    let pv: string;
-    before(async () => {
-        pv = await pkgInfo();
-    });
 
     describe("namespaceTemplate", () => {
 
@@ -33,6 +27,7 @@ describe("kubernetes/namespace", () => {
                 workspaceId: "SlASHR3C0RDS",
                 ns: "fuzzy",
                 image: "glb/dixie-drug-store:5.07",
+                sdmFulfiller: "EMI",
             };
             const n = await namespaceTemplate(r);
             const e = {
@@ -42,7 +37,7 @@ describe("kubernetes/namespace", () => {
                     name: "fuzzy",
                     labels: {
                         "atomist.com/workspaceId": "SlASHR3C0RDS",
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                     },
                 },
             } as any;

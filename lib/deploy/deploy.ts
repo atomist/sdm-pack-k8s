@@ -63,7 +63,7 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
 
     llog(`Deploying ${appId} to Kubernetes`, logger.info, log);
     try {
-        await upsertApplication(app);
+        await upsertApplication(app, goalEvent.fulfillment.name);
     } catch (e) {
         return logAndFailDeploy(`Failed to deploy ${appId} to Kubernetes: ${e.message}`, log);
     }

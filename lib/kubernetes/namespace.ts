@@ -26,6 +26,7 @@ import { metadataTemplate } from "./metadata";
 import {
     KubernetesApplication,
     KubernetesResourceRequest,
+    KubernetesSdm,
 } from "./request";
 
 export const defaultNamespace = "default";
@@ -59,8 +60,8 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<U
  * @param req Kubernetes application
  * @return kubernetes namespace resource
  */
-export async function namespaceTemplate(req: KubernetesApplication): Promise<k8s.V1Namespace> {
-    const allLabels = await applicationLabels(req);
+export async function namespaceTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1Namespace> {
+    const allLabels = applicationLabels(req);
     const retain = ["atomist.com/workspaceId", "app.kubernetes.io/managed-by"];
     const labels = Object.assign({}, ...Object.keys(allLabels).filter(k => retain.includes(k)).map(k => ({ [k]: allLabels[k] })));
     const metadata = metadataTemplate({ labels, name: req.ns });

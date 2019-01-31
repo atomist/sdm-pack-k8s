@@ -16,18 +16,12 @@
 
 import * as assert from "power-assert";
 import { deploymentTemplate } from "../../lib/kubernetes/deployment";
-import { pkgInfo } from "./pkg";
 
 /* tslint:disable:max-file-line-count */
 
 describe("kubernetes/deployment", () => {
 
     describe("deploymentTemplate", () => {
-
-        let pv: string;
-        before(async () => {
-            pv = await pkgInfo();
-        });
 
         it("should create a deployment spec", async () => {
             const r = {
@@ -37,11 +31,12 @@ describe("kubernetes/deployment", () => {
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 imagePullSecret: "comfort",
                 port: 5510,
+                sdmFulfiller: "EMI",
             };
             const d = await deploymentTemplate(r);
             assert(d.kind === "Deployment");
             assert(d.metadata.name === r.name);
-            assert(d.metadata.labels["app.kubernetes.io/managed-by"] === pv);
+            assert(d.metadata.labels["app.kubernetes.io/managed-by"] === r.sdmFulfiller);
             assert(d.metadata.labels["app.kubernetes.io/name"] === r.name);
             assert(d.metadata.labels["app.kubernetes.io/part-of"] === r.name);
             assert(d.metadata.labels["atomist.com/workspaceId"] === r.workspaceId);
@@ -52,7 +47,7 @@ describe("kubernetes/deployment", () => {
                 `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/KAT3BU5H"]}`);
             assert(d.spec.template.metadata.labels["app.kubernetes.io/name"] === r.name);
             assert(d.spec.template.metadata.labels["app.kubernetes.io/part-of"] === r.name);
-            assert(d.spec.template.metadata.labels["app.kubernetes.io/managed-by"] === pv);
+            assert(d.spec.template.metadata.labels["app.kubernetes.io/managed-by"] === r.sdmFulfiller);
             assert(d.spec.template.metadata.labels["atomist.com/workspaceId"] === r.workspaceId);
             assert(d.spec.template.metadata.name === r.name);
             assert(d.spec.template.spec.containers.length === 1);
@@ -89,6 +84,7 @@ describe("kubernetes/deployment", () => {
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 imagePullSecret: "comfort",
                 port: 5510,
+                sdmFulfiller: "EMI",
                 deploymentSpec: {
                     spec: {
                         replicas: 2,
@@ -113,7 +109,7 @@ describe("kubernetes/deployment", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -133,7 +129,7 @@ describe("kubernetes/deployment", () => {
                         metadata: {
                             name: r.name,
                             labels: {
-                                "app.kubernetes.io/managed-by": pv,
+                                "app.kubernetes.io/managed-by": r.sdmFulfiller,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
                                 "atomist.com/workspaceId": r.workspaceId,
@@ -220,6 +216,7 @@ describe("kubernetes/deployment", () => {
                 imagePullSecret: "comfort",
                 port: 5510,
                 replicas: 0,
+                sdmFulfiller: "EMI",
             };
             const d = await deploymentTemplate(r);
             const e = {
@@ -228,7 +225,7 @@ describe("kubernetes/deployment", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -246,7 +243,7 @@ describe("kubernetes/deployment", () => {
                         metadata: {
                             name: r.name,
                             labels: {
-                                "app.kubernetes.io/managed-by": pv,
+                                "app.kubernetes.io/managed-by": r.sdmFulfiller,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
                                 "atomist.com/workspaceId": r.workspaceId,
@@ -329,6 +326,7 @@ describe("kubernetes/deployment", () => {
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 replicas: 12,
+                sdmFulfiller: "EMI",
             };
             const d = await deploymentTemplate(r);
             const e = {
@@ -337,7 +335,7 @@ describe("kubernetes/deployment", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -355,7 +353,7 @@ describe("kubernetes/deployment", () => {
                         metadata: {
                             name: r.name,
                             labels: {
-                                "app.kubernetes.io/managed-by": pv,
+                                "app.kubernetes.io/managed-by": r.sdmFulfiller,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
                                 "atomist.com/workspaceId": r.workspaceId,
@@ -402,6 +400,7 @@ describe("kubernetes/deployment", () => {
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 roleSpec: {},
+                sdmFulfiller: "EMI",
             };
             const d = await deploymentTemplate(r);
             const e = {
@@ -410,7 +409,7 @@ describe("kubernetes/deployment", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -428,7 +427,7 @@ describe("kubernetes/deployment", () => {
                         metadata: {
                             name: r.name,
                             labels: {
-                                "app.kubernetes.io/managed-by": pv,
+                                "app.kubernetes.io/managed-by": r.sdmFulfiller,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
                                 "atomist.com/workspaceId": r.workspaceId,
@@ -484,6 +483,7 @@ describe("kubernetes/deployment", () => {
                         },
                     ],
                 },
+                sdmFulfiller: "EMI",
                 serviceAccountSpec: {
                     metadata: {
                         name: "peter-gabriel",
@@ -497,7 +497,7 @@ describe("kubernetes/deployment", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -515,7 +515,7 @@ describe("kubernetes/deployment", () => {
                         metadata: {
                             name: r.name,
                             labels: {
-                                "app.kubernetes.io/managed-by": pv,
+                                "app.kubernetes.io/managed-by": r.sdmFulfiller,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
                                 "atomist.com/workspaceId": r.workspaceId,

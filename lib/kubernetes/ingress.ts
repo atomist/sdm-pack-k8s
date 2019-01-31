@@ -29,6 +29,7 @@ import {
     KubernetesApplication,
     KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
+    KubernetesSdm,
 } from "./request";
 
 export interface UpsertIngressResponse {
@@ -106,8 +107,8 @@ function httpIngressPath(req: KubernetesApplication): k8s.V1beta1HTTPIngressPath
  * @param req Kubernestes application
  * @return ingress spec with single rule
  */
-export async function ingressTemplate(req: KubernetesApplication): Promise<k8s.V1beta1Ingress> {
-    const labels = await applicationLabels(req);
+export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1beta1Ingress> {
+    const labels = applicationLabels(req);
     const metadata = metadataTemplate({
         name: req.name,
         labels,

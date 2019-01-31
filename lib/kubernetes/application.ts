@@ -50,9 +50,10 @@ import {
  * Create or update all the resources for an application in a
  * Kubernetes cluster if it does not exist.
  *
- * @param req application creation request
+ * @param app Kubernetes application creation request
+ * @param sdmFullillter The registered name of the SDM fulfilling the deployment goal.
  */
-export async function upsertApplication(app: KubernetesApplication): Promise<void> {
+export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<void> {
     let config: k8s.KubeConfig;
     try {
         config = loadKubeConfig();
@@ -62,7 +63,7 @@ export async function upsertApplication(app: KubernetesApplication): Promise<voi
         throw e;
     }
     const clients = makeApiClients(config);
-    const req = { ...app, clients };
+    const req = { ...app, sdmFulfiller, clients };
 
     try {
         await upsertNamespace(req);

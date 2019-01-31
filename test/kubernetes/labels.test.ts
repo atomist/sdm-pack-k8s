@@ -17,18 +17,11 @@
 import * as assert from "power-assert";
 import {
     applicationLabels,
-    getCreator,
     matchLabels,
     safeLabelValue,
 } from "../../lib/kubernetes/labels";
-import { pkgInfo } from "./pkg";
 
 describe("kubernetes/labels", () => {
-
-    let pv: string;
-    before(async () => {
-        pv = await pkgInfo();
-    });
 
     describe("safeLabelValue", () => {
 
@@ -56,14 +49,12 @@ describe("kubernetes/labels", () => {
             assert(s === e);
         });
 
-    });
-
-    describe("getCreator", () => {
-
-        it("should return this package name and version", async () => {
-            const c = await getCreator();
-            assert(c);
-            assert(c === pv);
+        it("should fix consecutive invalid characters", () => {
+            const v = "@atomist/sdm-pack-k8s:?*1.1.0-k8s.20190125173349?";
+            const s = safeLabelValue(v);
+            const e = "atomist_sdm-pack-k8s_1.1.0-k8s.20190125173349";
+            assert(validation.test(s));
+            assert(s === e);
         });
 
     });
@@ -87,51 +78,54 @@ describe("kubernetes/labels", () => {
 
     describe("labels", () => {
 
-        it("should return the proper labels", async () => {
+        it("should return the proper labels", () => {
             const r = {
                 name: "cloudbusting",
                 workspaceId: "KAT3BU5H",
                 version: "5.1.0",
+                sdmFulfiller: "EMI",
             };
-            const l = await applicationLabels(r);
+            const l = applicationLabels(r);
             const e = {
                 "app.kubernetes.io/name": "cloudbusting",
                 "atomist.com/workspaceId": "KAT3BU5H",
                 "app.kubernetes.io/version": "5.1.0",
                 "app.kubernetes.io/part-of": "cloudbusting",
-                "app.kubernetes.io/managed-by": pv,
+                "app.kubernetes.io/managed-by": "EMI",
             };
             assert.deepStrictEqual(l, e);
         });
 
-        it("should return optional labels", async () => {
+        it("should return optional labels", () => {
             const r = {
                 name: "cloudbusting",
                 workspaceId: "KAT3BU5H",
                 version: "5.1.0",
+                sdmFulfiller: "EMI",
                 component: "song",
                 instance: "Fifth",
             };
-            const l = await applicationLabels(r);
+            const l = applicationLabels(r);
             const e = {
                 "app.kubernetes.io/name": "cloudbusting",
                 "atomist.com/workspaceId": "KAT3BU5H",
                 "app.kubernetes.io/version": "5.1.0",
                 "app.kubernetes.io/part-of": "cloudbusting",
-                "app.kubernetes.io/managed-by": pv,
+                "app.kubernetes.io/managed-by": "EMI",
                 "app.kubernetes.io/component": "song",
                 "app.kubernetes.io/instance": "Fifth",
             };
             assert.deepStrictEqual(l, e);
         });
 
-        it("should return a superset of the match labels", async () => {
+        it("should return a superset of the match labels", () => {
             const r = {
                 name: "cloudbusting",
                 workspaceId: "KAT3BU5H",
                 version: "5.1.0",
+                sdmFulfiller: "EMI",
             };
-            const l = await applicationLabels(r);
+            const l = applicationLabels(r);
             const m = matchLabels(r);
             Object.keys(m).forEach(k => {
                 assert(Object.keys(l).includes(k));

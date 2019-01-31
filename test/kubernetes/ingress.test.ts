@@ -16,16 +16,10 @@
 
 import * as assert from "power-assert";
 import { ingressTemplate } from "../../lib/kubernetes/ingress";
-import { pkgInfo } from "./pkg";
 
 describe("kubernetes/ingress", () => {
 
     describe("ingressTemplate", () => {
-
-        let pv: string;
-        before(async () => {
-            pv = await pkgInfo();
-        });
 
         it("should create a wildcard ingress spec", async () => {
             const r = {
@@ -35,6 +29,7 @@ describe("kubernetes/ingress", () => {
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 port: 5510,
                 path: "/bush/kate/hounds-of-love/cloudbusting",
+                sdmFulfiller: "EMI",
             };
             const i = await ingressTemplate(r);
             const e = {
@@ -43,7 +38,7 @@ describe("kubernetes/ingress", () => {
                 metadata: {
                     name: "cloudbusting",
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -80,6 +75,7 @@ describe("kubernetes/ingress", () => {
                 path: "/bush/kate/hounds-of-love/cloudbusting",
                 host: "emi.com",
                 protocol: "https" as "https",
+                sdmFulfiller: "EMI",
                 tlsSecret: "emi-com",
             };
             const i = await ingressTemplate(r);
@@ -88,7 +84,7 @@ describe("kubernetes/ingress", () => {
                 kind: "Ingress",
                 metadata: {
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -135,6 +131,7 @@ describe("kubernetes/ingress", () => {
                 path: "/bush/kate/hounds-of-love/cloudbusting",
                 host: "emi.com",
                 protocol: "https" as "https",
+                sdmFulfiller: "EMI",
                 tlsSecret: "emi-com",
                 ingressSpec: {
                     metadata: {
@@ -161,7 +158,7 @@ describe("kubernetes/ingress", () => {
                         "nginx.ingress.kubernetes.io/limit-rps": "25",
                     },
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,

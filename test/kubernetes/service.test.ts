@@ -16,16 +16,10 @@
 
 import * as assert from "power-assert";
 import { serviceTemplate } from "../../lib/kubernetes/service";
-import { pkgInfo } from "./pkg";
 
 describe("kubernetes/service", () => {
 
     describe("serviceTemplate", () => {
-
-        let pv: string;
-        before(async () => {
-            pv = await pkgInfo();
-        });
 
         it("should create a service spec", async () => {
             const r = {
@@ -34,6 +28,7 @@ describe("kubernetes/service", () => {
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 port: 5510,
+                sdmFulfiller: "EMI",
             };
             const s = await serviceTemplate(r);
             const e = {
@@ -42,7 +37,7 @@ describe("kubernetes/service", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -75,6 +70,7 @@ describe("kubernetes/service", () => {
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 port: 5510,
+                sdmFulfiller: "EMI",
                 serviceSpec: {
                     metadata: {
                         annotation: {
@@ -100,7 +96,7 @@ describe("kubernetes/service", () => {
                     },
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,

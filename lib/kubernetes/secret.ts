@@ -32,6 +32,7 @@ import {
     KubernetesDelete,
     KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
+    KubernetesSdm,
 } from "./request";
 
 export interface UpsertSecretResponse {
@@ -114,8 +115,8 @@ export function applicationSecrets(req: KubernetesDelete, secrets: k8s.V1Secret[
  * @param secret the unlabeled secret
  * @return the provided secret with appropriate labels
  */
-export async function secretTemplate(req: KubernetesApplication, secret: DeepPartial<k8s.V1Secret>): Promise<k8s.V1Secret> {
-    const labels = await applicationLabels({ ...req, component: "secret" });
+export async function secretTemplate(req: KubernetesApplication & KubernetesSdm, secret: DeepPartial<k8s.V1Secret>): Promise<k8s.V1Secret> {
+    const labels = applicationLabels({ ...req, component: "secret" });
     const metadata = metadataTemplate({ labels });
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const s: Partial<k8s.V1Secret> = {

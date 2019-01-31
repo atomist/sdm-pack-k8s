@@ -32,6 +32,7 @@ import {
     KubernetesApplication,
     KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
+    KubernetesSdm,
 } from "./request";
 
 export interface UpsertServiceResponse {
@@ -93,8 +94,8 @@ export async function deleteService(req: KubernetesDeleteResourceRequest): Promi
  * @param req service template request
  * @return service resource specification
  */
-export async function serviceTemplate(req: KubernetesApplication): Promise<k8s.V1Service> {
-    const labels = await applicationLabels(req);
+export async function serviceTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1Service> {
+    const labels = applicationLabels(req);
     const matchers = matchLabels(req);
     const metadata = metadataTemplate({
         name: req.name,

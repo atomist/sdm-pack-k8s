@@ -140,12 +140,16 @@ export interface KubernetesClientsContainer {
     /** Kubernetes API group clients. */
     clients: KubernetesClients;
 }
+export interface KubernetesSdm {
+    /** Name of SDM fulfilling the goal. */
+    sdmFulfiller: string;
+}
 
 /**
  * Internal application structure used to create or update resources
  * in a Kubernetes cluster.
  */
-export type KubernetesResourceRequest = KubernetesApplication & KubernetesClientsContainer;
+export type KubernetesResourceRequest = KubernetesApplication & KubernetesClientsContainer & KubernetesSdm;
 
 /**
  * Internal application structure used to delete resources from a

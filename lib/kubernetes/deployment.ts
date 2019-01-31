@@ -35,6 +35,7 @@ import {
     KubernetesApplication,
     KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
+    KubernetesSdm,
 } from "./request";
 
 export interface UpsertDeploymentResponse {
@@ -94,11 +95,11 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
  * @param req Kubernetes application request
  * @return deployment resource specification
  */
-export async function deploymentTemplate(req: KubernetesApplication): Promise<k8s.V1Deployment> {
+export async function deploymentTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1Deployment> {
     const k8ventAnnot = stringify({
         webhooks: [`${webhookBaseUrl()}/atomist/kube/teams/${req.workspaceId}`],
     });
-    const labels = await applicationLabels(req);
+    const labels = applicationLabels(req);
     const matchers = matchLabels(req);
     const metadata = metadataTemplate({
         name: req.name,

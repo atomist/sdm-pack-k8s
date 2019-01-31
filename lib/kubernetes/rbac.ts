@@ -29,6 +29,7 @@ import {
     KubernetesApplication,
     KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
+    KubernetesSdm,
 } from "./request";
 
 /**
@@ -243,8 +244,8 @@ async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<Upsert
  * @param req application request
  * @return role resource specification
  */
-export async function roleTemplate(req: KubernetesApplication): Promise<k8s.V1Role> {
-    const labels = await applicationLabels(req);
+export async function roleTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1Role> {
+    const labels = applicationLabels(req);
     const metadata = metadataTemplate({
         name: req.name,
         labels,
@@ -267,8 +268,8 @@ export async function roleTemplate(req: KubernetesApplication): Promise<k8s.V1Ro
  * @param req application request
  * @return role resource specification
  */
-export async function clusterRoleTemplate(req: KubernetesApplication): Promise<k8s.V1ClusterRole> {
-    const labels = await applicationLabels(req);
+export async function clusterRoleTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1ClusterRole> {
+    const labels = applicationLabels(req);
     const metadata = metadataTemplate({
         name: req.name,
         labels,
@@ -292,8 +293,8 @@ export async function clusterRoleTemplate(req: KubernetesApplication): Promise<k
  * @param req application request
  * @return service account resource specification
  */
-export async function serviceAccountTemplate(req: KubernetesApplication): Promise<k8s.V1ServiceAccount> {
-    const labels = await applicationLabels(req);
+export async function serviceAccountTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1ServiceAccount> {
+    const labels = applicationLabels(req);
     const metadata = metadataTemplate({
         name: req.name,
         labels,
@@ -319,8 +320,8 @@ export async function serviceAccountTemplate(req: KubernetesApplication): Promis
  * @param req application request
  * @return role binding resource specification
  */
-export async function roleBindingTemplate(req: KubernetesApplication): Promise<k8s.V1RoleBinding> {
-    const labels = await applicationLabels(req);
+export async function roleBindingTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1RoleBinding> {
+    const labels = applicationLabels(req);
     const metadata = metadataTemplate({
         name: req.name,
         labels,
@@ -360,8 +361,8 @@ export async function roleBindingTemplate(req: KubernetesApplication): Promise<k
  * @param req application request
  * @return cluster role binding resource specification
  */
-export async function clusterRoleBindingTemplate(req: KubernetesApplication): Promise<k8s.V1ClusterRoleBinding> {
-    const labels = await applicationLabels(req);
+export async function clusterRoleBindingTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1ClusterRoleBinding> {
+    const labels = applicationLabels(req);
     const metadata = metadataTemplate({
         name: req.name,
         labels,

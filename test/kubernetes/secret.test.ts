@@ -21,7 +21,6 @@ import {
     encodeSecret,
     secretTemplate,
 } from "../../lib/kubernetes/secret";
-import { pkgInfo } from "./pkg";
 
 describe("kubernetes/secret", () => {
 
@@ -255,11 +254,6 @@ describe("kubernetes/secret", () => {
 
     describe("secretTemplate", () => {
 
-        let pv: string;
-        before(async () => {
-            pv = await pkgInfo();
-        });
-
         it("should return a valid secret spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
@@ -267,6 +261,7 @@ describe("kubernetes/secret", () => {
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 port: 5510,
+                sdmFulfiller: "EMI",
             };
             const p: k8s.V1Secret = {
                 metadata: {
@@ -288,7 +283,7 @@ describe("kubernetes/secret", () => {
                 metadata: {
                     name: p.metadata.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "app.kubernetes.io/component": "secret",
@@ -313,6 +308,7 @@ describe("kubernetes/secret", () => {
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 port: 5510,
+                sdmFulfiller: "EMI",
             };
             const p: k8s.V1Secret = {
                 metadata: {
@@ -346,7 +342,7 @@ describe("kubernetes/secret", () => {
                     },
                     name: p.metadata.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "app.kubernetes.io/component": "double-secret",

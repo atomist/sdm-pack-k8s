@@ -24,16 +24,10 @@ import {
     upsertRbac,
 } from "../../lib/kubernetes/rbac";
 import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
-import { pkgInfo } from "./pkg";
 
 /* tslint:disable:max-file-line-count */
 
 describe("kubernetes/rbac", () => {
-
-    let pv: string;
-    before(async () => {
-        pv = await pkgInfo();
-    });
 
     describe("upsertRbac", () => {
 
@@ -53,6 +47,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: {},
             };
             const s = await roleTemplate(r);
@@ -62,7 +57,7 @@ describe("kubernetes/rbac", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -79,6 +74,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: {
                     metadata: {
                         annotation: {
@@ -122,7 +118,7 @@ describe("kubernetes/rbac", () => {
                     },
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -165,6 +161,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: { kind: "ClusterRole" },
             };
             const s = await clusterRoleTemplate(r);
@@ -174,7 +171,7 @@ describe("kubernetes/rbac", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -191,6 +188,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: {
                     kind: "ClusterRole",
                     metadata: {
@@ -235,7 +233,7 @@ describe("kubernetes/rbac", () => {
                     },
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -278,6 +276,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: {},
             };
             const s = await serviceAccountTemplate(r);
@@ -287,7 +286,7 @@ describe("kubernetes/rbac", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -303,6 +302,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 serviceAccountSpec: {
                     metadata: {
                         annotation: {
@@ -324,7 +324,7 @@ describe("kubernetes/rbac", () => {
                     },
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -341,6 +341,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 serviceAccountSpec: {
                     metadata: {
                         annotation: {
@@ -363,7 +364,7 @@ describe("kubernetes/rbac", () => {
                     },
                     name: "peter-gabriel",
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -384,6 +385,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: {},
             };
             const s = await roleBindingTemplate(r);
@@ -393,7 +395,7 @@ describe("kubernetes/rbac", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -420,6 +422,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleBindingSpec: {
                     metadata: {
                         annotation: {
@@ -441,7 +444,7 @@ describe("kubernetes/rbac", () => {
                     },
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -469,6 +472,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: {},
                 serviceAccountSpec: {
                     metadata: {
@@ -483,7 +487,7 @@ describe("kubernetes/rbac", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -514,6 +518,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: {},
             };
             const s = await clusterRoleBindingTemplate(r);
@@ -523,7 +528,7 @@ describe("kubernetes/rbac", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -551,6 +556,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleBindingSpec: {
                     kind: "ClusterRoleBinding",
                     metadata: {
@@ -573,7 +579,7 @@ describe("kubernetes/rbac", () => {
                     },
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
@@ -602,6 +608,7 @@ describe("kubernetes/rbac", () => {
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
                 roleSpec: {},
                 serviceAccountSpec: {
                     metadata: {
@@ -616,7 +623,7 @@ describe("kubernetes/rbac", () => {
                 metadata: {
                     name: r.name,
                     labels: {
-                        "app.kubernetes.io/managed-by": pv,
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
