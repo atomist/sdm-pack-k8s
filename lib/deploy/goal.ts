@@ -60,57 +60,30 @@ export interface KubernetesDeployRegistration extends FulfillmentRegistration {
     applicationData?: ApplicationDataCallback;
     /**
      * It not set (falsey), this SDM will fulfill its own Kubernetes
-     * deployment goals using.  If set, its value defines the name of
-     * the SDM that will fulfill the goal.  In this case, there should
-     * be another SDM running whose name, i.e., its name as defined in
+     * deployment goals.  If set, its value defines the name of the
+     * SDM that will fulfill the goal.  In this case, there should be
+     * another SDM running whose name, i.e., its name as defined in
      * its registration/package.json, is the same as the value of
-     * fulfillment and who is configured to manage deploying resources
-     * to the requested goal's namespace, i.e.,
-     * [[KubernetesApplication.ns]].
+     * fulfillment.
      */
     fulfillment?: string;
 }
 
 /**
  * Goal that initiates deploying an application to a Kubernetes
- * cluster either directly or by another SDM.  Deploying the
- * application is completed by the [[kubernetesDeployHandler]] event
- * handler.
+ * cluster.  Deploying the application is completed by the
+ * [[kubernetesDeployHandler]] event handler.  By default, this goal
+ * will be configured such that it is fulfilled by the SDM that
+ * creates it.  To have this goal be executed by another SDM, set the
+ * fulfillment name to the name of that SDM:
  *
- * To have this goal be executed by the SDM that creates it, set the
- * environment of this goal to the SDM's environment in the first argument
- * to the constructor, the `details` property, i.e.,
- *
- *     const deploy = new KubernetesDeploy({ environment: configuration.environment });
- *
- * and either do not set the [[SdmPackK8sOptions.namespaces]] property
- * when adding [[k8sSupport]] in that SDM or deploy the application to
- * one of the namespaces in that property.
- *
- * To have this goal be executed by another SDM, set the environment
- * to the environment of that SDM in the first constructor argument
- * and set the fulfillment to the name of that SDM, i.e.,
- *
- *     const deploy = new KubernetesDeploy({ environment: otherSdm.configuration.environment })
+ *     const deploy = new KubernetesDeploy()
  *         .with({ fulfillment: otherSdm.name });
  *
- * and deploy to a namespace managed by that SDM.
- *
- * Note: the `details.environment` property is mapped to a
- * `GoalEnvironment` and that value becomes the goal environment.  So
- * the `goal.details.environment` and `goal.environment` may differ.
- * You can always access `details.environment` via the `details`
- * property.
  */
 export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {
 
-    /**
-     * Standard SDM FulfillableGoalDetails.  The environment is
-     * particularly important as it plays a role in what SDM executes
-     * this deployment.  An SDM will only execute a Kubernetes
-     * deployment if the environment set in the goal details of the
-     * KubernetesDeploy goal match that of the SDM itself.
-     */
+    /** Standard SDM FulfillableGoalDetails. */
     public readonly details: FulfillableGoalDetails;
 
     /**
@@ -139,15 +112,18 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
     }
 
     /**
-     * Called by the SDM on initialization.
+     * Called by the SDM on initialization.  This function calls
+     * `super.register` and adds a startup listener to the SDM.
+     *
+     * The startup listener adds a default fulfillment deployment that
+     * adds itself as fulfiller of its deployment requests if this
+     * goal has no fulfillment or callbacks at startup.
      */
     public register(sdm: SoftwareDeliveryMachine): void {
         super.register(sdm);
 
-        // register a startup listener to add the default deployment if no dedicated got registered
         sdm.addStartupListener(async () => {
             if (this.fulfillments.length === 0 && this.callbacks.length === 0) {
-                // register the default deployment
                 this.with({ name: "default-" + this.name, pushTest: AnyPush });
             }
         });

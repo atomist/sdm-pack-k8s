@@ -26,7 +26,7 @@ import { kubeConfigContext } from "../kubernetes/config";
 
 /**
  * If the SDM is running in local mode, the `DOCKER_HOST` environment
- * variable are not set, and using a minikube cluster, use `minikube
+ * variable is not set, and using a minikube cluster, use `minikube
  * docker-env` to set the Docker environment variables.
  */
 export const minikubeStartupListener: StartupListener = async context => {

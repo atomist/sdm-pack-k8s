@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ describe("kubernetes/service", () => {
         it("should create a service spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -46,7 +45,6 @@ describe("kubernetes/service", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -73,7 +71,6 @@ describe("kubernetes/service", () => {
         it("should merge in provided service spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -106,7 +103,6 @@ describe("kubernetes/service", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },

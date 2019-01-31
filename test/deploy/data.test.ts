@@ -26,7 +26,6 @@ import {
 import * as assert from "power-assert";
 import {
     defaultImage,
-    defaultIngress,
     defaultKubernetesApplication,
     dockerPort,
     generateKubernetesGoalEventData,
@@ -192,63 +191,6 @@ describe("deploy/data", () => {
 
     });
 
-    describe("defaultIngress", () => {
-
-        let atmMode: string;
-        before(() => {
-            if (process.env.ATOMIST_MODE) {
-                atmMode = process.env.ATOMIST_MODE;
-                delete process.env.ATOMIST_MODE;
-            }
-        });
-        after(() => {
-            if (atmMode) {
-                process.env.ATOMIST_MODE = atmMode;
-            } else {
-                delete process.env.ATOMIST_MODE;
-            }
-        });
-
-        it("should not return anything if not in local mode", async () => {
-            process.env.ATOMIST_MODE = "nonlocal";
-            const e: SdmGoalEvent = {} as any;
-            const k: KubernetesDeploy = {} as any;
-            const n = "default";
-            const i = await defaultIngress(e, k, n);
-            assert(i === undefined);
-        });
-
-        it("should return path and protocol when in local mode", async () => {
-            process.env.ATOMIST_MODE = "local";
-            const e: SdmGoalEvent = {
-                environment: "instigator",
-                repo: {
-                    name: "messenger",
-                    owner: "dreamer",
-                },
-            } as any;
-            const k: KubernetesDeploy = {
-                details: {
-                    environment: "interpreter",
-                },
-                environment: "2-production/",
-                sdm: {
-                    configuation: {
-                        environment: "believer",
-                    },
-                },
-            } as any;
-            const n = "traveler";
-            const i = await defaultIngress(e, k, n);
-            const x = {
-                protocol: "http",
-                path: "/interpreter/traveler/dreamer/messenger",
-            };
-            assert.deepStrictEqual(i, x);
-        });
-
-    });
-
     describe("defaultDeploymentData", () => {
 
         it("should return something reasonable with minimal information", async () => {
@@ -276,9 +218,8 @@ describe("deploy/data", () => {
             const d = await defaultKubernetesApplication(p, e, k, c);
             const r = {
                 workspaceId: "L0UR33D",
-                environment: "NewYork",
                 name: "new-york",
-                ns: "NewYork",
+                ns: "default",
                 image: "loureed/new-york:latest",
                 port: undefined,
                 deploymentSpec: undefined,
@@ -334,7 +275,6 @@ describe("deploy/data", () => {
             const d = await defaultKubernetesApplication(p, e, k, c);
             const r = {
                 workspaceId: "L0UR33D",
-                environment: "NewYork",
                 name: "new-york",
                 ns: "romeo-juliet",
                 image: "docker.lou-reed.com/newyork:1989",
@@ -410,9 +350,8 @@ describe("deploy/data", () => {
             const gd = JSON.parse(sge.data);
             const exp = {
                 workspaceId: "L0UR33D",
-                environment: "NewYork",
                 name: "new-york",
-                ns: "NewYork",
+                ns: "default",
                 image: "loureed/new-york:latest",
             };
             assert.deepStrictEqual(gd["sdm-pack-k8s"], exp);
@@ -458,9 +397,8 @@ describe("deploy/data", () => {
             const gd = JSON.parse(sge.data);
             const exp = {
                 workspaceId: "L0UR33D",
-                environment: "NewYork",
                 name: "new-york",
-                ns: "NewYork",
+                ns: "default",
                 image: "loureed/new-york:latest",
             };
             assert.deepStrictEqual(gd["sdm-pack-k8s"], exp);
@@ -567,7 +505,6 @@ describe("deploy/data", () => {
             assert(gd.Xmas === "in February");
             const exp = {
                 workspaceId: "L0UR33D",
-                environment: "NewYork",
                 host: "sick.of.you",
                 name: "new-york",
                 ns: "romeo-juliet",

@@ -15,9 +15,24 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import { execPromise } from "@atomist/sdm";
+import {
+    execPromise,
+    SdmGoalEvent,
+} from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { KubernetesApplication } from "./request";
+import { KubernetesApplication } from "../kubernetes/request";
+
+export type ExternalUrls = Array<{ label?: string, url: string }>;
+
+/**
+ * Return proper SDM goal externalUrls structure or `undefined` if
+ * there is no externally accessible endpoint.
+ */
+export async function appExternalUrls(ka: KubernetesApplication, ge: SdmGoalEvent): Promise<ExternalUrls | undefined> {
+    const label = `Kubernetes ${ge.fulfillment.name}/${ka.ns}/${ka.name}`;
+    const url = await endpointBaseUrl(ka);
+    return (url) ? [{ label, url }] : undefined;
+}
 
 /**
  * Create the URL for a deployment using the protocol, host, and path

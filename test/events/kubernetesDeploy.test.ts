@@ -19,9 +19,7 @@ import * as assert from "power-assert";
 import {
     eligibleDeployGoal,
     KubernetesDeployParameters,
-    verifyKubernetesApplicationDeploy,
 } from "../../lib/events/kubernetesDeploy";
-import { KubernetesApplication } from "../../lib/kubernetes/request";
 
 describe("events/kubernetesDeploy", () => {
 
@@ -88,113 +86,19 @@ describe("events/kubernetesDeploy", () => {
             assert(await eligibleDeployGoal(g, p));
         });
 
-    });
-
-    describe("verifyKubernetesApplicationDeploy", () => {
-
-        it("should validate when environment matches and no namespaces", () => {
-            const a: KubernetesApplication = {
-                environment: "stardust",
-                image: "ziggys/fans:3.13",
-                name: "spiders-from-mars",
-                ns: "ziggy",
-                workspaceId: "B0W13",
-            };
+        it("should accept a goal fulfillment when no environment", async () => {
+            const g: SdmGoalEvent = {
+                fulfillment: {
+                    name: "@bowie/spiders-from-mars",
+                },
+                state: "in_process",
+            } as any;
             const p: KubernetesDeployParameters = {
                 configuration: {
                     name: "@bowie/spiders-from-mars",
-                    environment: "stardust",
                 } as any,
             };
-            assert(verifyKubernetesApplicationDeploy(a, p));
-        });
-
-        it("should validate when environment and namespaces match", () => {
-            const a: KubernetesApplication = {
-                environment: "stardust",
-                image: "ziggys/fans:3.13",
-                name: "spiders-from-mars",
-                ns: "ziggy",
-                workspaceId: "B0W13",
-            };
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    environment: "stardust",
-                    name: "@bowie/spiders-from-mars",
-                    sdm: {
-                        k8s: {
-                            namespaces: ["five-years", "soul-love", "moonage-daydream", "ziggy", "starman"],
-                        },
-                    },
-                } as any,
-            };
-            assert(verifyKubernetesApplicationDeploy(a, p));
-        });
-
-        it("should not validate when environment does not match and namespaces do", () => {
-            const a: KubernetesApplication = {
-                environment: "suffragette-city",
-                image: "ziggys/fans:3.13",
-                name: "spiders-from-mars",
-                ns: "ziggy",
-                workspaceId: "B0W13",
-            };
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    environment: "stardust",
-                    name: "@bowie/spiders-from-mars",
-                    sdm: {
-                        k8s: {
-                            namespaces: ["five-years", "soul-love", "moonage-daydream", "ziggy", "starman"],
-                        },
-                    },
-                } as any,
-            };
-            assert(!verifyKubernetesApplicationDeploy(a, p));
-        });
-
-        it("should not validate when environment matches and namespaces do not", () => {
-            const a: KubernetesApplication = {
-                environment: "stardust",
-                image: "ziggys/fans:3.13",
-                name: "spiders-from-mars",
-                ns: "ziggy",
-                workspaceId: "B0W13",
-            };
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    environment: "stardust",
-                    name: "@bowie/spiders-from-mars",
-                    sdm: {
-                        k8s: {
-                            namespaces: ["five-years", "soul-love", "moonage-daydream", "starman"],
-                        },
-                    },
-                } as any,
-            };
-            assert(!verifyKubernetesApplicationDeploy(a, p));
-        });
-
-        it("should not validate when namespaces empty", () => {
-            const a: KubernetesApplication = {
-                environment: "stardust",
-                image: "ziggys/fans:3.13",
-                name: "spiders-from-mars",
-                ns: "ziggy",
-                workspaceId: "B0W13",
-            };
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    environment: "stardust",
-                    name: "@bowie/spiders-from-mars",
-                    sdm: {
-                        k8s: {
-                            namespaces: [],
-                        },
-                    },
-                } as any,
-            };
-            assert(!verifyKubernetesApplicationDeploy(a, p));
+            assert(await eligibleDeployGoal(g, p));
         });
 
     });

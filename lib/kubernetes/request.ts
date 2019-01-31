@@ -31,8 +31,6 @@ import { KubernetesClients } from "./clients";
 export interface KubernetesApplication {
     /** Atomist workspace ID */
     workspaceId: string;
-    /** Arbitrary name of environment */
-    environment: string;
     /**
      * Name of resources to create.  It can be overriden for
      * individual resources in the partial specs.
@@ -171,7 +169,7 @@ export function isKubernetesApplication(o: { [key: string]: any }): o is Kuberne
     if (!o) {
         return false;
     }
-    const required = ["environment", "image", "name", "ns", "workspaceId"];
+    const required = ["image", "name", "ns", "workspaceId"];
     return required.every(k => o[k]);
 
 }

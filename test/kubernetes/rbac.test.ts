@@ -50,7 +50,6 @@ describe("kubernetes/rbac", () => {
         it("should create a role spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -66,7 +65,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -78,7 +76,6 @@ describe("kubernetes/rbac", () => {
         it("should merge in provided role spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -128,7 +125,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },
@@ -166,7 +162,6 @@ describe("kubernetes/rbac", () => {
         it("should create a cluster role spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -182,7 +177,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -194,7 +188,6 @@ describe("kubernetes/rbac", () => {
         it("should merge in provided role spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -245,7 +238,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },
@@ -283,7 +275,6 @@ describe("kubernetes/rbac", () => {
         it("should create a service account spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -299,7 +290,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -310,7 +300,6 @@ describe("kubernetes/rbac", () => {
         it("should merge in provided service account spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -338,7 +327,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },
@@ -350,7 +338,6 @@ describe("kubernetes/rbac", () => {
         it("should use provided service account name", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -379,7 +366,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },
@@ -395,7 +381,6 @@ describe("kubernetes/rbac", () => {
         it("should create a role binding spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -411,7 +396,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -433,7 +417,6 @@ describe("kubernetes/rbac", () => {
         it("should merge in provided role binding spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -461,7 +444,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },
@@ -484,7 +466,6 @@ describe("kubernetes/rbac", () => {
         it("should create a role binding spec with provided service account", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -505,7 +486,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -531,7 +511,6 @@ describe("kubernetes/rbac", () => {
         it("should create a cluster role binding spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -547,7 +526,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -570,7 +548,6 @@ describe("kubernetes/rbac", () => {
         it("should merge in provided cluster role binding spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -599,7 +576,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },
@@ -623,7 +599,6 @@ describe("kubernetes/rbac", () => {
         it("should create a cluster role binding spec with provided service account", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -644,7 +619,6 @@ describe("kubernetes/rbac", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },

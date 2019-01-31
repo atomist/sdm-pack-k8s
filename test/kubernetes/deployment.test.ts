@@ -32,7 +32,6 @@ describe("kubernetes/deployment", () => {
         it("should create a deployment spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -45,17 +44,15 @@ describe("kubernetes/deployment", () => {
             assert(d.metadata.labels["app.kubernetes.io/managed-by"] === pv);
             assert(d.metadata.labels["app.kubernetes.io/name"] === r.name);
             assert(d.metadata.labels["app.kubernetes.io/part-of"] === r.name);
-            assert(d.metadata.labels["atomist.com/environment"] === r.environment);
             assert(d.metadata.labels["atomist.com/workspaceId"] === r.workspaceId);
             assert(d.spec.replicas === 1);
             assert(d.spec.selector.matchLabels["app.kubernetes.io/name"] === r.name);
             assert(d.spec.selector.matchLabels["atomist.com/workspaceId"] === r.workspaceId);
             assert(d.spec.template.metadata.annotations["atomist.com/k8vent"] ===
-                `{"environment":"new-wave","webhooks":["https://webhook.atomist.com/atomist/kube/teams/KAT3BU5H"]}`);
+                `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/KAT3BU5H"]}`);
             assert(d.spec.template.metadata.labels["app.kubernetes.io/name"] === r.name);
             assert(d.spec.template.metadata.labels["app.kubernetes.io/part-of"] === r.name);
             assert(d.spec.template.metadata.labels["app.kubernetes.io/managed-by"] === pv);
-            assert(d.spec.template.metadata.labels["atomist.com/environment"] === r.environment);
             assert(d.spec.template.metadata.labels["atomist.com/workspaceId"] === r.workspaceId);
             assert(d.spec.template.metadata.name === r.name);
             assert(d.spec.template.spec.containers.length === 1);
@@ -87,7 +84,6 @@ describe("kubernetes/deployment", () => {
         it("should create a custom deployment spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -120,7 +116,6 @@ describe("kubernetes/deployment", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -141,12 +136,10 @@ describe("kubernetes/deployment", () => {
                                 "app.kubernetes.io/managed-by": pv,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
-                                "atomist.com/environment": r.environment,
                                 "atomist.com/workspaceId": r.workspaceId,
                             },
                             annotations: {
-                                // tslint:disable-next-line:max-line-length
-                                "atomist.com/k8vent": `{"environment":"${r.environment}","webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                                "atomist.com/k8vent": `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
                             },
                         },
                         spec: {
@@ -221,7 +214,6 @@ describe("kubernetes/deployment", () => {
         it("should create a deployment spec with zero replicas", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -239,7 +231,6 @@ describe("kubernetes/deployment", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -258,12 +249,10 @@ describe("kubernetes/deployment", () => {
                                 "app.kubernetes.io/managed-by": pv,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
-                                "atomist.com/environment": r.environment,
                                 "atomist.com/workspaceId": r.workspaceId,
                             },
                             annotations: {
-                                // tslint:disable-next-line:max-line-length
-                                "atomist.com/k8vent": `{"environment":"${r.environment}","webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                                "atomist.com/k8vent": `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
                             },
                         },
                         spec: {
@@ -336,7 +325,6 @@ describe("kubernetes/deployment", () => {
         it("should create a deployment spec with custom replicas", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -352,7 +340,6 @@ describe("kubernetes/deployment", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -371,12 +358,10 @@ describe("kubernetes/deployment", () => {
                                 "app.kubernetes.io/managed-by": pv,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
-                                "atomist.com/environment": r.environment,
                                 "atomist.com/workspaceId": r.workspaceId,
                             },
                             annotations: {
-                                // tslint:disable-next-line:max-line-length
-                                "atomist.com/k8vent": `{"environment":"${r.environment}","webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                                "atomist.com/k8vent": `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
                             },
                         },
                         spec: {
@@ -413,7 +398,6 @@ describe("kubernetes/deployment", () => {
         it("should create a deployment spec with service account", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -429,7 +413,6 @@ describe("kubernetes/deployment", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -448,12 +431,10 @@ describe("kubernetes/deployment", () => {
                                 "app.kubernetes.io/managed-by": pv,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
-                                "atomist.com/environment": r.environment,
                                 "atomist.com/workspaceId": r.workspaceId,
                             },
                             annotations: {
-                                // tslint:disable-next-line:max-line-length
-                                "atomist.com/k8vent": `{"environment":"${r.environment}","webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                                "atomist.com/k8vent": `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
                             },
                         },
                         spec: {
@@ -491,7 +472,6 @@ describe("kubernetes/deployment", () => {
         it("should create a deployment spec using service account name", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -520,7 +500,6 @@ describe("kubernetes/deployment", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -539,12 +518,10 @@ describe("kubernetes/deployment", () => {
                                 "app.kubernetes.io/managed-by": pv,
                                 "app.kubernetes.io/name": r.name,
                                 "app.kubernetes.io/part-of": r.name,
-                                "atomist.com/environment": r.environment,
                                 "atomist.com/workspaceId": r.workspaceId,
                             },
                             annotations: {
-                                // tslint:disable-next-line:max-line-length
-                                "atomist.com/k8vent": `{"environment":"${r.environment}","webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                                "atomist.com/k8vent": `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
                             },
                         },
                         spec: {

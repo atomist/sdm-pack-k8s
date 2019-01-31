@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ describe("kubernetes/namespace", () => {
             const r = {
                 name: "grant-lee-buffalo",
                 workspaceId: "SlASHR3C0RDS",
-                environment: "MachineElf",
                 ns: "fuzzy",
                 image: "glb/dixie-drug-store:5.07",
             };
@@ -43,7 +42,6 @@ describe("kubernetes/namespace", () => {
                     name: "fuzzy",
                     labels: {
                         "atomist.com/workspaceId": "SlASHR3C0RDS",
-                        "atomist.com/environment": "MachineElf",
                         "app.kubernetes.io/managed-by": pv,
                     },
                 },

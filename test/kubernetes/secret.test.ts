@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ describe("kubernetes/secret", () => {
                             "app.kubernetes.io/name": r.name,
                             "app.kubernetes.io/part-of": r.name,
                             "app.kubernetes.io/component": "secret",
-                            "atomist.com/environment": "cloud",
                             "atomist.com/workspaceId": r.workspaceId,
                         },
                     },
@@ -68,7 +67,6 @@ describe("kubernetes/secret", () => {
                             "app.kubernetes.io/name": "musical-collective",
                             "app.kubernetes.io/part-of": "musical-collective",
                             "app.kubernetes.io/component": "secret",
-                            "atomist.com/environment": "canada",
                         },
                     },
                     data: {
@@ -104,7 +102,6 @@ describe("kubernetes/secret", () => {
                             "app.kubernetes.io/name": r.name,
                             "app.kubernetes.io/part-of": r.name,
                             "app.kubernetes.io/component": "secret",
-                            "atomist.com/environment": "cloud",
                             "atomist.com/workspaceId": r.workspaceId,
                         },
                     },
@@ -164,7 +161,6 @@ describe("kubernetes/secret", () => {
                             "app.kubernetes.io/name": "cloudbursting",
                             "app.kubernetes.io/part-of": r.name,
                             "app.kubernetes.io/component": "secret",
-                            "atomist.com/environment": "cloud",
                             "atomist.com/workspaceId": r.workspaceId,
                         },
                     },
@@ -225,7 +221,6 @@ describe("kubernetes/secret", () => {
                             "app.kubernetes.io/name": r.name,
                             "app.kubernetes.io/part-of": r.name,
                             "app.kubernetes.io/component": "secret",
-                            "atomist.com/environment": "cloud",
                             "atomist.com/workspaceId": r.workspaceId,
                         },
                     },
@@ -268,7 +263,6 @@ describe("kubernetes/secret", () => {
         it("should return a valid secret spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -298,7 +292,6 @@ describe("kubernetes/secret", () => {
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "app.kubernetes.io/component": "secret",
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -316,7 +309,6 @@ describe("kubernetes/secret", () => {
         it("should return a custom secret spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -359,7 +351,6 @@ describe("kubernetes/secret", () => {
                         "app.kubernetes.io/part-of": r.name,
                         "app.kubernetes.io/component": "double-secret",
                         "app.kubernetes.io/version": "1.2.3",
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },

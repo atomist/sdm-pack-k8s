@@ -33,42 +33,6 @@ export interface SdmPackK8sOptions {
      * provided, the comand is not added.
      */
     addCommands?: boolean;
-    /**
-     * If the SDM is using default Kubernetes credentials, this
-     * specifices the Kubernetes config context to use when
-     * communicating with the Kubernetes API.  If not specified, the
-     * current context is used.
-     *
-     * Note that default Kubernetes credentials are typically only
-     * used when the SDM is running outside a Kubernetes cluster,
-     * e.g., when in local mode.  When running inside a Kubernetes
-     * cluster, default credentials, i.e., `$HOME/.kube/config`, can
-     * be provided in the container but typically the SDM falls back
-     * to the in-cluster Kubernetes credentials provided by the
-     * service account.  See [[loadKubeConfig]].
-     */
-    context?: string;
-    /**
-     * The namespaces to manage application deployments when
-     * fulfilling requested side-effect Kubernetes deployment goals.
-     * If it is `undefined`, all deployments requested for fulfillment
-     * by this SDM, i.e., the fulfillment name and goal environment
-     * matches the name and environment of the SDM, are fulfilled.  If
-     * set to an array of namespaces, only deployments requested whose
-     * name and environment match those of this SDM _and_ whose
-     * Kubernetes application data specifies a namespaces in this
-     * array are fulfilled.  To disable fulfillment of requested
-     * side-effect Kubernetes deployment goals, set this to an empty
-     * array.
-     *
-     * If this is not set and the `SDM_K8S_NAMESPACE` environment
-     * variable is set, this is set to an array with the single
-     * element of the `SDM_K8S_NAMESPACE` environment variable value.
-     * This makes it easy to deploy, using the same spec, SDMs into
-     * multiple namespaces that only mangage their namespace.  See
-     * https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
-     */
-    namespaces?: string[];
 }
 
 /**
@@ -81,9 +45,8 @@ export interface SdmPackK8sOptions {
  * If the merged options result in a truthy `addCommands`, then the
  * [[kubernetesUndeploy]] command is added to the SDM.
  *
- * If the options `namespaces` is `undefined` or an array with
- * non-zero elements, the [[kubernetesDeployHandler]] event handler is
- * added to the SDM.
+ * The [[kubernetesDeployHandler]] event handler for this SDM is added
+ * to the SDM.
  *
  * The [[minikubeStartupListener]] is added to the SDM to assist
  * running in local mode against a
@@ -112,13 +75,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
                 sdm.addCommand(kubernetesUndeploy);
             }
 
-            if (!sdm.configuration.sdm.k8s.options.namespaces && process.env.SDM_K8S_NAMESPACE) {
-                sdm.configuration.sdm.k8s.options.namespaces = [process.env.SDM_K8S_NAMESPACE];
-            }
-            const namespaces: string[] = sdm.configuration.sdm.k8s.options.namespaces;
-            if (namespaces === undefined || (namespaces && namespaces.length > 0)) {
-                sdm.addEvent(kubernetesDeployHandler(sdm.name));
-            }
+            sdm.addEvent(kubernetesDeployHandler(sdm.name));
 
             sdm.addStartupListener(minikubeStartupListener);
 

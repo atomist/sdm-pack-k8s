@@ -66,7 +66,7 @@ export function matchLabels(req: MatchLabelInput): { [key: string]: string } {
     };
 }
 
-export type KubernetesApplicationLabelInput = Pick<KubernetesApplication, "name" | "workspaceId" | "environment">;
+export type KubernetesApplicationLabelInput = Pick<KubernetesApplication, "name" | "workspaceId">;
 
 /**
  * Support for the Kubernetes recommended set of labels,
@@ -96,7 +96,6 @@ export async function applicationLabels(req: ApplicationLabelInput): Promise<{ [
         ...matchers,
         "app.kubernetes.io/part-of": req.name,
         "app.kubernetes.io/managed-by": creator,
-        "atomist.com/environment": req.environment,
     };
     if (req.component) {
         labels["app.kubernetes.io/component"] = req.component;

@@ -39,6 +39,7 @@ import {
     WriteToAllProgressLog,
 } from "@atomist/sdm";
 import * as stringify from "json-stringify-safe";
+import * as _ from "lodash";
 import { getKubernetesGoalEventData } from "../deploy/data";
 import {
     deployAppId,
@@ -58,17 +59,9 @@ export class KubernetesDeployParameters {
      * Make the entire SDM configuration available to this event
      * handler.  The specific prooperties used are:
      *
-     * `environment`: Environment to deploy applications to.  Only
-     * requested SDM Kubernetes deployment goals whose Kubernetes
-     * application environment match this environment are deployed by
-     * this SDM.
-     *
      * `name`: Name of this SDM.  Only requested SDM Kubernetes
      * deployment goals whose side-effect fulfillment name match this
      * name are deployed by this SDM.
-     *
-     * `sdm.k8s.namespaces`: The namespaces to manage application
-     * deploys.  If falsey, all namespaces are managed.
      *
      * `sdm.logFactory`: Used to generate a log sink to send progress
      * logs to.
@@ -120,11 +113,6 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
             return Success;
         }
         const appId = deployAppId(goalEvent, context, app);
-
-        if (!verifyKubernetesApplicationDeploy(app, params)) {
-            llog(`Kubernetes application data did not match parameters for ${appId}`, logger.debug, progressLog);
-            return Success;
-        }
 
         try {
             const result = await deployApplication(goalEvent, context);
@@ -188,52 +176,12 @@ export async function eligibleDeployGoal(goalEvent: SdmGoalEvent, params: Kubern
         return false;
     }
     if (goalEvent.state !== SdmGoalState.in_process) {
-        logger.debug(`SDM goal state '${goalEvent.state}' is not 'requested'`);
+        logger.debug(`SDM goal state '${goalEvent.state}' is not 'in_process'`);
         return false;
     }
     const name = params.configuration.name;
     if (goalEvent.fulfillment.name !== name) {
         logger.debug(`SDM goal fulfillment name '${goalEvent.fulfillment.name}' is not '${name}'`);
-        return false;
-    }
-    return true;
-}
-
-/**
- * Verify if this Kubernetes application should be deployed by this
- * SDM.  Namely,
- *
- * 1.  It ensures the environment of the application and this SDM are
- *     the same.
- * 2.  If the SDM k8s options defines namespaces to manage, the
- *     application namespace (ns) must be in that list of namespaces.
- *
- * If the deployment mode is "namespace", then the `POD_NAMESPACE`
- * environment variable must be defined.  If the values of `app.ns`
- * and `POD_NAMESPACE` environment variable are the same, it is a
- * match.  If they are not equal, `undefined` will be returned.  If
- * `POD_NAMESPACE` is not set, an `Error` is thrown.
- *
- * If the deployment mode is "cluster" or not set and the deployment
- * namespaces array has elements, then then the value of `app.ns` must
- * be in the array for there to be a match.  If the deployment
- * namespaces array is not set or zero length, any value of `app.ns`
- * is considered a match.
- *
- * @param app Kubernetes application options data from SDM goal.
- * @param deploy Kubernetes deployment parameters from command or configuration.
- * @return verified Kubernetes application options if deployment should proceed, `undefined` otherwise.
- */
-export function verifyKubernetesApplicationDeploy(app: KubernetesApplication, params: KubernetesDeployParameters): boolean {
-    const env = params.configuration.environment;
-    if (app.environment !== env) {
-        logger.debug(`Kubernetes application environment '${app.environment}' is not SDM environment '${env}'`);
-        return false;
-    }
-    const namespaces: string[] = (params.configuration.sdm && params.configuration.sdm.k8s && params.configuration.sdm.k8s.namespaces) ?
-        params.configuration.sdm.k8s.namespaces : undefined;
-    if (namespaces && !namespaces.includes(app.ns)) {
-        logger.debug(`Kubernetes application namespace '${app.ns}' is not in managed namespaces '${namespaces.join(",")}'`);
         return false;
     }
     return true;

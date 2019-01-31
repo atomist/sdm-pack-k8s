@@ -24,10 +24,7 @@ import {
     GoalInvocation,
     SdmGoalEvent,
 } from "@atomist/sdm";
-import {
-    isInLocalMode,
-    readSdmVersion,
-} from "@atomist/sdm-core";
+import { readSdmVersion } from "@atomist/sdm-core";
 import * as k8s from "@kubernetes/client-node";
 import * as dockerfileParser from "docker-file-parser";
 import * as stringify from "json-stringify-safe";
@@ -35,7 +32,6 @@ import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
 import { defaultNamespace } from "../kubernetes/namespace";
 import { KubernetesApplication } from "../kubernetes/request";
-import { defaultEnvironment } from "./environment";
 import {
     goalEventSlug,
     KubernetesDeploy,
@@ -139,9 +135,9 @@ export function getKubernetesGoalEventData(goalEvent: SdmGoalEvent): KubernetesA
  * "deployment", "service", "ingress", "role", "service-account", and
  * "role-binding".
  *
- * It also uses [[defaultEnvironment]], [[defaultImage]],
- * [[dockerPort]], and [[defaultIngress]] to further populated default
- * property values from information in the repository and event.
+ * It also uses [[defaultImage]] and [[dockerPort]] to further
+ * populated default property values from information in the
+ * repository and event.
  *
  * Any values obtained from the repository/project/event/goal override
  * those in the SDM configuration `k8s` property.
@@ -162,12 +158,10 @@ export async function defaultKubernetesApplication(
     const configAppData: Partial<KubernetesApplication> = _.get(k8Deploy, "sdm.configuration.sdm.k8s.app", {});
 
     const workspaceId = context.workspaceId;
-    const environment = defaultEnvironment(goalEvent, k8Deploy);
     const name = goalEvent.repo.name;
-    const ns = configAppData.ns || environment || defaultNamespace;
+    const ns = configAppData.ns || defaultNamespace;
     const image = await defaultImage(goalEvent, k8Deploy, context);
     const port = await dockerPort(p);
-    const appIngress = (port) ? await defaultIngress(goalEvent, k8Deploy, ns) : undefined;
 
     const deploymentSpec: DeepPartial<k8s.V1Deployment> = await loadKubernetesSpec(p, "deployment");
     const serviceSpec: DeepPartial<k8s.V1Service> = await loadKubernetesSpec(p, "service");
@@ -177,9 +171,7 @@ export async function defaultKubernetesApplication(
     const roleBindingSpec: DeepPartial<k8s.V1RoleBinding> = await loadKubernetesSpec(p, "role-binding");
 
     const repoAppData: KubernetesApplication = {
-        ...appIngress,
         workspaceId,
-        environment,
         name,
         ns,
         image,
@@ -262,7 +254,7 @@ export async function dockerPort(p: Project): Promise<number | undefined> {
 function dockerImageNameComponent(name: string, hubOwner: boolean = false): string {
     const cleanName = name.toLocaleLowerCase().replace(/^[^a-z0-9]+/, "").replace(/[^a-z0-9]+$/, "").replace(/[^-_/.a-z0-9]+/g, "");
     if (hubOwner) {
-        return cleanName.replace(/[^a-z0-9]+/, "");
+        return cleanName.replace(/[^a-z0-9]+/g, "");
     } else {
         return cleanName;
     }
@@ -282,7 +274,7 @@ function dockerImageNameComponent(name: string, hubOwner: boolean = false): stri
  * @param goalEvent SDM Kubernetes deployment goal event
  * @param k8Deploy Kubernetes deployment goal object
  * @param context Handler context
- * @return best value for the environment property
+ * @return Docker image associated with goal push after commit, or best guess
  */
 export async function defaultImage(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeploy, context: HandlerContext): Promise<string> {
     if (goalEvent.push && goalEvent.push.after && goalEvent.push.after.images && goalEvent.push.after.images.length > 0) {
@@ -305,25 +297,4 @@ export async function defaultImage(goalEvent: SdmGoalEvent, k8Deploy: Kubernetes
         const hubOwner = dockerImageNameComponent(goalEvent.repo.owner, true);
         return `${hubOwner}/${dockerName}:${tag}`;
     }
-}
-
-/**
- * Provide reasonable ingress-related configuration defaults for SDM
- * local mode.  If not in local mode, it returns `undefined`.
- *
- * @param goalEvent SDM Kubernetes deployment goal event
- * @param k8Deploy Kubernetes deployment goal object
- * @return best value for the environment property
- */
-export async function defaultIngress(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeploy, ns: string): Promise<Partial<KubernetesApplication>> {
-    if (!isInLocalMode()) {
-        return undefined;
-    }
-    const env = defaultEnvironment(goalEvent, k8Deploy);
-    const slug = goalEventSlug(goalEvent);
-    const path = `/${env}/${ns}/${slug}`;
-    return {
-        protocol: "http",
-        path,
-    };
 }

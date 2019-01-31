@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+import { SdmGoalEvent } from "@atomist/sdm";
 import * as assert from "power-assert";
-import { endpointBaseUrl } from "../../lib/kubernetes/endpoint";
+import {
+    appExternalUrls,
+    endpointBaseUrl,
+} from "../../lib/deploy/externalUrls";
 import { KubernetesApplication } from "../../lib/kubernetes/request";
 
 describe("kubernetes/endpoint", () => {
@@ -25,7 +29,6 @@ describe("kubernetes/endpoint", () => {
         it("should return undefined", async () => {
             const r: KubernetesApplication = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -38,7 +41,6 @@ describe("kubernetes/endpoint", () => {
         it("should return the host and path", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -55,7 +57,6 @@ describe("kubernetes/endpoint", () => {
         it("should return http protocol with no tlsSecret", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -71,7 +72,6 @@ describe("kubernetes/endpoint", () => {
         it("should return https protocol with tslSecret", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -88,7 +88,6 @@ describe("kubernetes/endpoint", () => {
         it("should not add / to path that already has it", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -105,7 +104,6 @@ describe("kubernetes/endpoint", () => {
         it("should prepend / to path that is missing it", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -127,7 +125,6 @@ describe("kubernetes/endpoint", () => {
             process.env.ATOMIST_MODE = "local";
             const r: KubernetesApplication = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -150,7 +147,6 @@ describe("kubernetes/endpoint", () => {
             process.env.ATOMIST_MODE = "local";
             const r: KubernetesApplication = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -174,7 +170,6 @@ describe("kubernetes/endpoint", () => {
             process.env.ATOMIST_MODE = "local";
             const r: KubernetesApplication = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -189,6 +184,146 @@ describe("kubernetes/endpoint", () => {
                 delete process.env.ATOMIST_MODE;
             }
             assert(/^https:\/\/\d+\.\d+\.\d+\.\d+\/bush\/kate\/hounds-of-love\/cloudbusting\/$/.test(u));
+        });
+
+    });
+
+    describe("appExternalUrls", () => {
+
+        it("should return undefined", async () => {
+            const r: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+            };
+            const g: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi",
+                },
+            } as any;
+            const u = await appExternalUrls(r, g);
+            assert(u === undefined);
+        });
+
+        it("should return the host and path", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/bush/kate/hounds-of-love/cloudbusting",
+                host: "emi.com",
+                protocol: "https" as "https",
+            };
+            const g: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi",
+                },
+            } as any;
+            const u = await appExternalUrls(r, g);
+            const e = [{
+                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                url: `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
+            }];
+            assert.deepStrictEqual(u, e);
+        });
+
+        it("should return http protocol with no tlsSecret", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/bush/kate/hounds-of-love/cloudbusting",
+                host: "emi.com",
+            };
+            const g: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi",
+                },
+            } as any;
+            const u = await appExternalUrls(r, g);
+            const e = [{
+                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                url: `http://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
+            }];
+            assert.deepStrictEqual(u, e);
+        });
+
+        it("should return https protocol with tslSecret", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/bush/kate/hounds-of-love/cloudbusting",
+                host: "emi.com",
+                tlsSecret: "wickham",
+            };
+            const g: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi",
+                },
+            } as any;
+            const u = await appExternalUrls(r, g);
+            const e = [{
+                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                url: `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
+            }];
+            assert.deepStrictEqual(u, e);
+        });
+
+        it("should not add / to path that already has it", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/bush/kate/hounds-of-love/cloudbusting/",
+                host: "emi.com",
+                protocol: "https" as "https",
+            };
+            const g: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi",
+                },
+            } as any;
+            const u = await appExternalUrls(r, g);
+            const e = [{
+                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                url: `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
+            }];
+            assert.deepStrictEqual(u, e);
+        });
+
+        it("should prepend / to path that is missing it", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "bush/kate/hounds-of-love/cloudbusting",
+                host: "emi.com",
+                protocol: "https" as "https",
+            };
+            const g: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi",
+                },
+            } as any;
+            const u = await appExternalUrls(r, g);
+            const e = [{
+                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                url: `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
+            }];
+            assert.deepStrictEqual(u, e);
         });
 
     });

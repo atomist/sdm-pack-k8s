@@ -26,12 +26,12 @@ import {
     SdmGoalEvent,
 } from "@atomist/sdm";
 import { upsertApplication } from "../kubernetes/application";
-import { endpointBaseUrl } from "../kubernetes/endpoint";
 import {
     isKubernetesApplication,
     KubernetesApplication,
 } from "../kubernetes/request";
 import { getKubernetesGoalEventData } from "./data";
+import { appExternalUrls } from "./externalUrls";
 
 /**
  * Given an SdmGoalEvent with the appropriate Kubernetes application
@@ -69,17 +69,15 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     }
     const message = `Successfully deployed ${appId} to Kubernetes`;
     llog(message, logger.info, log);
-    const description = `Deployed to Kubernetes environment \`${app.environment}\` and namespace \`${app.ns}\``;
-    const label = `Kubernetes ${app.environment}:${app.ns}`;
-    const endpointUrl = await endpointBaseUrl(app);
-    const externalUrls = (endpointUrl) ? [{ label, url: endpointUrl }] : undefined;
+    const description = `Application *${app.name}* deployed by _${goalEvent.fulfillment.name}_ to namespace \`${app.ns}\``;
+    const externalUrls = await appExternalUrls(app, goalEvent);
     return { code: 0, message, description, externalUrls };
 }
 
 /** Create a descriptive string for a goal event. */
 export function deployAppId(g: SdmGoalEvent, c: HandlerContext, a?: KubernetesApplication): string {
-    const app = (a) ? `:${a.environment}/${a.ns}/${a.name}` : "";
-    return `${c.workspaceId}:${g.repo.owner}/${g.repo.name}:${g.sha}${app}`;
+    const app = (a) ? `/${a.ns}/${a.name}` : "";
+    return `${c.workspaceId}:${g.repo.owner}/${g.repo.name}:${g.sha}:${g.fulfillment.name}${app}`;
 }
 
 /**

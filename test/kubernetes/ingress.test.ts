@@ -30,7 +30,6 @@ describe("kubernetes/ingress", () => {
         it("should create a wildcard ingress spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -47,7 +46,6 @@ describe("kubernetes/ingress", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
@@ -75,7 +73,6 @@ describe("kubernetes/ingress", () => {
         it("should create a host ingress spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -94,7 +91,6 @@ describe("kubernetes/ingress", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                     name: "cloudbusting",
@@ -132,7 +128,6 @@ describe("kubernetes/ingress", () => {
         it("should merge in provided ingress spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
-                environment: "new-wave",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
@@ -169,7 +164,6 @@ describe("kubernetes/ingress", () => {
                         "app.kubernetes.io/managed-by": pv,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
-                        "atomist.com/environment": r.environment,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                     name: "cloudbusting",

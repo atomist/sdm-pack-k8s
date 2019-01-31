@@ -35,7 +35,6 @@ describe("kubernetes/request", () => {
                 name: "elliott",
                 ns: "smith",
                 image: "pictures-of-me:3.46",
-                environment: "portland",
             };
             assert(!isKubernetesApplication(o));
         });
@@ -45,7 +44,6 @@ describe("kubernetes/request", () => {
                 name: "elliott",
                 ns: "smith",
                 image: "pictures-of-me:3.46",
-                environment: "portland",
                 workspaceId: "KRS",
             };
             assert(isKubernetesApplication(o));

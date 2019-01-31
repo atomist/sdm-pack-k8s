@@ -96,7 +96,6 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
  */
 export async function deploymentTemplate(req: KubernetesApplication): Promise<k8s.V1Deployment> {
     const k8ventAnnot = stringify({
-        environment: req.environment,
         webhooks: [`${webhookBaseUrl()}/atomist/kube/teams/${req.workspaceId}`],
     });
     const labels = await applicationLabels(req);

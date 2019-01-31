@@ -61,7 +61,7 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<U
  */
 export async function namespaceTemplate(req: KubernetesApplication): Promise<k8s.V1Namespace> {
     const allLabels = await applicationLabels(req);
-    const retain = ["atomist.com/workspaceId", "atomist.com/environment", "app.kubernetes.io/managed-by"];
+    const retain = ["atomist.com/workspaceId", "app.kubernetes.io/managed-by"];
     const labels = Object.assign({}, ...Object.keys(allLabels).filter(k => retain.includes(k)).map(k => ({ [k]: allLabels[k] })));
     const metadata = metadataTemplate({ labels, name: req.ns });
     // avoid https://github.com/kubernetes-client/javascript/issues/52

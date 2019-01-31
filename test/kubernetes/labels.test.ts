@@ -89,7 +89,6 @@ describe("kubernetes/labels", () => {
 
         it("should return the proper labels", async () => {
             const r = {
-                environment: "new-wave",
                 name: "cloudbusting",
                 workspaceId: "KAT3BU5H",
                 version: "5.1.0",
@@ -101,14 +100,12 @@ describe("kubernetes/labels", () => {
                 "app.kubernetes.io/version": "5.1.0",
                 "app.kubernetes.io/part-of": "cloudbusting",
                 "app.kubernetes.io/managed-by": pv,
-                "atomist.com/environment": "new-wave",
             };
             assert.deepStrictEqual(l, e);
         });
 
         it("should return optional labels", async () => {
             const r = {
-                environment: "new-wave",
                 name: "cloudbusting",
                 workspaceId: "KAT3BU5H",
                 version: "5.1.0",
@@ -122,7 +119,6 @@ describe("kubernetes/labels", () => {
                 "app.kubernetes.io/version": "5.1.0",
                 "app.kubernetes.io/part-of": "cloudbusting",
                 "app.kubernetes.io/managed-by": pv,
-                "atomist.com/environment": "new-wave",
                 "app.kubernetes.io/component": "song",
                 "app.kubernetes.io/instance": "Fifth",
             };
@@ -131,7 +127,6 @@ describe("kubernetes/labels", () => {
 
         it("should return a superset of the match labels", async () => {
             const r = {
-                environment: "new-wave",
                 name: "cloudbusting",
                 workspaceId: "KAT3BU5H",
                 version: "5.1.0",

@@ -18,84 +18,14 @@ import {
     IndependentOfEnvironment,
     ProductionEnvironment,
     ProjectDisposalEnvironment,
-    SdmGoalEvent,
     StagingEnvironment,
 } from "@atomist/sdm";
 import * as assert from "power-assert";
 import {
-    defaultEnvironment,
     getEnvironmentLabel,
 } from "../../lib/deploy/environment";
-import { KubernetesDeploy } from "../../lib/deploy/goal";
 
 describe("deploy/environment", () => {
-
-    describe("defaultEnvironment", () => {
-
-        it("should return the detail environment", () => {
-            const g: SdmGoalEvent = { environment: "messiaen" } as any;
-            const k: KubernetesDeploy = {
-                details: { environment: "goehr" },
-                environment: ProjectDisposalEnvironment,
-                sdm: {
-                    configuration: {
-                        environment: "boulez",
-                    },
-                },
-            } as any;
-            const e = defaultEnvironment(g, k);
-            assert(e === "goehr");
-        });
-
-        it("should return the event environment", () => {
-            const g: SdmGoalEvent = { environment: "messiaen" } as any;
-            const k: KubernetesDeploy = {
-                environment: ProjectDisposalEnvironment,
-                sdm: {
-                    configuration: {
-                        environment: "boulez",
-                    },
-                },
-            } as any;
-            const e = defaultEnvironment(g, k);
-            assert(e === "messiaen");
-        });
-
-        it("should return the goal environment", () => {
-            const g: SdmGoalEvent = {} as any;
-            const k: KubernetesDeploy = {
-                environment: ProjectDisposalEnvironment,
-                sdm: {
-                    configuration: {
-                        environment: "boulez",
-                    },
-                },
-            } as any;
-            const e = defaultEnvironment(g, k);
-            assert(e === "8-doom/");
-        });
-
-        it("should return the configuration environment", () => {
-            const g: SdmGoalEvent = {} as any;
-            const k: KubernetesDeploy = {
-                sdm: {
-                    configuration: {
-                        environment: "boulez",
-                    },
-                },
-            } as any;
-            const e = defaultEnvironment(g, k);
-            assert(e === "boulez");
-        });
-
-        it("should return undefined if no environment available", () => {
-            const g: SdmGoalEvent = {} as any;
-            const k: KubernetesDeploy = {} as any;
-            const e = defaultEnvironment(g, k);
-            assert(e === undefined);
-        });
-
-    });
 
     describe("getEnvironmentLabel", () => {
 

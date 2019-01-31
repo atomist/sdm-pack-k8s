@@ -17,40 +17,8 @@
 import {
     FulfillableGoalDetails,
     ProductionEnvironment,
-    SdmGoalEvent,
     StagingEnvironment,
 } from "@atomist/sdm";
-import { KubernetesDeploy } from "./goal";
-
-/**
- * Determine the best default value for the environment property for
- * this Kubernetes deployment goal event.  An environment is looked
- * for in the following places, in order:
- *
- *     0.  SDM Kubernetes deployment goal details (`k8Deploy.details.environment`)
- *     1.  SDM Kubernetes deployment goal event (`goalEvent.environment`)
- *     2.  SDM Kubernetes deployment goal (`k8Deploy.environment`)
- *     3.  SDM configuration (`k8Deploy.sdm.configuration.environment`)
- *
- * The first truthy value found is returned.
- *
- * @param goalEvent SDM Kubernetes deployment goal event
- * @param k8Deploy Kubernetes deployment goal object
- * @return best value for the environment property
- */
-export function defaultEnvironment(goalEvent: SdmGoalEvent, k8Deploy: KubernetesDeploy): string | undefined {
-    if (k8Deploy.details && k8Deploy.details.environment) {
-        return k8Deploy.details.environment;
-    } else if (goalEvent.environment) {
-        return goalEvent.environment;
-    } else if (k8Deploy.environment) {
-        return k8Deploy.environment;
-    } else if (k8Deploy.sdm && k8Deploy.sdm.configuration && k8Deploy.sdm.configuration.environment) {
-        return k8Deploy.sdm.configuration.environment;
-    } else {
-        return undefined;
-    }
-}
 
 /**
  * Generate environment label for this Kubernetes deployment goal.  A
