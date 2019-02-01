@@ -291,10 +291,6 @@ export async function defaultImage(goalEvent: SdmGoalEvent, k8Deploy: Kubernetes
     }
     const tag = version.replace(/^[-.]/, "").replace(/[^-.\w]+/, "").substring(0, 128);
     const dockerName = dockerImageNameComponent(goalEvent.repo.name);
-    if (k8Deploy.sdm.configuration.sdm && k8Deploy.sdm.configuration.sdm.docker && k8Deploy.sdm.configuration.sdm.docker.registry) {
-        return `${k8Deploy.sdm.configuration.sdm.docker.registry}/${dockerName}:${tag}`;
-    } else {
-        const hubOwner = dockerImageNameComponent(goalEvent.repo.owner, true);
-        return `${hubOwner}/${dockerName}:${tag}`;
-    }
+    const registry = _.get(k8Deploy, "sdm.configuration.sdm.build.docker.registry", dockerImageNameComponent(goalEvent.repo.owner, true));
+    return `${registry}/${dockerName}:${tag}`;
 }

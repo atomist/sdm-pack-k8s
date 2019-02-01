@@ -108,8 +108,10 @@ describe("deploy/data", () => {
                 sdm: {
                     configuration: {
                         sdm: {
-                            docker: {
-                                registry: "rhett.miller.com",
+                            build: {
+                                docker: {
+                                    registry: "rhett.miller.com",
+                                },
                             },
                         },
                     },
@@ -134,8 +136,10 @@ describe("deploy/data", () => {
                 sdm: {
                     configuration: {
                         sdm: {
-                            docker: {
-                                registry: "rhett.miller.com",
+                            build: {
+                                docker: {
+                                    registry: "rhett.miller.com",
+                                },
                             },
                         },
                     },
@@ -257,8 +261,10 @@ describe("deploy/data", () => {
                     configuration: {
                         environment: "NewYork",
                         sdm: {
-                            docker: {
-                                registry: "lou.reed.com",
+                            build: {
+                                docker: {
+                                    registry: "lou.reed.com",
+                                },
                             },
                             k8s: {
                                 app: {
