@@ -78,7 +78,7 @@ export interface KubernetesDeployRegistration extends FulfillmentRegistration {
  * fulfillment name to the name of that SDM:
  *
  *     const deploy = new KubernetesDeploy()
- *         .with({ fulfillment: otherSdm.name });
+ *         .with({ fulfillment: otherSdm.configuration.name });
  *
  */
 export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {

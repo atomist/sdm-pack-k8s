@@ -75,7 +75,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
                 sdm.addCommand(kubernetesUndeploy);
             }
 
-            sdm.addEvent(kubernetesDeployHandler(sdm.name));
+            sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));
 
             sdm.addStartupListener(minikubeStartupListener);
 
