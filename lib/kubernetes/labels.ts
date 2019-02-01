@@ -72,7 +72,7 @@ export function applicationLabels(req: ApplicationLabelInput): { [key: string]: 
     const labels: { [key: string]: string } = {
         ...matchers,
         "app.kubernetes.io/part-of": req.name,
-        "app.kubernetes.io/managed-by": req.sdmFulfiller,
+        "app.kubernetes.io/managed-by": safeLabelValue(req.sdmFulfiller),
     };
     if (req.component) {
         labels["app.kubernetes.io/component"] = req.component;

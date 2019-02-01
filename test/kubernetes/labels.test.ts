@@ -133,6 +133,24 @@ describe("kubernetes/labels", () => {
             });
         });
 
+        it("should make the fulfiller a valid label value", () => {
+            const r = {
+                name: "cloudbusting",
+                workspaceId: "KAT3BU5H",
+                version: "5.1.0",
+                sdmFulfiller: "@emi/Wickham-Farm::Welling,England_",
+            };
+            const l = applicationLabels(r);
+            const e = {
+                "app.kubernetes.io/name": "cloudbusting",
+                "atomist.com/workspaceId": "KAT3BU5H",
+                "app.kubernetes.io/version": "5.1.0",
+                "app.kubernetes.io/part-of": "cloudbusting",
+                "app.kubernetes.io/managed-by": "emi_Wickham-Farm_Welling_England",
+            };
+            assert.deepStrictEqual(l, e);
+        });
+
     });
 
 });
