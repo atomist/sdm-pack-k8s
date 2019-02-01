@@ -16,6 +16,7 @@
 
 import {
     FulfillableGoalDetails,
+    IndependentOfEnvironment,
     ProductionEnvironment,
     StagingEnvironment,
 } from "@atomist/sdm";
@@ -31,15 +32,18 @@ import {
  */
 export function getEnvironmentLabel(details: Pick<FulfillableGoalDetails, "environment">): string {
     if (details.environment) {
+        const geRegExp = /^\d+-(\w+)\/$/;
         // GoalEnvironments are strings, so check if string matches pattern
-        if (/^\d+-\w+\/$/.test(details.environment)) {
+        if (geRegExp.test(details.environment)) {
             switch (details.environment) {
                 case StagingEnvironment:
                     return " to `testing`";
                 case ProductionEnvironment:
                     return " to `production`";
+                case IndependentOfEnvironment:
+                    return " independent of environment";
                 default:
-                    return "";
+                    return details.environment.replace(geRegExp, " to `$1`");
             }
         } else {
             return ` to \`${details.environment}\``;

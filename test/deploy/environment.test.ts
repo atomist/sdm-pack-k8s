@@ -47,16 +47,22 @@ describe("deploy/environment", () => {
             assert(l === " to `testing`");
         });
 
-        it("should return nothing for independent", () => {
+        it("should return indedpendent for independent", () => {
             const d = { environment: IndependentOfEnvironment };
             const l = getEnvironmentLabel(d);
-            assert(l === "");
+            assert(l === " independent of environment");
         });
 
-        it("should return nothing for doom", () => {
+        it("should return doom for doom", () => {
             const d = { environment: ProjectDisposalEnvironment };
             const l = getEnvironmentLabel(d);
-            assert(l === "");
+            assert(l === " to `doom`");
+        });
+
+        it("should return lieven for 8-lieven/", () => {
+            const d = { environment: "8-lieven/" };
+            const l = getEnvironmentLabel(d);
+            assert(l === " to `lieven`");
         });
 
     });
