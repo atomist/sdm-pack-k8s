@@ -57,7 +57,7 @@ import { KubernetesDeployRequestedSdmGoal } from "../typings/types";
 export class KubernetesDeployParameters {
     /**
      * Make the entire SDM configuration available to this event
-     * handler.  The specific prooperties used are:
+     * handler.  The specific properties used are:
      *
      * `name`: Name of this SDM.  Only requested SDM Kubernetes
      * deployment goals whose side-effect fulfillment name match this

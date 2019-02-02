@@ -360,7 +360,7 @@ describe("deploy/data", () => {
                 ns: "default",
                 image: "loureed/new-york:latest",
             };
-            assert.deepStrictEqual(gd["sdm-pack-k8s"], exp);
+            assert.deepStrictEqual(gd["@atomist/sdm-pack-k8s"], exp);
         });
 
         it("should return goal when data is guff", async () => {
@@ -407,7 +407,7 @@ describe("deploy/data", () => {
                 ns: "default",
                 image: "loureed/new-york:latest",
             };
-            assert.deepStrictEqual(gd["sdm-pack-k8s"], exp);
+            assert.deepStrictEqual(gd["@atomist/sdm-pack-k8s"], exp);
         });
 
         it("should merge all provided data properly", async () => {
@@ -427,7 +427,7 @@ describe("deploy/data", () => {
                     branch: "rock",
                     data: JSON.stringify({
                         "Xmas": "in February",
-                        "sdm-pack-k8s": {
+                        "@atomist/sdm-pack-k8s": {
                             host: "sick.of.you",
                             path: "/hold/on",
                             replicas: 14,
@@ -549,7 +549,7 @@ describe("deploy/data", () => {
                     ],
                 },
             };
-            assert.deepStrictEqual(gd["sdm-pack-k8s"], exp);
+            assert.deepStrictEqual(gd["@atomist/sdm-pack-k8s"], exp);
         });
 
     });
@@ -580,7 +580,7 @@ describe("deploy/data", () => {
 
         it("should return application data", () => {
             const g: SdmGoalEvent = {
-                data: `{"sdm-pack-k8s":{"name":"nowhere-man","ns":"rubber-soul","workspaceId":"EM15TUD105"}}`,
+                data: `{"@atomist/sdm-pack-k8s":{"name":"nowhere-man","ns":"rubber-soul","workspaceId":"EM15TUD105"}}`,
             } as any;
             const k = getKubernetesGoalEventData(g);
             const e = {

@@ -44,7 +44,7 @@ import { loadKubernetesSpec } from "./spec";
  * [[KubernetesDeployment]] goal [[KubernetesApplication]] data are
  * stored, i.e., the value of `goal.data[sdmPackK8s]`.
  */
-export const sdmPackK8s = "sdm-pack-k8s";
+export const sdmPackK8s = "@atomist/sdm-pack-k8s";
 
 /**
  * Generate KubernetesApplication from project and goal invocation.
@@ -114,9 +114,6 @@ export function getKubernetesGoalEventData(goalEvent: SdmGoalEvent): KubernetesA
         logger.error(e.message);
         throw e;
     }
-    if (!data[sdmPackK8s]) {
-        return undefined;
-    }
     return data[sdmPackK8s];
 }
 
@@ -184,7 +181,7 @@ export async function defaultKubernetesApplication(
         roleBindingSpec,
     };
 
-    return _.merge(configAppData, repoAppData);
+    return _.merge({}, configAppData, repoAppData);
 }
 
 /**
