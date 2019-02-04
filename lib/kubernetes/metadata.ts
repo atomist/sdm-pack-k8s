@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2018 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-export {
-    KubernetesDeploy,
-    KubernetesDeployRegistration,
-} from "./lib/deploy/goal";
-export {
-    SdmPackK8sOptions,
-    k8sSupport,
-} from "./lib/k8s";
-export {
-    KubernetesApplication,
-    KubernetesDelete,
-} from "./lib/kubernetes/request";
-export {
-    encodeSecret,
-} from "./lib/kubernetes/secret";
+import * as k8s from "@kubernetes/client-node";
+import { DeepPartial } from "ts-essentials";
+
+/**
+ * Workaround for all properties erroneously being required in
+ * TypeScript class definitions
+ * https://github.com/kubernetes-client/javascript/issues/52 when in
+ * reality everything is optional in the metadata, even, somehow, the
+ * name.
+ */
+export function metadataTemplate(partial: DeepPartial<k8s.V1ObjectMeta> = {}): k8s.V1ObjectMeta {
+    return partial as k8s.V1ObjectMeta;
+}

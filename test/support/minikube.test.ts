@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
  */
 
 import * as assert from "power-assert";
-import {
-    processMinikubeDockeEnv,
-} from "../../lib/support/minikube";
+import { processMinikubeDockeEnv } from "../../lib/support/minikube";
 
-describe("minikube", () => {
+describe("support/minikube", () => {
 
     describe("parseMinikubeDockerEnv", () => {
 

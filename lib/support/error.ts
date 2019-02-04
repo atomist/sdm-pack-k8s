@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2019 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,29 @@
  * limitations under the License.
  */
 
+import * as stringify from "json-stringify-safe";
+
 /**
- * Prepend message to (e: Error).message.
+ * Extract message from a variety of error types.  If message is not
+ * found in any of the standard places, safely stringify the error.
  *
- * @param e original Error
- * @param prefix text to prepend to e.message
- * @return e with modified message
+ * @param e Some sort of Error or similar
+ * @return Error message
  */
-export function preErrMsg(e: Error, prefix: string): Error {
-    e.message = `${prefix}: ${e.message}`;
-    return e;
+export function errMsg(e: any): string {
+    if (!e) {
+        return stringify(e);
+    } else if (typeof e === "string") {
+        return e;
+    } else if (Array.isArray(e)) {
+        return stringify(e);
+    } else if (e.message) {
+        return e.message;
+    } else if (e.body && e.body.message) {
+        return e.body.message;
+    } else if (e.response && e.response.body && e.response.body.message) {
+        return e.response.body.message;
+    } else {
+        return stringify(e);
+    }
 }

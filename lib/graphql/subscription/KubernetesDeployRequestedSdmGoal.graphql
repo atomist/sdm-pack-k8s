@@ -1,5 +1,5 @@
-subscription KubeDeployRequestedSdmGoal {
-  SdmGoal(state: [requested]) {
+subscription KubernetesDeployRequestedSdmGoal($fulfillmentName: String!) {
+  SdmGoal(state: [in_process]) {
     uniqueName
     name
     id
@@ -52,8 +52,7 @@ subscription KubeDeployRequestedSdmGoal {
       owner
       providerId
     }
-    fulfillment(name: ["@atomist/k8-automation"], method: ["side-effect"])
-      @required {
+    fulfillment(name: [$fulfillmentName]) @required {
       method
       name
     }
