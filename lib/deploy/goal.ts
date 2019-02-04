@@ -22,10 +22,10 @@ import {
     ExecuteGoalResult,
     FulfillableGoalDetails,
     FulfillableGoalWithRegistrations,
-    FulfillmentRegistration,
     getGoalDefinitionFrom,
     Goal,
     GoalInvocation,
+    PushTest,
     SdmGoalEvent,
     SdmGoalState,
     SoftwareDeliveryMachine,
@@ -52,7 +52,7 @@ export type ApplicationDataCallback =
  * Registration object to pass to KubernetesDeployment goal to
  * configure how deployment works.
  */
-export interface KubernetesDeployRegistration extends FulfillmentRegistration {
+export interface KubernetesDeployRegistration {
     /**
      * Allows the user of this pack to modify the default application
      * data before execution of deployment.
@@ -63,10 +63,13 @@ export interface KubernetesDeployRegistration extends FulfillmentRegistration {
      * deployment goals.  If set, its value defines the name of the
      * SDM that will fulfill the goal.  In this case, there should be
      * another SDM running whose name, i.e., its name as defined in
-     * its registration/package.json, is the same as the value of
-     * fulfillment.
+     * its registration/package.json, is the same as this name.
      */
-    fulfillment?: string;
+    name?: string;
+    /**
+     * Optional push test for this goal implementation.
+     */
+    pushTest?: PushTest;
 }
 
 /**
@@ -78,7 +81,7 @@ export interface KubernetesDeployRegistration extends FulfillmentRegistration {
  * fulfillment name to the name of that SDM:
  *
  *     const deploy = new KubernetesDeploy()
- *         .with({ fulfillment: otherSdm.configuration.name });
+ *         .with({ name: otherSdm.configuration.name });
  *
  */
 export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {
@@ -103,7 +106,7 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
      */
     public with(registration: KubernetesDeployRegistration): this {
         this.addFulfillment({
-            name: registration.fulfillment || this.sdm.configuration.name,
+            name: registration.name || this.sdm.configuration.name,
             goalExecutor: initiateKubernetesDeploy(this, registration),
             pushTest: registration.pushTest,
         });
@@ -115,16 +118,16 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
      * Called by the SDM on initialization.  This function calls
      * `super.register` and adds a startup listener to the SDM.
      *
-     * The startup listener adds a default fulfillment deployment that
+     * The startup listener registers a default goal fulfillment that
      * adds itself as fulfiller of its deployment requests if this
-     * goal has no fulfillment or callbacks at startup.
+     * goal has no fulfillments or callbacks at startup.
      */
     public register(sdm: SoftwareDeliveryMachine): void {
         super.register(sdm);
 
         sdm.addStartupListener(async () => {
             if (this.fulfillments.length === 0 && this.callbacks.length === 0) {
-                this.with({ name: "default-" + this.name, pushTest: AnyPush });
+                this.with({ pushTest: AnyPush });
             }
         });
     }

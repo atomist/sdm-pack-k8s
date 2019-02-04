@@ -60,8 +60,8 @@ export class KubernetesDeployParameters {
      * handler.  The specific properties used are:
      *
      * `name`: Name of this SDM.  Only requested SDM Kubernetes
-     * deployment goals whose side-effect fulfillment name match this
-     * name are deployed by this SDM.
+     * deployment goals whose fulfillment name match this name are
+     * deployed by this SDM.
      *
      * `sdm.logFactory`: Used to generate a log sink to send progress
      * logs to.
