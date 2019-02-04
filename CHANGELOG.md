@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 -   Consolidate deploy execution.
 -   Update dependencies. [#23](https://github.com/atomist/sdm-pack-k8/pull/23)
+-   Migrate to sdm-pack-k8s. [#28](https://github.com/atomist/sdm-pack-k8s/issues/28)
 
 ## [1.0.1](https://github.com/atomist/sdm-pack-k8/compare/1.0.0-RC.2...1.0.1) - 2018-11-09
 
@@ -83,8 +84,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -   Update to latest API.
 
 ## [0.1.0](https://github.com/atomist/sdm-pack-k8/tree/0.1.0) - 2018-06-25
-
-Initial release
 
 ### Added
 
