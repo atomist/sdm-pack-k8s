@@ -29,7 +29,6 @@ import { metadataTemplate } from "./metadata";
 import {
     appName,
     KubernetesApplication,
-    KubernetesDelete,
     KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
     KubernetesSdm,
@@ -81,32 +80,22 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
 export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promise<void> {
     const slug = appName(req);
     let secrets: k8s.V1SecretList;
+    const matchers = matchLabels(req);
+    const labelSelector = Object.keys(matchers).map(l => `${l}=${matchers[l]}`).join(",");
     try {
-        const listResp = await Promise.resolve(req.clients.core.listNamespacedSecret(req.ns));
+        const listResp = await Promise.resolve(req.clients.core.listNamespacedSecret(req.ns, undefined, undefined,
+            undefined, undefined, labelSelector));
         secrets = listResp.body;
     } catch (e) {
         logger.debug(`Failed to list secrets in namespace ${req.ns}, not deleting secrets for ${slug}: ${errMsg(e)}`);
         return;
     }
-    const appSecrets = applicationSecrets(req, secrets.items);
-    for (const secret of appSecrets) {
+    for (const secret of secrets.items) {
         const secretName = `${req.ns}/${secret.metadata.name}`;
         await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns),
             `delete secret ${secretName}`);
     }
     return;
-}
-
-/**
- * Given an array of all the secrets in a namespace, return the list
- * associated with the application described in `req`.
- *
- * @param secrets array of all secrets in a namespace
- * @return array of secrets associated with the application in `req`
- */
-export function applicationSecrets(req: KubernetesDelete, secrets: k8s.V1Secret[]): k8s.V1Secret[] {
-    const matchers = matchLabels(req);
-    return secrets.filter(s => s.metadata.labels && Object.keys(matchers).every(l => s.metadata.labels[l] === matchers[l]));
 }
 
 /**
