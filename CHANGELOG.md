@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.1.0...HEAD)
 
+### Changed
+
+-   List secrets using labelSelector. [#29](https://github.com/atomist/sdm-pack-k8s/issues/29)
+
 ## [1.1.0](https://github.com/atomist/sdm-pack-k8s/compare/1.0.1...1.1.0) - 2019-02-06
 
 ### Added
