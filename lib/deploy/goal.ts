@@ -155,10 +155,10 @@ function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDe
 }
 
 /**
- * If in SDM team mode, this goal executor that generates and stores
- * the Kubernetes application data for deploying an application to
+ * If in SDM team mode, this goal executor generates and stores the
+ * Kubernetes application data for deploying an application to
  * Kubernetes.  It returns the augmented SdmGoalEvent with the
- * Kubernetes application informatikon in the `data` property and the
+ * Kubernetes application information in the `data` property and the
  * state of the SdmGoalEvent set to "in_process".  The actual
  * deployment is done by the [[kubernetesDeployHandler]] event
  * handler.
