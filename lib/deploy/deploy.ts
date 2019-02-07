@@ -44,7 +44,7 @@ import { appExternalUrls } from "./externalUrls";
  * @return Goal success or failure, with endpoint URL(s) on success if
  *         ingress properties are set
  */
-export async function deployApplication(goalEvent: SdmGoalEvent, context: HandlerContext, log?: ProgressLog): Promise<ExecuteGoalResult> {
+export async function deployApplication(goalEvent: SdmGoalEvent, context: HandlerContext, log: ProgressLog): Promise<ExecuteGoalResult> {
 
     let appId = deployAppId(goalEvent, context);
     llog(`Processing ${appId}`, logger.debug, log);
