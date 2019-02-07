@@ -59,7 +59,7 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
         const secretName = `${req.ns}/${secret.metadata.name}`;
         const spec = await secretTemplate(req, secret);
         try {
-            await Promise.resolve(req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns));
+            await req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
             return logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),

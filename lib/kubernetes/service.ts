@@ -57,7 +57,7 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
     }
     const spec = await serviceTemplate(req);
     try {
-        await Promise.resolve(req.clients.core.readNamespacedService(req.name, req.ns));
+        await req.clients.core.readNamespacedService(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
         logger.debug(`Creating service ${slug} using '${stringify(spec)}'`);
@@ -77,7 +77,7 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
 export async function deleteService(req: KubernetesDeleteResourceRequest): Promise<void> {
     const slug = appName(req);
     try {
-        await Promise.resolve(req.clients.core.readNamespacedService(req.name, req.ns));
+        await req.clients.core.readNamespacedService(req.name, req.ns);
     } catch (e) {
         logger.debug(`Service ${slug} does not exist: ${errMsg(e)}`);
         return;

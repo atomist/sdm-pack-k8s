@@ -93,7 +93,7 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
 
     let roleBindingExists = false;
     try {
-        await Promise.resolve(req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns));
+        await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
         roleBindingExists = true;
     } catch (e) {
         logger.debug(`Role binding ${slug} does not exist: ${errMsg(e)}`);
@@ -109,7 +109,7 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
 
     let serviceAccountExists = false;
     try {
-        await Promise.resolve(req.clients.core.readNamespacedServiceAccount(req.name, req.ns));
+        await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
         serviceAccountExists = true;
     } catch (e) {
         logger.debug(`Service account ${slug} does not exist: ${errMsg(e)}`);
@@ -125,7 +125,7 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
 
     let roleExists = false;
     try {
-        await Promise.resolve(req.clients.rbac.readNamespacedRole(req.name, req.ns));
+        await req.clients.rbac.readNamespacedRole(req.name, req.ns);
         roleExists = true;
     } catch (e) {
         logger.debug(`Role ${slug} does not exist: ${errMsg(e)}`);
@@ -158,7 +158,7 @@ async function upsertServiceAccount(req: KubernetesResourceRequest): Promise<Ups
     const slug = appName(req);
     const spec = await serviceAccountTemplate(req);
     try {
-        await Promise.resolve(req.clients.core.readNamespacedServiceAccount(req.name, req.ns));
+        await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read service account ${slug}, creating: ${errMsg(e)}`);
         return logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, spec),
@@ -180,7 +180,7 @@ async function upsertRole(req: KubernetesResourceRequest): Promise<UpsertRoleRes
     if (req.roleSpec.kind === "ClusterRole") {
         const spec = await clusterRoleTemplate(req);
         try {
-            await Promise.resolve(req.clients.rbac.readClusterRole(req.name));
+            await req.clients.rbac.readClusterRole(req.name);
         } catch (e) {
             logger.debug(`Failed to read cluster role ${slug}, creating: ${errMsg(e)}`);
             logger.debug(`Creating cluster role ${slug} using '${stringify(spec)}'`);
@@ -191,7 +191,7 @@ async function upsertRole(req: KubernetesResourceRequest): Promise<UpsertRoleRes
     } else {
         const spec = await roleTemplate(req);
         try {
-            await Promise.resolve(req.clients.rbac.readNamespacedRole(req.name, req.ns));
+            await req.clients.rbac.readNamespacedRole(req.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read role ${slug}, creating: ${errMsg(e)}`);
             return logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, spec), `create role ${slug}`);
@@ -212,7 +212,7 @@ async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<Upsert
     if (req.roleSpec.kind === "ClusterRole") {
         const spec = await clusterRoleBindingTemplate(req);
         try {
-            await Promise.resolve(req.clients.rbac.readClusterRoleBinding(req.name));
+            await req.clients.rbac.readClusterRoleBinding(req.name);
         } catch (e) {
             logger.debug(`Failed to read cluster role binding ${slug}, creating: ${errMsg(e)}`);
             return logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
@@ -224,7 +224,7 @@ async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<Upsert
     } else {
         const spec = await roleBindingTemplate(req);
         try {
-            await Promise.resolve(req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns));
+            await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read role binding ${slug}, creating: ${errMsg(e)}`);
             return logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),

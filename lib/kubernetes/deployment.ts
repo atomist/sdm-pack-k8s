@@ -55,7 +55,7 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
     const slug = appName(req);
     const spec = await deploymentTemplate(req);
     try {
-        await Promise.resolve(req.clients.apps.readNamespacedDeployment(req.name, req.ns));
+        await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read deployment ${slug}, creating: ${errMsg(e)}`);
         logger.debug(`Creating deployment ${slug} using '${stringify(spec)}'`);
@@ -76,7 +76,7 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
 export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Promise<void> {
     const slug = appName(req);
     try {
-        await Promise.resolve(req.clients.apps.readNamespacedDeployment(req.name, req.ns));
+        await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
     } catch (e) {
         logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
         return;
