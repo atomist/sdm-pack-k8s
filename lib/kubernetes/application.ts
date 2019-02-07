@@ -50,7 +50,7 @@ import {
  * Kubernetes cluster if it does not exist.
  *
  * @param app Kubernetes application creation request
- * @param sdmFullillter The registered name of the SDM fulfilling the deployment goal.
+ * @param sdmFulfiller The registered name of the SDM fulfilling the deployment goal.
  */
 export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<void> {
     let config: k8s.KubeConfig;
