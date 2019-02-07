@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.2.0...HEAD)
 
+### Changed
+
+-   Shorten description and endpoint labels. [#30](https://github.com/atomist/sdm-pack-k8s/issues/30)
+
 ### Fixed
 
 -   Fix missing progress log. [035b414](https://github.com/atomist/sdm-pack-k8s/commit/035b4145bf6ac3758f36e1cbf67306e95860be93), [b284bcd](https://github.com/atomist/sdm-pack-k8s/commit/b284bcd228f171b3854fe9c2b7401a1f4e03873b)
