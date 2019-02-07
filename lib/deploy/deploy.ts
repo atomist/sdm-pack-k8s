@@ -69,8 +69,7 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     }
     const message = `Successfully deployed ${appId} to Kubernetes`;
     llog(message, logger.info, log);
-    const env = goalEvent.fulfillment.name.replace(/@[^\/]*\//, "").replace(/.*?_/, "");
-    const description = `Deployed \`${app.ns}:${app.name}\` to \`${env}\``;
+    const description = deployDescription(app, goalEvent);
     const externalUrls = await appExternalUrls(app, goalEvent);
     return { code: 0, message, description, externalUrls };
 }
@@ -101,4 +100,20 @@ export function llog(message: string, ll: LeveledLogMethod, log: ProgressLog): v
 function logAndFailDeploy(message: string, log?: ProgressLog): HandlerResult {
     llog(message, logger.error, log);
     return { code: 1, message };
+}
+
+/**
+ * Create goal description for a deployed application containing the
+ * Kubernetes cluster, namespace, and application name.  The cluster
+ * name is parsed from the goal fulfillment name, stripping any NPM
+ * scope and everything before the first underscore, `_`, if they
+ * exist.
+ *
+ * @param app Application deployed to Kubernetes.
+ * @param goalEvent SDM goal event that triggered the deployment.
+ * @return Description of deployment.
+ */
+export function deployDescription(app: KubernetesApplication, goalEvent: SdmGoalEvent): string {
+    const cluster = goalEvent.fulfillment.name.replace(/^@[^\/]*\//, "").replace(/^.*?_/, "");
+    return `Deployed \`${cluster}:${app.ns}/${app.name}\``;
 }
