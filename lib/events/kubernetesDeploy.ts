@@ -118,7 +118,7 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
 
             const updateParams: UpdateSdmGoalParams = {
                 state: (result.code) ? SdmGoalState.failure : SdmGoalState.success,
-                description: result.description,
+                description: result.description || result.message || undefined,
                 error: (result.code) ? new Error(result.message) : undefined,
                 externalUrls: result.externalUrls,
             };
