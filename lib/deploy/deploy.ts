@@ -44,7 +44,7 @@ import { appExternalUrls } from "./externalUrls";
  * @return Goal success or failure, with endpoint URL(s) on success if
  *         ingress properties are set
  */
-export async function deployApplication(goalEvent: SdmGoalEvent, context: HandlerContext, log?: ProgressLog): Promise<ExecuteGoalResult> {
+export async function deployApplication(goalEvent: SdmGoalEvent, context: HandlerContext, log: ProgressLog): Promise<ExecuteGoalResult> {
 
     let appId = deployAppId(goalEvent, context);
     llog(`Processing ${appId}`, logger.debug, log);
@@ -69,7 +69,8 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     }
     const message = `Successfully deployed ${appId} to Kubernetes`;
     llog(message, logger.info, log);
-    const description = `Deployed \`${app.ns}:${app.name}\``;
+    const env = goalEvent.fulfillment.name.replace(/@[^\/]*/, "").replace(/.*?_/, "");
+    const description = `Deployed \`${app.ns}:${app.name}\` to \`${env}\``;
     const externalUrls = await appExternalUrls(app, goalEvent);
     return { code: 0, message, description, externalUrls };
 }
