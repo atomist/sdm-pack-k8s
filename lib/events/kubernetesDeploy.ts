@@ -39,7 +39,6 @@ import {
     WriteToAllProgressLog,
 } from "@atomist/sdm";
 import * as stringify from "json-stringify-safe";
-import * as _ from "lodash";
 import { getKubernetesGoalEventData } from "../deploy/data";
 import {
     deployAppId,
@@ -115,7 +114,7 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
         const appId = deployAppId(goalEvent, context, app);
 
         try {
-            const result = await deployApplication(goalEvent, context);
+            const result = await deployApplication(goalEvent, context, progressLog);
 
             const updateParams: UpdateSdmGoalParams = {
                 state: (result.code) ? SdmGoalState.failure : SdmGoalState.success,
