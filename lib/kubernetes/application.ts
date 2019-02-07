@@ -17,7 +17,6 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
-import * as _ from "lodash";
 import { makeApiClients } from "./clients";
 import { loadKubeConfig } from "./config";
 import {
@@ -58,7 +57,7 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
     try {
         config = loadKubeConfig();
     } catch (e) {
-        e.message(`Failed to load Kubernetes config to deploy ${app.ns}/${app.name}: ${e.message}`);
+        e.message = `Failed to load Kubernetes config to deploy ${app.ns}/${app.name}: ${e.message}`;
         logger.error(e.message);
         throw e;
     }
