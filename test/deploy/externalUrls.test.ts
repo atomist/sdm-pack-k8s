@@ -225,7 +225,7 @@ describe("kubernetes/endpoint", () => {
             } as any;
             const u = await appExternalUrls(r, g);
             const e = [{
-                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                label: "k8s https",
                 url: `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
             }];
             assert.deepStrictEqual(u, e);
@@ -248,7 +248,7 @@ describe("kubernetes/endpoint", () => {
             } as any;
             const u = await appExternalUrls(r, g);
             const e = [{
-                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                label: "k8s http",
                 url: `http://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
             }];
             assert.deepStrictEqual(u, e);
@@ -272,7 +272,7 @@ describe("kubernetes/endpoint", () => {
             } as any;
             const u = await appExternalUrls(r, g);
             const e = [{
-                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                label: "k8s https",
                 url: `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
             }];
             assert.deepStrictEqual(u, e);
@@ -296,7 +296,7 @@ describe("kubernetes/endpoint", () => {
             } as any;
             const u = await appExternalUrls(r, g);
             const e = [{
-                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                label: "k8s https",
                 url: `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
             }];
             assert.deepStrictEqual(u, e);
@@ -320,7 +320,7 @@ describe("kubernetes/endpoint", () => {
             } as any;
             const u = await appExternalUrls(r, g);
             const e = [{
-                label: "Kubernetes emi/hounds-of-love/cloudbusting",
+                label: "k8s https",
                 url: `https://emi.com/bush/kate/hounds-of-love/cloudbusting/`,
             }];
             assert.deepStrictEqual(u, e);
