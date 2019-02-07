@@ -29,9 +29,12 @@ export type ExternalUrls = Array<{ label?: string, url: string }>;
  * there is no externally accessible endpoint.
  */
 export async function appExternalUrls(ka: KubernetesApplication, ge: SdmGoalEvent): Promise<ExternalUrls | undefined> {
-    const label = `Kubernetes ${ge.fulfillment.name}/${ka.ns}/${ka.name}`;
     const url = await endpointBaseUrl(ka);
-    return (url) ? [{ label, url }] : undefined;
+    if (!url) {
+        return undefined;
+    }
+    const label = `k8s ${url.split(":")[0]}`;
+    return [{ label, url }];
 }
 
 /**

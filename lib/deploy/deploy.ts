@@ -69,7 +69,7 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     }
     const message = `Successfully deployed ${appId} to Kubernetes`;
     llog(message, logger.info, log);
-    const description = `Application *${app.name}* deployed by _${goalEvent.fulfillment.name}_ to namespace \`${app.ns}\``;
+    const description = `Deployed \`${app.ns}:${app.name}\``;
     const externalUrls = await appExternalUrls(app, goalEvent);
     return { code: 0, message, description, externalUrls };
 }
