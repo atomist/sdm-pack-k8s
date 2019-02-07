@@ -33,7 +33,7 @@ export async function appExternalUrls(ka: KubernetesApplication, ge: SdmGoalEven
     if (!url) {
         return undefined;
     }
-    const label = `k8s ${url.split(":")[0]}`;
+    const label = url.split(":")[0];
     return [{ label, url }];
 }
 
