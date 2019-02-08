@@ -31,9 +31,9 @@ import { kubeConfigContext } from "../kubernetes/config";
  */
 export const minikubeStartupListener: StartupListener = async context => {
     if (!isInLocalMode()) {
-        logger.debug(`Not in local mode, not executing minikube startup listener`);
         return;
     }
+    logger.debug(`Executing minikube startup listener`);
 
     if (process.env.DOCKER_HOST) {
         logger.info(`Using provided Docker environment variables: DOCKER_HOST=${process.env.DOCKER_HOST}`);
