@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.3.1](https://github.com/atomist/sdm-pack-k8s/compare/1.3.0...1.3.1) - 2019-02-08
 
+### Changed
+
+-   Update @kubernetes/client-node. [c719735](https://github.com/atomist/sdm-pack-k8s/commit/c719735a548628771f8d0f57b10d8b85c14e5117)
+-   Remove "k8s" from external URL label. [1560c8b](https://github.com/atomist/sdm-pack-k8s/commit/1560c8bd6a62e8ccc6baba5344bf0e74cabdfdd9)
+-   Only log minikube startup listener when it runs. [69da1e9](https://github.com/atomist/sdm-pack-k8s/commit/69da1e92c314c283126c74f5ca4d3030aefaefd1)
+
 ## [1.3.0](https://github.com/atomist/sdm-pack-k8s/compare/1.2.0...1.3.0) - 2019-02-07
 
 ### Changed
