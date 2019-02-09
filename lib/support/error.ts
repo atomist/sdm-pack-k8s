@@ -37,6 +37,19 @@ export function errMsg(e: any): string {
     } else if (e.response && e.response.body && e.response.body.message) {
         return e.response.body.message;
     } else {
-        return stringify(e);
+        return stringify(e, keyFilter);
     }
+}
+
+/** Omit possibly secret values from stringified object. */
+function keyFilter<T>(key: string, value: T): T | string | undefined {
+    if (/secret|token|password|jwt|url|secret|auth|key|cert|pass|user/i.test(key)) {
+        if (typeof value === "string") {
+            const masked = (value.length < 16) ? "*".repeat(value.length) :
+                value.charAt(0) + "*".repeat(value.length - 2) + value.charAt(value.length - 1);
+            return masked;
+        }
+        return undefined;
+    }
+    return value;
 }

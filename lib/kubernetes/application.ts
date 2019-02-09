@@ -137,14 +137,16 @@ export async function deleteApplication(del: KubernetesDelete): Promise<void> {
 }
 
 /** Stringify filter for a Kubernetes request object. */
-function reqFilter<T>(k: string, v: T): T | undefined {
-    if (k === "config" || k === "clients") {
+export function reqFilter<T>(k: string, v: T): T | undefined {
+    if (k === "config" || k === "clients" || k === "secrets") {
+        return undefined;
+    } else if (typeof v === "string" && v === "[Circular ~]") {
         return undefined;
     }
     return v;
 }
 
 /** Stringify a Kubernetes request object. */
-function reqString(req: any): string {
+export function reqString(req: any): string {
     return stringify(req, reqFilter);
 }

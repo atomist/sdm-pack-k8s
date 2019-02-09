@@ -125,8 +125,7 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
             try {
                 await updateGoal(context, goalEvent, updateParams);
             } catch (e) {
-                const msg = `Failed to update SDM goal '${stringify(goalEvent)}' with params ` +
-                    `'${stringify(updateParams)}': ${e.message}`;
+                const msg = `Failed to update SDM goal ${goalEventString(goalEvent)} with params '${stringify(updateParams)}': ${e.message}`;
                 llog(msg, logger.error, progressLog);
                 result.message = `${e.message}; ${msg}`;
             }
@@ -171,7 +170,7 @@ export function kubernetesDeployHandler(self: string)
  */
 export async function eligibleDeployGoal(goalEvent: SdmGoalEvent, params: KubernetesDeployParameters): Promise<boolean> {
     if (!goalEvent.fulfillment) {
-        logger.debug(`SDM goal contains no fulfillment: ${stringify(goalEvent)}`);
+        logger.debug(`SDM goal contains no fulfillment: ${goalEventString(goalEvent)}`);
         return false;
     }
     if (goalEvent.state !== SdmGoalState.in_process) {
@@ -205,9 +204,14 @@ async function failGoal(context: HandlerContext, goalEvent: SdmGoalEvent, messag
     try {
         await updateGoal(context, goalEvent, params);
     } catch (e) {
-        const msg = `Failed to update SDM goal '${stringify(goalEvent)}' with params '${stringify(params)}': ${e.message}`;
+        const msg = `Failed to update SDM goal '${goalEventString(goalEvent)}' with params '${stringify(params)}': ${e.message}`;
         llog(msg, logger.error, log);
         return { code: 2, message: `${message}; ${msg}` };
     }
     return { code: 1, message };
+}
+
+/** Unique string for goal event. */
+function goalEventString(goalEvent: SdmGoalEvent): string {
+    return `${goalEvent.goalSetId}/${goalEvent.uniqueName}`;
 }
