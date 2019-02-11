@@ -16,10 +16,122 @@
 
 import { SdmGoalEvent } from "@atomist/sdm";
 import * as assert from "power-assert";
-import { deployDescription } from "../../lib/deploy/deploy";
+import {
+    deployDescription,
+    destination,
+} from "../../lib/deploy/deploy";
 import { KubernetesApplication } from "../../lib/kubernetes/request";
 
 describe("kubernetes/deploy", () => {
+
+    describe("deployDescription", () => {
+
+        it("should return a proper destination", () => {
+            const a: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+            };
+            const e: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi",
+                },
+            } as any;
+            const d = destination(e, a);
+            assert(d === "emi:hounds-of-love/cloudbusting");
+        });
+
+        it("should remove package scope", () => {
+            const a: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+            };
+            const e: SdmGoalEvent = {
+                fulfillment: {
+                    name: "@wickham/emi",
+                },
+            } as any;
+            const d = destination(e, a);
+            assert(d === "emi:hounds-of-love/cloudbusting");
+        });
+
+        it("should remove package", () => {
+            const a: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+            };
+            const e: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi_windmill-lane",
+                },
+            } as any;
+            const d = destination(e, a);
+            assert(d === "windmill-lane:hounds-of-love/cloudbusting");
+        });
+
+        it("should remove package with scope", () => {
+            const a: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+            };
+            const e: SdmGoalEvent = {
+                fulfillment: {
+                    name: "@wickham/emi_windmill-lane",
+                },
+            } as any;
+            const d = destination(e, a);
+            assert(d === "windmill-lane:hounds-of-love/cloudbusting");
+        });
+
+        it("should remove text before first underscore", () => {
+            const a: KubernetesApplication = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+            };
+            const e: SdmGoalEvent = {
+                fulfillment: {
+                    name: "@wickham/emi_windmill_lane",
+                },
+            } as any;
+            const d = destination(e, a);
+            assert(d === "windmill_lane:hounds-of-love/cloudbusting");
+        });
+
+        it("should ignore missing application", () => {
+            const e: SdmGoalEvent = {
+                fulfillment: {
+                    name: "emi",
+                },
+            } as any;
+            const d = destination(e);
+            assert(d === "emi");
+        });
+
+        it("should parse fulfillment and ignore missing application", () => {
+            const e: SdmGoalEvent = {
+                fulfillment: {
+                    name: "@wickham/emi_windmill_lane",
+                },
+            } as any;
+            const d = destination(e);
+            assert(d === "windmill_lane");
+        });
+
+    });
 
     describe("deployDescription", () => {
 
@@ -36,7 +148,7 @@ describe("kubernetes/deploy", () => {
                     name: "emi",
                 },
             } as any;
-            const d = deployDescription(a, e);
+            const d = deployDescription(e, a);
             assert(d === "Deployed `emi:hounds-of-love/cloudbusting`");
         });
 
@@ -53,7 +165,7 @@ describe("kubernetes/deploy", () => {
                     name: "@wickham/emi",
                 },
             } as any;
-            const d = deployDescription(a, e);
+            const d = deployDescription(e, a);
             assert(d === "Deployed `emi:hounds-of-love/cloudbusting`");
         });
 
@@ -70,7 +182,7 @@ describe("kubernetes/deploy", () => {
                     name: "emi_windmill-lane",
                 },
             } as any;
-            const d = deployDescription(a, e);
+            const d = deployDescription(e, a);
             assert(d === "Deployed `windmill-lane:hounds-of-love/cloudbusting`");
         });
 
@@ -87,7 +199,7 @@ describe("kubernetes/deploy", () => {
                     name: "@wickham/emi_windmill-lane",
                 },
             } as any;
-            const d = deployDescription(a, e);
+            const d = deployDescription(e, a);
             assert(d === "Deployed `windmill-lane:hounds-of-love/cloudbusting`");
         });
 
@@ -104,7 +216,7 @@ describe("kubernetes/deploy", () => {
                     name: "@wickham/emi_windmill_lane",
                 },
             } as any;
-            const d = deployDescription(a, e);
+            const d = deployDescription(e, a);
             assert(d === "Deployed `windmill_lane:hounds-of-love/cloudbusting`");
         });
 
