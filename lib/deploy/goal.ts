@@ -31,10 +31,11 @@ import {
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
+import * as _ from "lodash";
 import { KubernetesApplication } from "../kubernetes/request";
+import { getClusterLabel } from "./cluster";
 import { generateKubernetesGoalEventData } from "./data";
 import { deployApplication } from "./deploy";
-import { getEnvironmentLabel } from "./environment";
 
 /** Return repository slug for SDM goal event. */
 export function goalEventSlug(goalEvent: SdmGoalEvent): string {
@@ -96,20 +97,20 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
      * @param dependsOn Other goals that must complete successfully before scheduling this goal.
      */
     constructor(details?: FulfillableGoalDetails, ...dependsOn: Goal[]) {
-        const deets = defaultDetails(details);
-        super(getGoalDefinitionFrom(deets, DefaultGoalNameGenerator.generateName("kubernetes-deploy")), ...dependsOn);
-        this.details = deets;
+        super(getGoalDefinitionFrom(details, DefaultGoalNameGenerator.generateName("kubernetes-deploy")), ...dependsOn);
     }
 
     /**
      * Register a deployment with the initiator fulfillment.
      */
     public with(registration: KubernetesDeployRegistration): this {
+        const fulfillment = registration.name || this.sdm.configuration.name;
         this.addFulfillment({
-            name: registration.name || this.sdm.configuration.name,
+            name: fulfillment,
             goalExecutor: initiateKubernetesDeploy(this, registration),
             pushTest: registration.pushTest,
         });
+        this.populateDefinition(fulfillment);
 
         return this;
     }
@@ -131,27 +132,34 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
             }
         });
     }
-}
 
-/**
- * Provide reasonable defaults for the various goal descriptions.
- */
-function defaultDetails(details: FulfillableGoalDetails = {}): FulfillableGoalDetails {
-    const envLabel = getEnvironmentLabel(details);
-    if (!details.displayName) {
-        details.displayName = `deploy${envLabel}`;
+    /**
+     * Set the goal definition "displayName" property and populate the
+     * various goal definition descriptions with reasonable defaults.
+     * Other than "displayName", if any stage definition is already
+     * populated, it is not changed.
+     *
+     * @param fulfillment Name of fulfillment, typically the cluster-scoped name of k8s-sdm
+     */
+    private populateDefinition(fulfillment: string): this {
+        const clusterLabel = getClusterLabel(this.details.environment || this.environment, fulfillment);
+        this.definition.displayName = `deploy${clusterLabel}`;
+        const defaultDefinitions = {
+            canceledDescription: `Canceled ${this.definition.displayName}`,
+            completedDescription: `Deployed${clusterLabel}`,
+            failedDescription: `Deployment${clusterLabel} failed`,
+            plannedDescription: `Planned ${this.definition.displayName}`,
+            requestedDescription: `Requested ${this.definition.displayName}`,
+            skippedDescription: `Skipped ${this.definition.displayName}`,
+            stoppedDescription: `Stopped ${this.definition.displayName}`,
+            waitingForApprovalDescription: `Successfully deployed${clusterLabel}`,
+            waitingForPreApprovalDescription: `Deploy${clusterLabel} pending approval`,
+            workingDescription: `Deploying${clusterLabel}`,
+        };
+        _.defaultsDeep(this.definition, defaultDefinitions);
+        return this;
     }
-    details.descriptions = details.descriptions || {};
-    if (!details.descriptions.completed) {
-        details.descriptions.completed = `Deployed${envLabel}`;
-    }
-    if (!details.descriptions.failed) {
-        details.descriptions.failed = `Deployment${envLabel} failed`;
-    }
-    if (!details.descriptions.waitingForApproval) {
-        details.descriptions.waitingForApproval = `Successfully deployed${envLabel}`;
-    }
-    return details;
+
 }
 
 /**
