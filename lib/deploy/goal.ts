@@ -24,6 +24,7 @@ import {
     FulfillableGoalWithRegistrations,
     getGoalDefinitionFrom,
     Goal,
+    GoalDefinition,
     GoalInvocation,
     PushTest,
     SdmGoalEvent,
@@ -102,13 +103,12 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
      */
     public with(registration: KubernetesDeployRegistration): this {
         const fulfillment = registration.name || this.sdm.configuration.name;
-
         this.addFulfillment({
             name: fulfillment,
             goalExecutor: initiateKubernetesDeploy(this, registration),
             pushTest: registration.pushTest,
         });
-        this.populateDefinition(fulfillment);
+        this.updateGoalName(fulfillment);
 
         return this;
     }
@@ -132,25 +132,26 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
     }
 
     /**
-     * Set the goal definition "displayName" property and populate the
-     * various goal definition descriptions with reasonable defaults.
-     * Other than "displayName", if any stage definition is already
-     * populated, it is not changed.
+     * Set the goal "name" and goal definition "displayName".  If any
+     * goal definition description is not set, populate it with a
+     * reasonable default.
      *
      * @param fulfillment Name of fulfillment, typically the cluster-scoped name of k8s-sdm
+     * @return object
      */
-    private populateDefinition(fulfillment: string): this {
+    private updateGoalName(fulfillment: string): this {
         const env = (this.details && this.details.environment) ? this.details.environment : this.environment;
         const clusterLabel = getClusterLabel(env, fulfillment);
-        this.definition.displayName = `deploy${clusterLabel}`;
-        const defaultDefinitions = {
-            canceledDescription: `Canceled ${this.definition.displayName}`,
+        const goalName = `deploy${clusterLabel}`;
+        this.definition.displayName = goalName;
+        const defaultDefinitions: Partial<GoalDefinition> = {
+            canceledDescription: `Canceled ${goalName}`,
             completedDescription: `Deployed${clusterLabel}`,
             failedDescription: `Deployment${clusterLabel} failed`,
-            plannedDescription: `Planned ${this.definition.displayName}`,
-            requestedDescription: `Requested ${this.definition.displayName}`,
-            skippedDescription: `Skipped ${this.definition.displayName}`,
-            stoppedDescription: `Stopped ${this.definition.displayName}`,
+            plannedDescription: `Planned ${goalName}`,
+            requestedDescription: `Requested ${goalName}`,
+            skippedDescription: `Skipped ${goalName}`,
+            stoppedDescription: `Stopped ${goalName}`,
             waitingForApprovalDescription: `Successfully deployed${clusterLabel}`,
             waitingForPreApprovalDescription: `Deploy${clusterLabel} pending approval`,
             workingDescription: `Deploying${clusterLabel}`,
