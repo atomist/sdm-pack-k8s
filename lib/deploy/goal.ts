@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { GitProject } from "@atomist/automation-client";
+import { GitProject, logger } from "@atomist/automation-client";
 import {
     AnyPush,
     DefaultGoalNameGenerator,
@@ -31,6 +31,7 @@ import {
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
+import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { KubernetesApplication } from "../kubernetes/request";
 import { getClusterLabel } from "./cluster";
@@ -154,6 +155,8 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
             waitingForPreApprovalDescription: `Deploy${clusterLabel} pending approval`,
             workingDescription: `Deploying${clusterLabel}`,
         };
+        logger.debug(`populateDefinition:definition:${stringify(this.definition)}`);
+        logger.debug(`populateDefinition:defaultDefinitions:${stringify(defaultDefinitions)}`);
         _.defaultsDeep(this.definition, defaultDefinitions);
         return this;
     }
