@@ -87,16 +87,13 @@ export interface KubernetesDeployRegistration {
  */
 export class KubernetesDeploy extends FulfillableGoalWithRegistrations<KubernetesDeployRegistration> {
 
-    /** Standard SDM FulfillableGoalDetails. */
-    public readonly details: FulfillableGoalDetails;
-
     /**
      * Create a KubernetesDeploy object.
      *
      * @param details Define unique aspects of this Kubernetes deployment, see [[KubernetesDeploy.details]].
      * @param dependsOn Other goals that must complete successfully before scheduling this goal.
      */
-    constructor(details?: FulfillableGoalDetails, ...dependsOn: Goal[]) {
+    constructor(public readonly details?: FulfillableGoalDetails, ...dependsOn: Goal[]) {
         super(getGoalDefinitionFrom(details, DefaultGoalNameGenerator.generateName("kubernetes-deploy")), ...dependsOn);
     }
 
@@ -142,7 +139,8 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
      * @param fulfillment Name of fulfillment, typically the cluster-scoped name of k8s-sdm
      */
     private populateDefinition(fulfillment: string): this {
-        const clusterLabel = getClusterLabel(this.details.environment || this.environment, fulfillment);
+        const env = (this.details && this.details.environment) ? this.details.environment : this.environment;
+        const clusterLabel = getClusterLabel(env, fulfillment);
         this.definition.displayName = `deploy${clusterLabel}`;
         const defaultDefinitions = {
             canceledDescription: `Canceled ${this.definition.displayName}`,
