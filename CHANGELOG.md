@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 -   Improve goal description prior to deployment. [#32](https://github.com/atomist/sdm-pack-k8s/issues/32)
+-   Provide simple description for failure. [#35](https://github.com/atomist/sdm-pack-k8s/issues/35)
 
 ## [1.3.2](https://github.com/atomist/sdm-pack-k8s/compare/1.3.1...1.3.2) - 2019-02-09
 
