@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { GitProject, logger } from "@atomist/automation-client";
+import {
+    GitProject,
+    logger,
+} from "@atomist/automation-client";
 import {
     AnyPush,
     DefaultGoalNameGenerator,
