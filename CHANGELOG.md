@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.3.3...HEAD)
 
+### Fixed
+
+-   Fix goal details instance variable. [82168e1](https://github.com/atomist/sdm-pack-k8s/commit/82168e1d9c5ffcdd109234eda86f557131825471)
+
 ## [1.3.3](https://github.com/atomist/sdm-pack-k8s/compare/1.3.2...1.3.3) - 2019-02-12
 
 ### Changed
