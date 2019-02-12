@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-    GitProject,
-    logger,
-} from "@atomist/automation-client";
+import { GitProject } from "@atomist/automation-client";
 import {
     AnyPush,
     DefaultGoalNameGenerator,
@@ -158,8 +155,10 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
             waitingForPreApprovalDescription: `Deploy${clusterLabel} pending approval`,
             workingDescription: `Deploying${clusterLabel}`,
         };
-        logger.debug(`populateDefinition:definition:${stringify(this.definition)}`);
-        logger.debug(`populateDefinition:defaultDefinitions:${stringify(defaultDefinitions)}`);
+        /* tslint:disable:no-console */
+        console.log(`populateDefinition:definition:${stringify(this.definition)}`);
+        console.log(`populateDefinition:defaultDefinitions:${stringify(defaultDefinitions)}`);
+        /* tslint:enable:no-console */
         _.defaultsDeep(this.definition, defaultDefinitions);
         return this;
     }
