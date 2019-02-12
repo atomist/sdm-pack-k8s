@@ -26,12 +26,12 @@ import {
  * before the first underscore, `_`, if they exist.
  *
  * If there is no fulfillment, the cluster name derived from the goal
- * environment.  An environment of `StagingEnvironment`,
- * `ProductionEnvironment`, or `IndependentOfEnvironment` is mapped to
- * an appropriate string. Any other goal environment is simplified to
- * the name of the environment.  If the environment is not truthy or
- * is a different `GoalEnvironment`, an empty string is returned.
- * Otherwise the `environment` is returned unchanged.
+ * environment.  An environment of `StagingEnvironment` or
+ * `ProductionEnvironment` is mapped to an appropriate string.  Any
+ * other goal environment is simplified to the name of the
+ * environment.  If the environment is not truthy an empty string is
+ * returned.  Otherwise the `environment` string is returned
+ * unchanged.
  *
  * @param environment FulfillableGoalDetails.environment
  * @param fulfillment GoalFulfillment.name
@@ -39,7 +39,7 @@ import {
  */
 export function getCluster(environment: string, fulfillment?: string): string {
     if (fulfillment) {
-        return fulfillment.replace(/^@[^\/]*\//, "").replace(/^.*?_/, "");
+        return fulfillment.replace(/^@.*?\//, "").replace(/^.*?_/, "");
     } else if (environment) {
         const geRegExp = /^\d+-(\w+)\/$/;
         // GoalEnvironments are strings, so check if string matches pattern
@@ -61,7 +61,7 @@ export function getCluster(environment: string, fulfillment?: string): string {
 }
 
 /**
- * Generate the tail of a goal label using [[getCluster]] to determing
+ * Generate the tail of a goal label using [[getCluster]] to determine
  * an appropriate deployment target.
  *
  * @param environment FulfillableGoalDetails.environment

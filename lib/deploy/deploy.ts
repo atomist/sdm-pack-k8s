@@ -29,6 +29,7 @@ import {
     isKubernetesApplication,
     KubernetesApplication,
 } from "../kubernetes/request";
+import { getCluster } from "./cluster";
 import { getKubernetesGoalEventData } from "./data";
 import { appExternalUrls } from "./externalUrls";
 
@@ -47,16 +48,18 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
 
     let appId = deployAppId(goalEvent, context);
     llog(`Processing ${appId}`, logger.debug, log);
+    let dest = destination(goalEvent);
 
     let app: KubernetesApplication;
     try {
         app = getKubernetesGoalEventData(goalEvent);
     } catch (e) {
-        return logAndFailDeploy(`No valid goal event data found for ${appId}: ${e.message}`, log, goalEvent);
+        return logAndFailDeploy(`No valid goal event data found for ${appId}: ${e.message}`, log, dest);
     }
+    dest = destination(goalEvent, app);
 
     if (!isKubernetesApplication(app)) {
-        return logAndFailDeploy(`No valid Kubernetes goal event data found for ${appId}`, log, goalEvent, app);
+        return logAndFailDeploy(`No valid Kubernetes goal event data found for ${appId}`, log, dest);
     }
     appId = deployAppId(goalEvent, context, app);
 
@@ -64,11 +67,11 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     try {
         await upsertApplication(app, goalEvent.fulfillment.name);
     } catch (e) {
-        return logAndFailDeploy(`Failed to deploy ${appId} to Kubernetes: ${e.message}`, log, goalEvent, app);
+        return logAndFailDeploy(`Failed to deploy ${appId} to Kubernetes: ${e.message}`, log, dest);
     }
     const message = `Successfully deployed ${appId} to Kubernetes`;
     llog(message, logger.info, log);
-    const description = deployDescription(goalEvent, app);
+    const description = `Deployed \`${dest}\``;
     const externalUrls = await appExternalUrls(app, goalEvent);
     return { code: 0, description, externalUrls, message };
 }
@@ -80,9 +83,9 @@ export function deployAppId(g: SdmGoalEvent, c: HandlerContext, a?: KubernetesAp
 }
 
 /**
- * Log to a specific log level method and optionally a progress log.
+ * Log to a specific log level method and a progress log.
  *
- * @param ll Levelled log method like `logger.debug()`
+ * @param ll Levelled log method like `logger.debug`
  * @param log goal progress log
  */
 export function llog(message: string, ll: LeveledLogMethod, log: ProgressLog): void {
@@ -94,37 +97,25 @@ export function llog(message: string, ll: LeveledLogMethod, log: ProgressLog): v
  * Log and return failure.
  *
  * @param message informative error message
- * @return a failure handler result using the provided error message
+ * @return an ExecuteGoalResult indicating a failed deploy using the provided error message
  */
-function logAndFailDeploy(message: string, log: ProgressLog, goalEvent: SdmGoalEvent, app?: KubernetesApplication): ExecuteGoalResult {
+function logAndFailDeploy(message: string, log: ProgressLog, dest: string): ExecuteGoalResult {
     llog(message, logger.error, log);
-    const dest = destination(goalEvent, app);
     const description = `Deploy \`${dest}\` failed`;
     return { code: 1, description, message };
 }
 
 /**
- * Create identifying deployment destination from fulillment name,
- * application namespace, and application name.
+ * Create identifying deployment destination from goal environment and
+ * fulillment name using [[getCluster]], application namespace, and
+ * application name.
+ *
+ * @param goalEvent SDM goal event to generate desitnation for
+ * @param app Kubernetes application object
+ * @return The cluster name, application namespace, and application name
  */
 export function destination(goalEvent: SdmGoalEvent, app?: KubernetesApplication): string {
-    const cluster = goalEvent.fulfillment.name.replace(/^@[^\/]*\//, "").replace(/^.*?_/, "");
+    const cluster = getCluster(goalEvent.environment, goalEvent.fulfillment.name);
     const nsName = (app) ? `:${app.ns}/${app.name}` : "";
     return `${cluster}${nsName}`;
-}
-
-/**
- * Create goal description for a deployed application containing the
- * Kubernetes cluster, namespace, and application name.  The cluster
- * name is parsed from the goal fulfillment name, stripping any NPM
- * scope and everything before the first underscore, `_`, if they
- * exist.
- *
- * @param app Application deployed to Kubernetes.
- * @param goalEvent SDM goal event that triggered the deployment.
- * @return Description of deployment.
- */
-export function deployDescription(goalEvent: SdmGoalEvent, app: KubernetesApplication): string {
-    const dest = destination(goalEvent, app);
-    return `Deployed \`${dest}\``;
 }

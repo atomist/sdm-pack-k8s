@@ -51,6 +51,20 @@ describe("deploy/cluster", () => {
             assert(l === "motor-away");
         });
 
+        it("should only match up to the first /", () => {
+            const e = "messiaen";
+            const f = "@gbv/alien-lanes_motor/away";
+            const l = getCluster(e, f);
+            assert(l === "motor/away");
+        });
+
+        it("should not remove leading @ if no /", () => {
+            const e = "messiaen";
+            const f = "@gbv-alien-lanes-motor-away";
+            const l = getCluster(e, f);
+            assert(l === f);
+        });
+
         it("should handle an environment string", () => {
             const e = "messiaen";
             const l = getCluster(e);
