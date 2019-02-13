@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.3.5](https://github.com/atomist/sdm-pack-k8s/compare/1.3.4...1.3.5) - 2019-02-13
 
+### Fixed
+
+-   Fix goal descriptions. [426965a](https://github.com/atomist/sdm-pack-k8s/commit/426965a768f0bbfe152bdba871ea1145d3adad1f)
+
 ## [1.3.4](https://github.com/atomist/sdm-pack-k8s/compare/1.3.3...1.3.4) - 2019-02-12
 
 ### Fixed
