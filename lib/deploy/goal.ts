@@ -24,6 +24,7 @@ import {
     FulfillableGoalWithRegistrations,
     getGoalDefinitionFrom,
     Goal,
+    GoalDefinition,
     GoalInvocation,
     PushTest,
     SdmGoalEvent,
@@ -143,7 +144,7 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
         const env = (this.details && this.details.environment) ? this.details.environment : this.environment;
         const clusterLabel = getClusterLabel(env, fulfillment);
         this.definition.displayName = `deploy${clusterLabel}`;
-        const defaultDefinitions = {
+        const defaultDefinitions: Partial<GoalDefinition> = {
             canceledDescription: `Canceled ${this.definition.displayName}`,
             completedDescription: `Deployed${clusterLabel}`,
             failedDescription: `Deployment${clusterLabel} failed`,
@@ -156,10 +157,10 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
             workingDescription: `Deploying${clusterLabel}`,
         };
         /* tslint:disable:no-console */
-        console.log(`populateDefinition:definition:${stringify(this.definition)}`);
-        console.log(`populateDefinition:defaultDefinitions:${stringify(defaultDefinitions)}`);
-        /* tslint:enable:no-console */
+        console.log(`populateDefinition:before:definition:${stringify(this.definition)}`);
         _.defaultsDeep(this.definition, defaultDefinitions);
+        console.log(`populateDefinition:after:definition:${stringify(this.definition)}`);
+        /* tslint:enable:no-console */
         return this;
     }
 
