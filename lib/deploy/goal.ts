@@ -142,6 +142,8 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
         const env = (this.details && this.details.environment) ? this.details.environment : this.environment;
         const clusterLabel = getClusterLabel(env, fulfillment);
         this.definition.displayName = `deploy${clusterLabel}`;
+        // Set the goal name directly
+        (this.definition as any).name = `deploy${clusterLabel}`;
         const defaultDefinitions = {
             canceledDescription: `Canceled ${this.definition.displayName}`,
             completedDescription: `Deployed${clusterLabel}`,
