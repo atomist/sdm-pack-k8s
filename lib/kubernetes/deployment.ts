@@ -22,14 +22,14 @@ import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
-import { errMsg } from "../support/error";
-import { logRetry } from "../support/retry";
+import {DeepPartial} from "ts-essentials";
+import {errMsg} from "../support/error";
+import {logRetry} from "../support/retry";
 import {
     applicationLabels,
     matchLabels,
 } from "./labels";
-import { metadataTemplate } from "./metadata";
+import {metadataTemplate} from "./metadata";
 import {
     appName,
     KubernetesApplication,
@@ -81,9 +81,29 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
         logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
         return;
     }
-    const body: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
+    const body: k8s.V1DeleteOptions = {propagationPolicy: "Background"} as any;
     await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, "", body),
         `delete deployment ${slug}`);
+    return;
+}
+
+export async function rollbackDeployment(req: KubernetesDeleteResourceRequest): Promise<void> {
+    const slug = appName(req);
+    try {
+        await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
+    } catch (e) {
+        logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
+        return;
+    }
+    const body: k8s.ExtensionsV1beta1DeploymentRollback = {
+        apiVersion: "apps/v1beta1",
+        kind: "Rollback",
+        name: req.name,
+        rollbackTo: {revision: 0},
+        updatedAnnotations: null,
+    };
+    await logRetry(() => req.clients.ext.createNamespacedDeploymentRollback(req.name, req.ns, body),
+        `rollback deployment ${slug}`).then(status => logger.info(status.response.statusMessage));
     return;
 }
 
@@ -177,7 +197,7 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
         d.spec.template.spec.containers[0].livenessProbe = probe;
     }
     if (req.imagePullSecret) {
-        d.spec.template.spec.imagePullSecrets = [{ name: req.imagePullSecret }];
+        d.spec.template.spec.imagePullSecrets = [{name: req.imagePullSecret}];
     }
     if (req.roleSpec) {
         d.spec.template.spec.serviceAccountName = _.get(req, "serviceAccountSpec.metadata.name", req.name);

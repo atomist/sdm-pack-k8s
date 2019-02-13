@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
+import {logger} from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
-import { makeApiClients } from "./clients";
-import { loadKubeConfig } from "./config";
+import {makeApiClients} from "./clients";
+import {loadKubeConfig} from "./config";
 import {
-    deleteDeployment,
+    deleteDeployment, rollbackDeployment,
     upsertDeployment,
 } from "./deployment";
 import {
     deleteIngress,
     upsertIngress,
 } from "./ingress";
-import { upsertNamespace } from "./namespace";
+import {upsertNamespace} from "./namespace";
 import {
     deleteRbac,
     upsertRbac,
@@ -62,7 +62,7 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
         throw e;
     }
     const clients = makeApiClients(config);
-    const req = { ...app, sdmFulfiller, clients };
+    const req = {...app, sdmFulfiller, clients};
 
     try {
         await upsertNamespace(req);
@@ -96,7 +96,7 @@ export async function deleteApplication(del: KubernetesDelete): Promise<void> {
         throw e;
     }
     const clients = makeApiClients(config);
-    const req = { ...del, clients };
+    const req = {...del, clients};
 
     const errs: Error[] = [];
     try {
@@ -133,6 +133,26 @@ export async function deleteApplication(del: KubernetesDelete): Promise<void> {
         const msg = `Failed to delete application '${reqString(req)}': ${errs.map(e => e.message).join("; ")}`;
         logger.error(msg);
         throw new Error(msg);
+    }
+}
+
+export async function rollbackApplication(roll: KubernetesDelete): Promise<void> {
+    const slug = `${roll.ns}/${roll.name}`;
+    let config: k8s.KubeConfig;
+    try {
+        config = loadKubeConfig();
+    } catch (e) {
+        e.message(`Failed to load kubernetes config to rollback ${slug}: ${e.message}`);
+    }
+    const clients = makeApiClients(config);
+    const req = {...roll, clients};
+
+    try {
+        await rollbackDeployment(req);
+    } catch (e) {
+        e.message = `Failed to rollback '${reqString(req)}': ${e.message}`;
+        logger.error(e.message);
+        throw e;
     }
 }
 

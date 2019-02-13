@@ -19,6 +19,7 @@ import {
     metadata,
 } from "@atomist/sdm";
 import * as _ from "lodash";
+import {kubernetesRollback} from "./commands/kubernetesRollback";
 import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
 import { minikubeStartupListener } from "./support/minikube";
@@ -73,6 +74,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
 
             if (sdm.configuration.sdm.k8s.options.addCommands) {
                 sdm.addCommand(kubernetesUndeploy);
+                sdm.addCommand(kubernetesRollback);
             }
 
             sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));
