@@ -32,7 +32,6 @@ import {
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
-import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { KubernetesApplication } from "../kubernetes/request";
 import { getClusterLabel } from "./cluster";
@@ -109,7 +108,7 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
             goalExecutor: initiateKubernetesDeploy(this, registration),
             pushTest: registration.pushTest,
         });
-        this.populateDefinition(fulfillment);
+        this.updateGoalName(fulfillment);
 
         return this;
     }
@@ -133,17 +132,19 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
     }
 
     /**
-     * Set the goal definition "displayName" property and populate the
-     * various goal definition descriptions with reasonable defaults.
-     * Other than "displayName", if any stage definition is already
-     * populated, it is not changed.
+     * Set the goal "name" and goal definition "displayName".  If any
+     * goal definition description is not set, populate it with a
+     * reasonable default.
      *
      * @param fulfillment Name of fulfillment, typically the cluster-scoped name of k8s-sdm
+     * @return object
      */
-    private populateDefinition(fulfillment: string): this {
+    private updateGoalName(fulfillment: string): this {
         const env = (this.details && this.details.environment) ? this.details.environment : this.environment;
         const clusterLabel = getClusterLabel(env, fulfillment);
-        this.definition.displayName = `deploy${clusterLabel}`;
+        const name = `deploy${clusterLabel}`;
+        this.definition.displayName = name;
+        (this as any).name = name;
         const defaultDefinitions: Partial<GoalDefinition> = {
             canceledDescription: `Canceled ${this.definition.displayName}`,
             completedDescription: `Deployed${clusterLabel}`,
@@ -156,11 +157,7 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
             waitingForPreApprovalDescription: `Deploy${clusterLabel} pending approval`,
             workingDescription: `Deploying${clusterLabel}`,
         };
-        /* tslint:disable:no-console */
-        console.log(`populateDefinition:before:definition:${stringify(this.definition)}`);
         _.defaultsDeep(this.definition, defaultDefinitions);
-        console.log(`populateDefinition:after:definition:${stringify(this.definition)}`);
-        /* tslint:enable:no-console */
         return this;
     }
 
