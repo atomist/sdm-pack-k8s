@@ -38,6 +38,7 @@ import {
     KubernetesDeployRegistration,
 } from "./goal";
 import { loadKubernetesSpec } from "./spec";
+import { SdmPackK8sConfiguration } from "../k8s";
 
 /**
  * JSON propery under the goal event data where the
@@ -152,7 +153,9 @@ export async function defaultKubernetesApplication(
     context: HandlerContext,
 ): Promise<KubernetesApplication> {
 
-    const configAppData: Partial<KubernetesApplication> = _.get(k8Deploy, "sdm.configuration.sdm.k8s.app", {});
+    const possibleK8sConfiguration = (k8Deploy.sdm.configuration.k8s || {}) as SdmPackK8sConfiguration["k8s"];
+
+    const configAppData = possibleK8sConfiguration.app || {};
 
     const workspaceId = context.workspaceId;
     const name = goalEvent.repo.name;

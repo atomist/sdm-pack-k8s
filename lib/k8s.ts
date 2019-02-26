@@ -1,3 +1,4 @@
+import { SdmPackK8sConfiguration } from './k8s';
 /*
  * Copyright © 2019 Atomist, Inc.
  *
@@ -38,8 +39,8 @@ export interface SdmPackK8sOptions {
 
 export interface SdmPackK8sConfiguration {
     k8s: {
-        app?: KubernetesApplication;
-        options: {
+        app?: Partial<KubernetesApplication>;
+        options?: {
             /**
              * kubeconfig context, only used in local mode presently
              */
@@ -84,7 +85,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
             };
             _.merge(sdm, k8sOptions);
 
-            if (sdm.configuration.sdm.k8s.options.addCommands) {
+            if ((sdm.configuration.sdm.k8s as SdmPackK8sConfiguration["k8s"]).options.addCommands) {
                 sdm.addCommand(kubernetesUndeploy);
             }
 
