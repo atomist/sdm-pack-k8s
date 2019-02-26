@@ -1,4 +1,3 @@
-import { SdmPackK8sConfiguration } from "./k8s.d";
 /*
 * Copyright © 2019 Atomist, Inc.
 *
