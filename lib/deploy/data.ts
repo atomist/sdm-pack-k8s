@@ -1,3 +1,4 @@
+import { SdmPackK8sConfiguration } from './../k8s.d';
 /*
  * Copyright © 2019 Atomist, Inc.
  *
@@ -153,7 +154,9 @@ export async function defaultKubernetesApplication(
     context: HandlerContext,
 ): Promise<KubernetesApplication> {
 
-    const configAppData: Partial<KubernetesApplication> = _.get(k8Deploy, "sdm.configuration.sdm.k8s.app", {});
+    const k8sConfig = (k8Deploy.sdm.configuration.sdm.k8s || {}) as SdmPackK8sConfiguration["k8s"];
+
+    const configAppData: Partial<KubernetesApplication> = k8sConfig.app || {};
 
     const workspaceId = context.workspaceId;
     const name = goalEvent.repo.name;
