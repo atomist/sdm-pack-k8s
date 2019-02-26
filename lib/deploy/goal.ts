@@ -145,13 +145,13 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
         const goalName = `deploy${clusterLabel}`;
         this.definition.displayName = goalName;
         const defaultDefinitions: Partial<GoalDefinition> = {
-            canceledDescription: `Canceled ${goalName}`,
+            canceledDescription: `Canceled: ${goalName}`,
             completedDescription: `Deployed${clusterLabel}`,
             failedDescription: `Deployment${clusterLabel} failed`,
-            plannedDescription: `Planned ${goalName}`,
-            requestedDescription: `Requested ${goalName}`,
-            skippedDescription: `Skipped ${goalName}`,
-            stoppedDescription: `Stopped ${goalName}`,
+            plannedDescription: `Planned: ${goalName}`,
+            requestedDescription: `Requested: ${goalName}`,
+            skippedDescription: `Skipped: ${goalName}`,
+            stoppedDescription: `Stopped: ${goalName}`,
             waitingForApprovalDescription: `Successfully deployed${clusterLabel}`,
             waitingForPreApprovalDescription: `Deploy${clusterLabel} pending approval`,
             workingDescription: `Deploying${clusterLabel}`,
