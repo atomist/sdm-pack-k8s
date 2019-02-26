@@ -74,5 +74,5 @@ export function kubeConfigContext(sdm: SoftwareDeliveryMachine): string | undefi
         k8sConfig.options.context = kc.currentContext;
     }
 
-    return k8sConfig.options.context as string;
+    return k8sConfig.options.context;
 }
