@@ -153,9 +153,7 @@ export async function defaultKubernetesApplication(
     context: HandlerContext,
 ): Promise<KubernetesApplication> {
 
-    const possibleK8sConfiguration = (k8Deploy.sdm.configuration.k8s || {}) as SdmPackK8sConfiguration["k8s"];
-
-    const configAppData = possibleK8sConfiguration.app || {};
+    const configAppData: Partial<KubernetesApplication> = _.get(k8Deploy, "sdm.configuration.sdm.k8s.app", {});
 
     const workspaceId = context.workspaceId;
     const name = goalEvent.repo.name;
