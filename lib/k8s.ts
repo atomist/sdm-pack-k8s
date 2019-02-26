@@ -1,3 +1,4 @@
+import { SdmPackK8sConfiguration } from "./k8s.d";
 /*
 * Copyright © 2019 Atomist, Inc.
 *
@@ -85,7 +86,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
             };
             _.merge(sdm, k8sOptions);
 
-            if (sdm.configuration.sdm.k8s.options.addCommands) {
+            if ((sdm.configuration.sdm as unknown as SdmPackK8sConfiguration).k8s.options.addCommands) {
                 sdm.addCommand(kubernetesUndeploy);
             }
 
