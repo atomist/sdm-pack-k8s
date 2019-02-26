@@ -20,6 +20,7 @@ export {
 } from "./lib/deploy/goal";
 export {
     SdmPackK8sOptions,
+    SdmPackK8sConfiguration,
     k8sSupport,
 } from "./lib/k8s";
 export {

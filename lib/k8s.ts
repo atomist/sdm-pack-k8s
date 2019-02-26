@@ -21,6 +21,7 @@ import {
 import * as _ from "lodash";
 import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
+import { KubernetesApplication } from "./kubernetes/request";
 import { minikubeStartupListener } from "./support/minikube";
 
 /**
@@ -33,6 +34,18 @@ export interface SdmPackK8sOptions {
      * provided, the comand is not added.
      */
     addCommands?: boolean;
+}
+
+export interface SdmPackK8sConfiguration {
+    k8s: {
+        app?: KubernetesApplication;
+        options: {
+            /**
+             * kubeconfig context, only used in local mode presently
+             */
+            context?: string;
+        } & SdmPackK8sOptions;
+    };
 }
 
 /**
