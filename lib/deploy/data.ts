@@ -30,6 +30,7 @@ import * as dockerfileParser from "docker-file-parser";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import { SdmPackK8sConfiguration } from "../k8s";
 import { defaultNamespace } from "../kubernetes/namespace";
 import { KubernetesApplication } from "../kubernetes/request";
 import {
@@ -38,7 +39,6 @@ import {
     KubernetesDeployRegistration,
 } from "./goal";
 import { loadKubernetesSpec } from "./spec";
-import { SdmPackK8sConfiguration } from "../k8s";
 
 /**
  * JSON propery under the goal event data where the
