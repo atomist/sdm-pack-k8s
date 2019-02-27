@@ -30,7 +30,7 @@ import * as dockerfileParser from "docker-file-parser";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
-import { SdmPackK8sConfiguration } from "../k8s";
+import { K8sConfiguration } from "../k8s";
 import { defaultNamespace } from "../kubernetes/namespace";
 import { KubernetesApplication } from "../kubernetes/request";
 import {
@@ -153,7 +153,7 @@ export async function defaultKubernetesApplication(
     context: HandlerContext,
 ): Promise<KubernetesApplication> {
 
-    const k8sConfig = (k8Deploy.sdm.configuration.sdm.k8s || {}) as SdmPackK8sConfiguration["k8s"];
+    const k8sConfig = (k8Deploy.sdm.configuration.sdm.k8s || {}) as K8sConfiguration["k8s"];
 
     const configAppData: Partial<KubernetesApplication> = k8sConfig.app || {};
 

@@ -21,7 +21,6 @@ import {
 import * as _ from "lodash";
 import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
-import { SdmPackK8sConfiguration } from "./k8s";
 import { KubernetesApplication } from "./kubernetes/request";
 import { minikubeStartupListener } from "./support/minikube";
 
@@ -37,10 +36,10 @@ export interface SdmPackK8sOptions {
     addCommands?: boolean;
 }
 
-export interface SdmPackK8sConfiguration {
-    k8s: {
+export interface K8sConfiguration {
+    k8s?: {
         app?: KubernetesApplication;
-        options: {
+        options?: {
             /**
              * kubeconfig context, only used in local mode presently
              */
@@ -85,7 +84,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
             };
             _.merge(sdm, k8sOptions);
 
-            if ((sdm.configuration.sdm as unknown as SdmPackK8sConfiguration).k8s.options.addCommands) {
+            if ((sdm.configuration.sdm as unknown as K8sConfiguration).k8s.options.addCommands) {
                 sdm.addCommand(kubernetesUndeploy);
             }
 

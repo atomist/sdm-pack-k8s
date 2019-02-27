@@ -17,7 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import { SoftwareDeliveryMachine } from "@atomist/sdm";
 import * as k8s from "@kubernetes/client-node";
-import { SdmPackK8sConfiguration } from "../k8s";
+import { K8sConfiguration } from "../k8s";
 
 /**
  * Get Kubernetes configuration.  It first tries to
@@ -62,7 +62,7 @@ export function kubeConfigContext(sdm: SoftwareDeliveryMachine): string | undefi
         throw e;
     }
 
-    const k8sConfig = sdm.configuration.sdm.k8s as SdmPackK8sConfiguration["k8s"];
+    const k8sConfig = sdm.configuration.sdm.k8s as K8sConfiguration["k8s"];
     if (k8sConfig.options.context) {
         if (!kc.contexts.some(c => c.name === k8sConfig.options.context)) {
             const msg = `Kubernetes config context in SDM configuration does not exist in default Kubernetes config`;
