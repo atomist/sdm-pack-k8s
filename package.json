@@ -27,6 +27,7 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "dependencies": {
+    "@atomist/slack-messages": "^1.1.0",
     "@kubernetes/client-node": "^0.8.1",
     "@types/js-yaml": "^3.11.4",
     "@types/json-stringify-safe": "^5.0.0",
@@ -34,6 +35,7 @@
     "@types/node": "^10.12.10",
     "@types/p-retry": "^2.0.0",
     "docker-file-parser": "^1.0.3",
+    "handlebars": "^4.0.13",
     "js-yaml": "^3.12.0",
     "json-stringify-safe": "^5.0.1",
     "lodash": "^4.17.11",

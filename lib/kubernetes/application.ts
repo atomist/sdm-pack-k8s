@@ -20,7 +20,7 @@ import * as stringify from "json-stringify-safe";
 import {makeApiClients} from "./clients";
 import {loadKubeConfig} from "./config";
 import {
-    deleteDeployment, rollbackDeployment,
+    deleteDeployment, kubeImageValidate, rollbackDeployment,
     upsertDeployment,
 } from "./deployment";
 import {
@@ -73,6 +73,37 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
         await upsertIngress(req);
     } catch (e) {
         e.message = `Failed to upsert '${reqString(req)}': ${e.message}`;
+        logger.error(e.message);
+        throw e;
+    }
+}
+
+/**
+ * Validate an application from a kubernetes cluster. If any resource
+ * requested to be validated does not exist, it is logged but no error
+ * is returned.
+ *
+ * @param app
+ */
+export async function validateApplicationImage(app: KubernetesApplication): Promise<void> {
+    let config: k8s.KubeConfig;
+    try {
+        config = loadKubeConfig();
+    } catch (e) {
+        e.message = `Failed to load Kubernetes config to validate ${app.ns}/${app.name}: ${e.message}`;
+        logger.error(e.message);
+        throw e;
+    }
+    const clients = makeApiClients(config);
+    const req = {...app, clients};
+
+    try {
+        if (await kubeImageValidate(req, 120000) === false) {
+            logger.error("validation failed.");
+            // await rollbackApplication({name: app.name, ns: app.ns, workspaceId: app.workspaceId});
+        }
+    } catch (e) {
+        e.message = `Failed to validate '${reqString(req)}': ${e.message}`;
         logger.error(e.message);
         throw e;
     }

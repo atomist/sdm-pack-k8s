@@ -36,7 +36,7 @@ export class KubernetesRollbackParameters {
  * Rollback all resources related to a Kubernetes deployment.
  */
 export const kubernetesRollback: CommandHandlerRegistration<KubernetesRollbackParameters> = {
-    name: "KubernetesRollback",
+    name: "kubernetesRollback",
     intent: "kube rollback",
     description: "rollback all resources related to an application from Kubernetes cluster",
     paramsMaker: KubernetesRollbackParameters,

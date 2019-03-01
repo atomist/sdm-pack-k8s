@@ -15,6 +15,7 @@
  */
 
 import {
+    buttonForCommand, ButtonSpecification,
     HandlerContext,
     LeveledLogMethod,
     logger,
@@ -24,14 +25,15 @@ import {
     ProgressLog,
     SdmGoalEvent,
 } from "@atomist/sdm";
-import { upsertApplication } from "../kubernetes/application";
+import {SlackMessage} from "@atomist/slack-messages";
+import {upsertApplication, validateApplicationImage} from "../kubernetes/application";
 import {
     isKubernetesApplication,
     KubernetesApplication,
 } from "../kubernetes/request";
-import { getCluster } from "./cluster";
-import { getKubernetesGoalEventData } from "./data";
-import { appExternalUrls } from "./externalUrls";
+import {getCluster} from "./cluster";
+import {getKubernetesGoalEventData} from "./data";
+import {appExternalUrls} from "./externalUrls";
 
 /**
  * Given an SdmGoalEvent with the appropriate Kubernetes application
@@ -69,11 +71,39 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     } catch (e) {
         return logAndFailDeploy(`Failed to deploy ${appId} to Kubernetes: ${e.message}`, log, dest);
     }
+    llog(`Validating ${appId} deployment to Kubernetes`, logger.info, log);
+    try {
+        await validateApplicationImage(app);
+        const buttonSpec: ButtonSpecification = {
+            text: "Rollback",
+            confirm: {
+                text: "Do you really want to rollback?",
+                ok_text: "Yes",
+                dismiss_text: "No",
+            },
+        };
+        const msg: SlackMessage = {
+            text: "Rollback Application?",
+            attachments: [
+                {
+                    text: "rollback",
+                    fallback: " rollback application",
+                    callback_id: "callback1",
+                    actions: [
+                        buttonForCommand(buttonSpec, "kube rollback"),
+                    ],
+                },
+            ],
+        };
+        await context.messageClient.addressChannels(msg, goalEvent.push.repo.channels.map(c => c.name));
+    } catch (e) {
+        return logAndFailDeploy(`Failed to validate ${appId} ${e.message}`, log, dest);
+    }
     const message = `Successfully deployed ${appId} to Kubernetes`;
     llog(message, logger.info, log);
     const description = `Deployed \`${dest}\``;
     const externalUrls = await appExternalUrls(app, goalEvent);
-    return { code: 0, description, externalUrls, message };
+    return {code: 0, description, externalUrls, message};
 }
 
 /** Create a descriptive string for a goal event. */
@@ -102,7 +132,7 @@ export function llog(message: string, ll: LeveledLogMethod, log: ProgressLog): v
 function logAndFailDeploy(message: string, log: ProgressLog, dest: string): ExecuteGoalResult {
     llog(message, logger.error, log);
     const description = `Deploy \`${dest}\` failed`;
-    return { code: 1, description, message };
+    return {code: 1, description, message};
 }
 
 /**

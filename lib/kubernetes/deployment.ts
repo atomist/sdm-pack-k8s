@@ -87,6 +87,12 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
     return;
 }
 
+/**
+ * Rollback a deployment if it exists. If the resource does not exist,
+ * do nothing.
+ *
+ * @param req Kubernetes delete request
+ */
 export async function rollbackDeployment(req: KubernetesDeleteResourceRequest): Promise<void> {
     const slug = appName(req);
     try {
@@ -100,11 +106,42 @@ export async function rollbackDeployment(req: KubernetesDeleteResourceRequest): 
         kind: "Rollback",
         name: req.name,
         rollbackTo: {revision: 0},
-        updatedAnnotations: null,
+        updatedAnnotations: undefined,
     };
     await logRetry(() => req.clients.ext.createNamespacedDeploymentRollback(req.name, req.ns, body),
         `rollback deployment ${slug}`).then(status => logger.info(status.response.statusMessage));
     return;
+}
+
+/**
+ * Validate that a deployment has been correctly deployed to k8. If the resource
+ * does not exit, do nothing.
+ *
+ * https://github.com/kubernetes-client/python/issues/571#issuecomment-405890791
+ *
+ * @param req KubernetesDeleteRequest
+ * @param timeout Number in milliseconds
+ */
+export async function kubeImageValidate(req: KubernetesDeleteResourceRequest, timeout: number): Promise<boolean> {
+    const slug = appName(req);
+    try {
+        const start = Date.now();
+
+        while (Date.now() - start < timeout) {
+            const response = await req.clients.apps.readNamespacedDeploymentStatus(req.name, req.ns);
+            const status = response.body.status;
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            if (status.updatedReplicas === response.body.spec.replicas &&
+                status.replicas === response.body.spec.replicas &&
+                status.availableReplicas === response.body.spec.replicas &&
+                status.observedGeneration >= response.body.metadata.generation) {
+                return true;
+            }
+        }
+    } catch (e) {
+        logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
+    }
+    return false;
 }
 
 /**
