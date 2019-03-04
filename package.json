@@ -1,6 +1,6 @@
 {
   "name": "@atomist/sdm-pack-k8s",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "Extension Pack for an Atomist SDM to integrate Kubernetes deployments",
   "author": {
     "name": "Atomist",
@@ -48,9 +48,9 @@
     "@atomist/sdm-core": ">=1.2.0"
   },
   "devDependencies": {
-    "@atomist/automation-client": "1.2.0",
-    "@atomist/sdm": "1.2.0",
-    "@atomist/sdm-core": "1.2.0",
+    "@atomist/automation-client": "1.3.0-master.20190211141235",
+    "@atomist/sdm": "1.3.0-master.20190213170255",
+    "@atomist/sdm-core": "1.3.0-master.20190213143939",
     "@types/mocha": "^5.2.5",
     "@types/power-assert": "^1.4.29",
     "espower-typescript": "^9.0.0",
