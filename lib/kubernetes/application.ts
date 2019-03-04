@@ -85,7 +85,7 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
  *
  * @param app
  */
-export async function validateApplicationImage(app: KubernetesApplication): Promise<void> {
+export async function validateApplicationImage(app: KubernetesApplication): Promise<boolean> {
     let config: k8s.KubeConfig;
     try {
         config = loadKubeConfig();
@@ -100,8 +100,9 @@ export async function validateApplicationImage(app: KubernetesApplication): Prom
     try {
         if (await kubeImageValidate(req, 120000) === false) {
             logger.error("validation failed.");
-            // await rollbackApplication({name: app.name, ns: app.ns, workspaceId: app.workspaceId});
+            return false;
         }
+        return true;
     } catch (e) {
         e.message = `Failed to validate '${reqString(req)}': ${e.message}`;
         logger.error(e.message);
@@ -167,6 +168,13 @@ export async function deleteApplication(del: KubernetesDelete): Promise<void> {
     }
 }
 
+/**
+ * Rollback an application from a kubernetes cluster. If any resource
+ * requested to be rolled back does not exist, it is logged but no
+ * error is returned.
+ *
+ * @param roll delete application request object
+ */
 export async function rollbackApplication(roll: KubernetesDelete): Promise<void> {
     const slug = `${roll.ns}/${roll.name}`;
     let config: k8s.KubeConfig;

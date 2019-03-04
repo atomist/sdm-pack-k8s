@@ -73,29 +73,30 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     }
     llog(`Validating ${appId} deployment to Kubernetes`, logger.info, log);
     try {
-        await validateApplicationImage(app);
-        const buttonSpec: ButtonSpecification = {
-            text: "Rollback",
-            confirm: {
-                text: "Do you really want to rollback?",
-                ok_text: "Yes",
-                dismiss_text: "No",
-            },
-        };
-        const msg: SlackMessage = {
-            text: "Rollback Application?",
-            attachments: [
-                {
-                    text: "rollback",
-                    fallback: " rollback application",
-                    callback_id: "callback1",
-                    actions: [
-                        buttonForCommand(buttonSpec, "kube rollback"),
-                    ],
+        if (await validateApplicationImage(app) === false) {
+            const buttonSpec: ButtonSpecification = {
+                text: "Rollback",
+                confirm: {
+                    text: "Do you really want to rollback?",
+                    ok_text: "Yes",
+                    dismiss_text: "No",
                 },
-            ],
-        };
-        await context.messageClient.addressChannels(msg, goalEvent.push.repo.channels.map(c => c.name));
+            };
+            const msg: SlackMessage = {
+                text: "Rollback Application?",
+                attachments: [
+                    {
+                        text: "rollback",
+                        fallback: " rollback application",
+                        callback_id: "callback1",
+                        actions: [
+                            buttonForCommand(buttonSpec, "kubernetesRollback", {name: app.name, namespace: app.ns}),
+                        ],
+                    },
+                ],
+            };
+            await context.messageClient.addressChannels(msg, goalEvent.push.repo.channels.map(c => c.name));
+        }
     } catch (e) {
         return logAndFailDeploy(`Failed to validate ${appId} ${e.message}`, log, dest);
     }
