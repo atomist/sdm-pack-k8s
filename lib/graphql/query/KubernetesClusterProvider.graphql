@@ -1,0 +1,6 @@
+query KubernetesClusterProvider($name: String!) {
+  KubernetesClusterProvider(name: $name) {
+    id
+    name
+  }
+}
