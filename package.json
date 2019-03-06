@@ -27,6 +27,7 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "dependencies": {
+    "@atomist/sdm-local": "1.0.5-master.20190301000954",
     "@kubernetes/client-node": "^0.8.1",
     "@types/js-yaml": "^3.11.4",
     "@types/json-stringify-safe": "^5.0.0",
@@ -46,8 +47,8 @@
     "@atomist/sdm-core": ">=1.2.0"
   },
   "devDependencies": {
-    "@atomist/automation-client": "1.3.0-master.20190211141235",
-    "@atomist/sdm": "1.3.0-master.20190213170255",
+    "@atomist/automation-client": "1.3.0-master.20190228133619",
+    "@atomist/sdm": "1.3.0-master.20190305073353",
     "@atomist/sdm-core": "1.3.0-master.20190213143939",
     "@types/mocha": "^5.2.5",
     "@types/power-assert": "^1.4.29",
