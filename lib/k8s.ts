@@ -21,6 +21,7 @@ import {
 import * as _ from "lodash";
 import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
+import { providerStartupListener } from "./provider/kubernetesCluster";
 import { minikubeStartupListener } from "./support/minikube";
 
 /**
@@ -77,6 +78,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
 
             sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));
 
+            sdm.addStartupListener(providerStartupListener);
             sdm.addStartupListener(minikubeStartupListener);
 
         },
