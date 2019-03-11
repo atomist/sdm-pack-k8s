@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.3.5...HEAD)
 
+### Added
+
+-   Register SDM using this pack as cluster provider. [#41](https://github.com/atomist/sdm-pack-k8s/issues/41)
+
 ## [1.3.5](https://github.com/atomist/sdm-pack-k8s/compare/1.3.4...1.3.5) - 2019-02-13
 
 ### Fixed
