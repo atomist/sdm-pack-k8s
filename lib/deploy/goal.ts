@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { GitProject } from "@atomist/automation-client";
+import {
+    GitProject,
+    HandlerContext,
+} from "@atomist/automation-client";
 import {
     AnyPush,
     DefaultGoalNameGenerator,
@@ -48,7 +51,7 @@ export function goalEventSlug(goalEvent: SdmGoalEvent): string {
  * [[KubernetesApplication]] object.
  */
 export type ApplicationDataCallback =
-    (a: KubernetesApplication, p: GitProject, g: KubernetesDeploy, e: SdmGoalEvent) => Promise<KubernetesApplication>;
+    (a: KubernetesApplication, p: GitProject, g: KubernetesDeploy, e: SdmGoalEvent, ctx: HandlerContext) => Promise<KubernetesApplication>;
 
 /**
  * Registration object to pass to KubernetesDeployment goal to
