@@ -15,6 +15,7 @@
  */
 
 import {
+    GraphClient,
     logger,
     QueryNoCacheOptions,
 } from "@atomist/automation-client";
@@ -24,6 +25,8 @@ import * as cluster from "cluster";
 import {
     CreateKubernetesClusterProvider,
     KubernetesClusterProvider,
+    ResourceProviderStateName,
+    SetResourceProviderState,
 } from "../typings/types";
 
 /**
@@ -37,7 +40,7 @@ export const providerStartupListener: StartupListener = async context => {
     }
     const sdm = context.sdm;
     if (!sdm || !sdm.configuration || !sdm.configuration.workspaceIds) {
-        logger.info(`SDM configuration contains no workspace IDs, not creating KubernetesClusterProvider`);
+        logger.debug(`SDM configuration contains no workspace IDs, not creating KubernetesClusterProvider`);
     }
     const name = context.sdm.configuration.name;
     await Promise.all(sdm.configuration.workspaceIds.map(async workspaceId => {
@@ -50,6 +53,10 @@ export const providerStartupListener: StartupListener = async context => {
         });
         if (providers && providers.KubernetesClusterProvider && providers.KubernetesClusterProvider.length === 1) {
             logger.info(`KubernetesClusterProvider ${name} already exists in ${workspaceId}`);
+            const provider = providers.KubernetesClusterProvider[0];
+            if (!provider.state || provider.state.name !== ResourceProviderStateName.converged) {
+                await setProviderState(graphClient, providers.KubernetesClusterProvider[0].id, ResourceProviderStateName.converged);
+            }
             return;
         }
         if (providers && providers.KubernetesClusterProvider && providers.KubernetesClusterProvider.length > 1) {
@@ -57,11 +64,29 @@ export const providerStartupListener: StartupListener = async context => {
             return;
         }
         logger.info(`Creating KubernetesClusterProivder ${name} in ${workspaceId}`);
-        await graphClient.mutate<CreateKubernetesClusterProvider.Mutation, CreateKubernetesClusterProvider.Variables>({
+        const result = await graphClient.mutate<CreateKubernetesClusterProvider.Mutation, CreateKubernetesClusterProvider.Variables>({
             name: "CreateKubernetesClusterProvider",
             variables: { name },
         });
+        await setProviderState(graphClient, result.createKubernetesClusterProvider.id, ResourceProviderStateName.converged);
         return;
     }));
     return;
 };
+
+/**
+ * Set the state of the resource provider identified by provided id.
+ */
+async function setProviderState(gc: GraphClient,
+                                id: string,
+                                state: ResourceProviderStateName,
+                                error: string = ""): Promise<void> {
+    await gc.mutate<SetResourceProviderState.Mutation, SetResourceProviderState.Variables>({
+        name: "SetResourceProviderState",
+        variables: {
+            id,
+            state,
+            error,
+        },
+    });
+}

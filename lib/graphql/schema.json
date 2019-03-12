@@ -6589,6 +6589,77 @@
             "deprecationReason": null
           },
           {
+            "name": "ResourceProvider",
+            "description": "",
+            "args": [
+              {
+                "name": "id",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "orderBy",
+                "description": "",
+                "type": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "ENUM",
+                    "name": "_ResourceProviderOrdering",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "_id",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "first",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "offset",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "INTERFACE",
+                "name": "ResourceProvider",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "GitHubProvider",
             "description": "",
             "args": [
@@ -7733,6 +7804,43 @@
               "ofType": {
                 "kind": "OBJECT",
                 "name": "KubernetesClusterProvider",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "Credential",
+            "description": "",
+            "args": [
+              {
+                "name": "id",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "_id",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "INTERFACE",
+                "name": "Credential",
                 "ofType": null
               }
             },
@@ -10332,7 +10440,7 @@
       {
         "kind": "SCALAR",
         "name": "Float",
-        "description": "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point). ",
+        "description": "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point). ",
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -15070,6 +15178,18 @@
             "deprecationReason": null
           },
           {
+            "name": "state",
+            "description": "",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "ResourceProviderState",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "credential",
             "description": "",
             "args": [],
@@ -16663,7 +16783,7 @@
             "args": [],
             "type": {
               "kind": "OBJECT",
-              "name": "SCMProviderState",
+              "name": "ResourceProviderState",
               "ofType": null
             },
             "isDeprecated": false,
@@ -16944,7 +17064,7 @@
       },
       {
         "kind": "OBJECT",
-        "name": "SCMProviderState",
+        "name": "ResourceProviderState",
         "description": "",
         "fields": [
           {
@@ -16965,7 +17085,7 @@
             "args": [],
             "type": {
               "kind": "ENUM",
-              "name": "SCMProviderStateName",
+              "name": "ResourceProviderStateName",
               "ofType": null
             },
             "isDeprecated": false,
@@ -16979,7 +17099,7 @@
       },
       {
         "kind": "ENUM",
-        "name": "SCMProviderStateName",
+        "name": "ResourceProviderStateName",
         "description": "",
         "fields": null,
         "inputFields": null,
@@ -33669,6 +33789,41 @@
       },
       {
         "kind": "ENUM",
+        "name": "_ResourceProviderOrdering",
+        "description": "Ordering Enum for ResourceProvider",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "atmTeamId_asc",
+            "description": "Ascending sort for atmTeamId",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "atmTeamId_desc",
+            "description": "Descending sort for atmTeamId",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "id_asc",
+            "description": "Ascending sort for id",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "id_desc",
+            "description": "Descending sort for id",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "ENUM",
         "name": "_GitHubProviderOrdering",
         "description": "Ordering Enum for GitHubProvider",
         "fields": null,
@@ -33838,6 +33993,18 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "state",
+            "description": "",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "ResourceProviderState",
               "ofType": null
             },
             "isDeprecated": false,
@@ -34546,6 +34713,18 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "state",
+            "description": "",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "ResourceProviderState",
               "ofType": null
             },
             "isDeprecated": false,
@@ -38253,7 +38432,7 @@
             "deprecationReason": null
           },
           {
-            "name": "setSCMProviderState",
+            "name": "setResourceProviderState",
             "description": "",
             "args": [
               {
@@ -38276,6 +38455,47 @@
                 "type": {
                   "kind": "INPUT_OBJECT",
                   "name": "ResourceProviderStateInput",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INTERFACE",
+                "name": "ResourceProvider",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "setSCMProviderState",
+            "description": "",
+            "args": [
+              {
+                "name": "id",
+                "description": "",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "ID",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "providerState",
+                "description": "",
+                "type": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "SCMProviderStateInput",
                   "ofType": null
                 },
                 "defaultValue": null
@@ -38365,6 +38585,51 @@
                   "ofType": {
                     "kind": "INPUT_OBJECT",
                     "name": "CredentialInput",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INTERFACE",
+                "name": "Credential",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "linkCredentialToResourceProvider",
+            "description": "",
+            "args": [
+              {
+                "name": "resourceProviderId",
+                "description": "",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "ID",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "credentialId",
+                "description": "",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "ID",
                     "ofType": null
                   }
                 },
@@ -39464,6 +39729,41 @@
               "name": null,
               "ofType": {
                 "kind": "ENUM",
+                "name": "ResourceProviderStateName",
+                "ofType": null
+              }
+            },
+            "defaultValue": null
+          },
+          {
+            "name": "error",
+            "description": "",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "SCMProviderStateInput",
+        "description": "",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "state",
+            "description": "",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
                 "name": "SCMProviderStateName",
                 "ofType": null
               }
@@ -39483,6 +39783,41 @@
         ],
         "interfaces": null,
         "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "ENUM",
+        "name": "SCMProviderStateName",
+        "description": "",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "converged",
+            "description": "",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "unconverged",
+            "description": "",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "misconfigured",
+            "description": "",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "unauthorized",
+            "description": "",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
         "possibleTypes": null
       },
       {
@@ -46547,6 +46882,77 @@
             "deprecationReason": null
           },
           {
+            "name": "ResourceProvider",
+            "description": "",
+            "args": [
+              {
+                "name": "id",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "orderBy",
+                "description": "",
+                "type": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "ENUM",
+                    "name": "_ResourceProviderOrdering",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "_id",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "first",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "offset",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "INTERFACE",
+                "name": "ResourceProvider",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "GitHubProvider",
             "description": "",
             "args": [
@@ -47691,6 +48097,43 @@
               "ofType": {
                 "kind": "OBJECT",
                 "name": "KubernetesClusterProvider",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "Credential",
+            "description": "",
+            "args": [
+              {
+                "name": "id",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "_id",
+                "description": "",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "INTERFACE",
+                "name": "Credential",
                 "ofType": null
               }
             },
