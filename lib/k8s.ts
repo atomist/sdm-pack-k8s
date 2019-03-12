@@ -34,6 +34,12 @@ export interface SdmPackK8sOptions {
      * provided, the comand is not added.
      */
     addCommands?: boolean;
+
+    /**
+     * Whether to register and converge a k8s cluster.  Typically this
+     * is used from k8s-sdm to manage k8s cluster it is running in.
+     */
+    registerCluster?: boolean;
 }
 
 /**
@@ -78,7 +84,9 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
 
             sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));
 
-            sdm.addStartupListener(providerStartupListener);
+            if (sdm.configuration.sdm.k8s.options.registerCluster) {
+                sdm.addStartupListener(providerStartupListener);
+            }
             sdm.addStartupListener(minikubeStartupListener);
 
         },
