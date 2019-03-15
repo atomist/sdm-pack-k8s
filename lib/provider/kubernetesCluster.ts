@@ -22,8 +22,10 @@ import {
 import { StartupListener } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as cluster from "cluster";
+import * as _ from "lodash";
 import {
     CreateKubernetesClusterProvider,
+    DeleteResourceProvider,
     KubernetesClusterProvider,
     ResourceProviderStateName,
     SetResourceProviderState,
@@ -43,30 +45,43 @@ export const providerStartupListener: StartupListener = async context => {
         logger.debug(`SDM configuration contains no workspace IDs, not creating KubernetesClusterProvider`);
     }
     const name = context.sdm.configuration.name;
+    const url = _.get(sdm.configuration, "sdm.kubernetes.provider.url");
     await Promise.all(sdm.configuration.workspaceIds.map(async workspaceId => {
         const graphClient = sdm.configuration.graphql.client.factory.create(workspaceId, sdm.configuration);
         logger.debug(`Checking for KubernetesClusterProvider ${name} in workspace ${workspaceId}`);
+
         const providers = await graphClient.query<KubernetesClusterProvider.Query, KubernetesClusterProvider.Variables>({
             name: "KubernetesClusterProvider",
             variables: { name },
             options: QueryNoCacheOptions,
         });
+
         if (providers && providers.KubernetesClusterProvider && providers.KubernetesClusterProvider.length === 1) {
             logger.info(`KubernetesClusterProvider ${name} already exists in ${workspaceId}`);
             const provider = providers.KubernetesClusterProvider[0];
-            if (!provider.state || provider.state.name !== ResourceProviderStateName.converged) {
+            if (url !== provider.url) {
+                logger.info(`Deleting existing KubernetesClusterProvider because url doesn't match`);
+                await graphClient.mutate<DeleteResourceProvider.Mutation, DeleteResourceProvider.Variables>({
+                    name: "DeleteResourceProvider",
+                    variables: {
+                        id: provider.id,
+                    },
+                });
+            } else if (!provider.state || provider.state.name !== ResourceProviderStateName.converged) {
                 await setProviderState(graphClient, providers.KubernetesClusterProvider[0].id, ResourceProviderStateName.converged);
+                return;
             }
-            return;
         }
+
         if (providers && providers.KubernetesClusterProvider && providers.KubernetesClusterProvider.length > 1) {
             logger.warn(`More than one KubernetesClusterProvider with the name ${name} exists in ${workspaceId}`);
             return;
         }
-        logger.info(`Creating KubernetesClusterProivder ${name} in ${workspaceId}`);
+
+        logger.info(`Creating KubernetesClusterProvider ${name} in ${workspaceId}`);
         const result = await graphClient.mutate<CreateKubernetesClusterProvider.Mutation, CreateKubernetesClusterProvider.Variables>({
             name: "CreateKubernetesClusterProvider",
-            variables: { name },
+            variables: { name, url },
         });
         await setProviderState(graphClient, result.createKubernetesClusterProvider.id, ResourceProviderStateName.converged);
         return;

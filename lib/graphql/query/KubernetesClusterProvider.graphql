@@ -2,6 +2,7 @@ query KubernetesClusterProvider($name: String!) {
   KubernetesClusterProvider(name: $name) {
     id
     name
+    url
     state {
       name
       error

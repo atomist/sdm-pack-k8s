@@ -1,5 +1,5 @@
-mutation CreateKubernetesClusterProvider($name: String!) {
-  createKubernetesClusterProvider(name: $name) {
+mutation CreateKubernetesClusterProvider($name: String!, $url: String) {
+  createKubernetesClusterProvider(name: $name, url: $url) {
     id
   }
 }
