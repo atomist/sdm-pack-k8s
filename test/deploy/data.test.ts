@@ -18,6 +18,7 @@ import {
     GitProject,
     HandlerContext,
     InMemoryProject,
+    Project,
 } from "@atomist/automation-client";
 import {
     GoalInvocation,
@@ -30,9 +31,11 @@ import {
     dockerPort,
     generateKubernetesGoalEventData,
     getKubernetesGoalEventData,
+    repoSpecsKubernetsApplication,
 } from "../../lib/deploy/data";
 import {
     KubernetesDeploy,
+    KubernetesDeployDataSources,
     KubernetesDeployRegistration,
 } from "../../lib/deploy/goal";
 import { KubernetesApplication } from "../../lib/kubernetes/request";
@@ -195,10 +198,9 @@ describe("deploy/data", () => {
 
     });
 
-    describe("defaultDeploymentData", () => {
+    describe("defaultKubernetesApplication", () => {
 
-        it("should return something reasonable with minimal information", async () => {
-            const p: GitProject = InMemoryProject.of() as any;
+        it("should return default application data", async () => {
             const e: SdmGoalEvent = {
                 push: {
                     after: {},
@@ -209,9 +211,6 @@ describe("deploy/data", () => {
                 },
             } as any;
             const k: KubernetesDeploy = {
-                details: {
-                    environment: "NewYork",
-                },
                 sdm: {
                     configuration: {
                         sdm: {},
@@ -219,31 +218,44 @@ describe("deploy/data", () => {
                 },
             } as any;
             const c: HandlerContext = { workspaceId: "L0UR33D" } as any;
-            const d = await defaultKubernetesApplication(p, e, k, c);
+            const d = await defaultKubernetesApplication(e, k, c);
             const r = {
                 workspaceId: "L0UR33D",
                 name: "new-york",
-                ns: "default",
                 image: "loureed/new-york:latest",
-                port: undefined,
-                deploymentSpec: undefined,
-                serviceSpec: undefined,
-                ingressSpec: undefined,
-                roleSpec: undefined,
-                serviceAccountSpec: undefined,
-                roleBindingSpec: undefined,
-            } as any;
+            };
             assert.deepStrictEqual(d, r);
         });
 
-        it("should return all the modifications", async () => {
-            const p: GitProject = InMemoryProject.of(
-                { path: ".atomist/kubernetes/deployment.json", content: `{"spec":{"template":{"spec":{"terminationGracePeriodSeconds":7}}}}` },
-                { path: ".atomist/kubernetes/service.yml", content: `spec:\n  metadata:\n    annotation:\n      halloween: parade\n` },
-                { path: "Dockerfile", content: "EXPOSE 8080/udp\n" },
-            ) as any;
+        it("should clean up repo name and org", async () => {
             const e: SdmGoalEvent = {
-                branch: "rock",
+                push: {
+                    after: {},
+                },
+                repo: {
+                    name: "new_york.",
+                    owner: "lou-reed-",
+                },
+            } as any;
+            const k: KubernetesDeploy = {
+                sdm: {
+                    configuration: {
+                        sdm: {},
+                    },
+                },
+            } as any;
+            const c: HandlerContext = { workspaceId: "L0UR33D" } as any;
+            const d = await defaultKubernetesApplication(e, k, c);
+            const r = {
+                workspaceId: "L0UR33D",
+                name: "new-york",
+                image: "loureed/new_york:latest",
+            };
+            assert.deepStrictEqual(d, r);
+        });
+
+        it("should use linked image", async () => {
+            const e: SdmGoalEvent = {
                 push: {
                     after: {
                         images: [{ imageName: "docker.lou-reed.com/newyork:1989" }],
@@ -252,41 +264,46 @@ describe("deploy/data", () => {
                 repo: {
                     name: "new-york",
                     owner: "loureed",
-                    providerId: "sire",
                 },
-                sha: "ca19881989",
             } as any;
             const k: KubernetesDeploy = {
                 sdm: {
                     configuration: {
-                        environment: "NewYork",
-                        sdm: {
-                            build: {
-                                docker: {
-                                    registry: "lou.reed.com",
-                                },
-                            },
-                            k8s: {
-                                app: {
-                                    ns: "romeo-juliet",
-                                    host: "dirty.blvd.org",
-                                    tlsSecret: "star-blvd-org",
-                                },
-                            },
-                        },
+                        sdm: {},
                     },
                 },
             } as any;
             const c: HandlerContext = { workspaceId: "L0UR33D" } as any;
-            const d = await defaultKubernetesApplication(p, e, k, c);
+            const d = await defaultKubernetesApplication(e, k, c);
             const r = {
                 workspaceId: "L0UR33D",
                 name: "new-york",
-                ns: "romeo-juliet",
                 image: "docker.lou-reed.com/newyork:1989",
-                port: 8080,
-                host: "dirty.blvd.org",
-                tlsSecret: "star-blvd-org",
+            };
+            assert.deepStrictEqual(d, r);
+        });
+
+    });
+
+    describe("repoSpecsKubernetesApplication", () => {
+
+        it("should return all provided specs", async () => {
+            const p: Project = InMemoryProject.of(
+                { path: ".atomist/kubernetes/deployment.json", content: `{"spec":{"template":{"spec":{"terminationGracePeriodSeconds":7}}}}` },
+                { path: ".atomist/kubernetes/service.yml", content: `spec:\n  metadata:\n    annotation:\n      halloween: parade\n` },
+            );
+            const r: KubernetesDeployRegistration = {
+                dataSources: [
+                    KubernetesDeployDataSources.DeploymentSpec,
+                    KubernetesDeployDataSources.ServiceSpec,
+                    KubernetesDeployDataSources.IngressSpec,
+                    KubernetesDeployDataSources.RoleSpec,
+                    KubernetesDeployDataSources.ServiceAccountSpec,
+                    KubernetesDeployDataSources.RoleBindingSpec,
+                ],
+            };
+            const d = await repoSpecsKubernetsApplication(p, r);
+            const e = {
                 deploymentSpec: {
                     spec: {
                         template: {
@@ -310,7 +327,59 @@ describe("deploy/data", () => {
                 serviceAccountSpec: undefined,
                 roleBindingSpec: undefined,
             } as any;
-            assert.deepStrictEqual(d, r);
+            assert.deepStrictEqual(d, e);
+        });
+
+        it("should return no provided specs", async () => {
+            const p: Project = InMemoryProject.of(
+                { path: ".atomist/kubernetes/deployment.json", content: `{"spec":{"template":{"spec":{"terminationGracePeriodSeconds":7}}}}` },
+                { path: ".atomist/kubernetes/service.yml", content: `spec:\n  metadata:\n    annotation:\n      halloween: parade\n` },
+            );
+            const r: KubernetesDeployRegistration = {
+                dataSources: [],
+            };
+            const d = await repoSpecsKubernetsApplication(p, r);
+            const e = {
+                deploymentSpec: undefined,
+                serviceSpec: undefined,
+                ingressSpec: undefined,
+                roleSpec: undefined,
+                serviceAccountSpec: undefined,
+                roleBindingSpec: undefined,
+            } as any;
+            assert.deepStrictEqual(d, e);
+        });
+
+        it("should return selected specs", async () => {
+            const p: Project = InMemoryProject.of(
+                { path: ".atomist/kubernetes/deployment.json", content: `{"spec":{"template":{"spec":{"terminationGracePeriodSeconds":7}}}}` },
+                { path: ".atomist/kubernetes/service.yml", content: `spec:\n  metadata:\n    annotation:\n      halloween: parade\n` },
+            );
+            const r: KubernetesDeployRegistration = {
+                dataSources: [
+                    KubernetesDeployDataSources.IngressSpec,
+                    KubernetesDeployDataSources.ServiceSpec,
+                    KubernetesDeployDataSources.ServiceAccountSpec,
+                ],
+            };
+            const d = await repoSpecsKubernetsApplication(p, r);
+            const e = {
+                deploymentSpec: undefined,
+                serviceSpec: {
+                    spec: {
+                        metadata: {
+                            annotation: {
+                                halloween: "parade",
+                            },
+                        },
+                    },
+                },
+                ingressSpec: undefined,
+                roleSpec: undefined,
+                serviceAccountSpec: undefined,
+                roleBindingSpec: undefined,
+            } as any;
+            assert.deepStrictEqual(d, e);
         });
 
     });
@@ -347,7 +416,7 @@ describe("deploy/data", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeployRegistration = {} as any;
+            const r: KubernetesDeployRegistration = { dataSources: [] };
             const sge = await generateKubernetesGoalEventData(k, r, g);
             assert(Object.keys(sge).length === 3);
             assert.deepStrictEqual(sge.push, { after: {} });
@@ -394,7 +463,7 @@ describe("deploy/data", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeployRegistration = {} as any;
+            const r: KubernetesDeployRegistration = { dataSources: [] };
             const sge = await generateKubernetesGoalEventData(k, r, g);
             assert(Object.keys(sge).length === 3);
             assert.deepStrictEqual(sge.push, { after: {} });
@@ -417,6 +486,7 @@ describe("deploy/data", () => {
                     content: `{"spec":{"replicas":5,"template":{"spec":{"dnsPolicy":"None","terminationGracePeriodSeconds":7}}}}`,
                 },
                 { path: ".atomist/kubernetes/service.yml", content: `spec:\n  metadata:\n    annotation:\n      halloween: parade\n` },
+                { path: ".atomist/kubernetes/ingress.yml", content: `spec:\n  metadata:\n    annotation:\n      halloween: parade\n` },
                 { path: "Dockerfile", content: "EXPOSE 8080/udp\n" },
             ) as any;
             const g: GoalInvocation = {
@@ -499,7 +569,17 @@ describe("deploy/data", () => {
                         ],
                     },
                 }),
-            } as any;
+                dataSources: [
+                    KubernetesDeployDataSources.Dockerfile,
+                    KubernetesDeployDataSources.SdmConfiguration,
+                    KubernetesDeployDataSources.GoalEvent,
+                    KubernetesDeployDataSources.DeploymentSpec,
+                    KubernetesDeployDataSources.ServiceSpec,
+                    KubernetesDeployDataSources.RoleSpec,
+                    KubernetesDeployDataSources.ServiceAccountSpec,
+                    KubernetesDeployDataSources.RoleBindingSpec,
+                ],
+            };
             const sge = await generateKubernetesGoalEventData(k, r, g);
             assert(Object.keys(sge).length === 5);
             assert(sge.branch === "rock");
