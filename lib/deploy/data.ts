@@ -15,7 +15,6 @@
  */
 
 import {
-    GitProject,
     HandlerContext,
     logger,
     Project,
@@ -30,11 +29,13 @@ import * as dockerfileParser from "docker-file-parser";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import { validName } from "../kubernetes/name";
 import { defaultNamespace } from "../kubernetes/namespace";
 import { KubernetesApplication } from "../kubernetes/request";
 import {
     goalEventSlug,
     KubernetesDeploy,
+    KubernetesDeployDataSources,
     KubernetesDeployRegistration,
 } from "./goal";
 import { loadKubernetesSpec } from "./spec";
@@ -47,14 +48,20 @@ import { loadKubernetesSpec } from "./spec";
 export const sdmPackK8s = "@atomist/sdm-pack-k8s";
 
 /**
- * Generate KubernetesApplication from project and goal invocation.
- * This function used [[defaultDeploymentData]] to produce initial
- * [[KubernetesApplication]] data.  It then merges in any object
- * provided by `goalEvent.data[[[sdmPackk8]]]`, with the latter taking
- * precedence.  Then, if `registration.applicationData` is truthy, it
- * calls that function, passing the merged value of the Kubernetes
- * application, and uses its return value as
- * `goalEvent.data[[[sdmPackk8]]]`.
+ * Generate KubernetesApplication from goal, goal registration,
+ * project, and goal invocation.  The priority of the various sources
+ * of KubernetesApplication data are, from lowest to highest:
+ *
+ * 1.  Starting point is `{ ns: defaultNamespace }`
+ * 2.  [[KubernetesDeployDataSources.SdmConfiguration]]
+ * 3.  [[defaultKubernetesApplication]]
+ * 4.  [[KubernetesDeployDataSources.Dockerfile]]
+ * 5.  The various partial Kubernetes specs under `.atomist/kubernetes`
+ * 6.  [[KubernetesDeployDataSources.GoalEvent]]
+ * 7.  [[KubernetesDeployRegistration.applicationData]]
+ *
+ * Specific sources can be enabled/disabled via the
+ * [[KubernetesDeployRegistration.dataSources]].
  *
  * @param k8Deploy Kubernetes deployment goal
  * @param registration Goal registration/configuration for `k8Deploy`
@@ -69,26 +76,41 @@ export function generateKubernetesGoalEventData(
     return k8Deploy.sdm.configuration.sdm.projectLoader.doWithProject({ ...goalInvocation, readOnly: true }, async p => {
 
         const { context, goalEvent } = goalInvocation;
-        const defaultData: any = {};
-        defaultData[sdmPackK8s] = await defaultKubernetesApplication(p, goalEvent, k8Deploy, context);
 
-        const slug = goalEventSlug(goalEvent);
-        let eventData: any;
-        try {
-            eventData = JSON.parse(goalEvent.data || "{}");
-        } catch (e) {
-            logger.warn(`Failed to parse goal event data for ${slug} as JSON: ${e.message}`);
-            logger.warn(`Ignoring current value of goal event data: ${goalEvent.data}`);
-            eventData = {};
+        const sdmConfigAppData: Partial<KubernetesApplication> = (registration.dataSources.includes(KubernetesDeployDataSources.SdmConfiguration)) ?
+            _.get(k8Deploy, "sdm.configuration.sdm.k8s.app", {}) : {};
+
+        const defaultAppData: Partial<KubernetesApplication> = await defaultKubernetesApplication(goalEvent, k8Deploy, context);
+
+        const dockerfileAppData: Partial<KubernetesApplication> = (registration.dataSources.includes(KubernetesDeployDataSources.Dockerfile)) ?
+            await dockerfileKubernetesApplication(p) : {};
+
+        const specAppData: Partial<KubernetesApplication> = await repoSpecsKubernetsApplication(p, registration);
+
+        const mergedAppData = _.merge({ ns: defaultNamespace }, sdmConfigAppData, defaultAppData, dockerfileAppData, specAppData);
+
+        const appData: any = {};
+        appData[sdmPackK8s] = mergedAppData;
+
+        if (registration.dataSources.includes(KubernetesDeployDataSources.GoalEvent)) {
+            const slug = goalEventSlug(goalEvent);
+            let eventData: any;
+            try {
+                eventData = JSON.parse(goalEvent.data || "{}");
+            } catch (e) {
+                logger.warn(`Failed to parse goal event data for ${slug} as JSON: ${e.message}`);
+                logger.warn(`Ignoring current value of goal event data: ${goalEvent.data}`);
+                eventData = {};
+            }
+            _.merge(appData, eventData);
         }
-        const mergedData = _.merge(defaultData, eventData);
 
         if (registration.applicationData) {
-            const callbackData = await registration.applicationData(mergedData[sdmPackK8s], p, k8Deploy, goalEvent, context);
-            mergedData[sdmPackK8s] = callbackData;
+            const callbackAppData = await registration.applicationData(appData[sdmPackK8s], p, k8Deploy, goalEvent, context);
+            appData[sdmPackK8s] = callbackAppData;
         }
 
-        goalEvent.data = JSON.stringify(mergedData);
+        goalEvent.data = JSON.stringify(appData);
         return goalEvent;
     });
 }
@@ -118,70 +140,30 @@ export function getKubernetesGoalEventData(goalEvent: SdmGoalEvent): KubernetesA
 }
 
 /**
- * Given the project, event, [[KubernetesDeployment]] goal, and
- * handler context generate a default [[KubernetesApplication]] object
- * that should be suitable for deploying simple, microservices.
+ * Given the goal event, [[KubernetesDeploy]] goal, and
+ * handler context generate a default [[KubernetesApplication]] object.
  *
- * If the SDM configuration contains a `k8s.app` property, i.e.,
- * `k8Deploy.sdm.configuration.sdm.k8s.app`, it is used as the basis
- * for the default [[KubernetesApplication]] object.
+ * This function uses [[defaultImage]] to determine the image.
  *
- * This function reads partial Kubernetes specs from the
- * `.atomist/kubernetes` directory of the project, if any exist.
- * Specifically it looks for JSON and YAML files with the base names
- * "deployment", "service", "ingress", "role", "service-account", and
- * "role-binding".
- *
- * It also uses [[defaultImage]] and [[dockerPort]] to further
- * populated default property values from information in the
- * repository and event.
- *
- * Any values obtained from the repository/project/event/goal override
- * those in the SDM configuration `k8s` property.
- *
- * @param p Project being deployed
  * @param goalEvent SDM Kubernetes deployment goal event
  * @param k8Deploy Kubernetes deployment goal configuration
  * @param context Handler context
  * @return a valid default KubernetesApplication for this SDM goal deployment event
  */
 export async function defaultKubernetesApplication(
-    p: GitProject,
     goalEvent: SdmGoalEvent,
     k8Deploy: KubernetesDeploy,
     context: HandlerContext,
-): Promise<KubernetesApplication> {
-
-    const configAppData: Partial<KubernetesApplication> = _.get(k8Deploy, "sdm.configuration.sdm.k8s.app", {});
+): Promise<Partial<KubernetesApplication>> {
 
     const workspaceId = context.workspaceId;
-    const name = goalEvent.repo.name;
-    const ns = configAppData.ns || defaultNamespace;
+    const name = validName(goalEvent.repo.name);
     const image = await defaultImage(goalEvent, k8Deploy, context);
-    const port = await dockerPort(p);
-
-    const deploymentSpec: DeepPartial<k8s.V1Deployment> = await loadKubernetesSpec(p, "deployment");
-    const serviceSpec: DeepPartial<k8s.V1Service> = await loadKubernetesSpec(p, "service");
-    const ingressSpec: DeepPartial<k8s.V1beta1Ingress> = await loadKubernetesSpec(p, "ingress");
-    const roleSpec: DeepPartial<k8s.V1Role> = await loadKubernetesSpec(p, "role");
-    const serviceAccountSpec: DeepPartial<k8s.V1ServiceAccount> = await loadKubernetesSpec(p, "service-account");
-    const roleBindingSpec: DeepPartial<k8s.V1RoleBinding> = await loadKubernetesSpec(p, "role-binding");
-
-    const repoAppData: KubernetesApplication = {
+    return {
         workspaceId,
         name,
-        ns,
         image,
-        port,
-        deploymentSpec,
-        serviceSpec,
-        ingressSpec,
-        roleSpec,
-        serviceAccountSpec,
-        roleBindingSpec,
     };
-
-    return _.merge({}, configAppData, repoAppData);
 }
 
 /**
@@ -220,6 +202,43 @@ export async function dockerPort(p: Project): Promise<number | undefined> {
     return undefined;
 }
 
+/** Package return of [[dockerPort]] in [[KubernetesApplication]]. */
+async function dockerfileKubernetesApplication(p: Project): Promise<Partial<KubernetesApplication>> {
+    const port = await dockerPort(p);
+    return (port) ? { port } : {};
+}
+
+/**
+ * Read configured Kubernetes partial specs from repository.
+ *
+ * @param p Project to look for specs
+ * @param registration Configuration of KubernetesDeploy goal
+ * @return KubernetesApplication object with requested specs populated
+ */
+export async function repoSpecsKubernetsApplication(p: Project, r: KubernetesDeployRegistration): Promise<Partial<KubernetesApplication>> {
+    const deploymentSpec: DeepPartial<k8s.V1Deployment> = (r.dataSources.includes(KubernetesDeployDataSources.DeploymentSpec)) ?
+        await loadKubernetesSpec(p, "deployment") : undefined;
+    const serviceSpec: DeepPartial<k8s.V1Service> = (r.dataSources.includes(KubernetesDeployDataSources.ServiceSpec)) ?
+        await loadKubernetesSpec(p, "service") : undefined;
+    const ingressSpec: DeepPartial<k8s.V1beta1Ingress> = (r.dataSources.includes(KubernetesDeployDataSources.IngressSpec)) ?
+        await loadKubernetesSpec(p, "ingress") : undefined;
+    const roleSpec: DeepPartial<k8s.V1Role> = (r.dataSources.includes(KubernetesDeployDataSources.RoleSpec)) ?
+        await loadKubernetesSpec(p, "role") : undefined;
+    const serviceAccountSpec: DeepPartial<k8s.V1ServiceAccount> = (r.dataSources.includes(KubernetesDeployDataSources.ServiceAccountSpec)) ?
+        await loadKubernetesSpec(p, "service-account") : undefined;
+    const roleBindingSpec: DeepPartial<k8s.V1RoleBinding> = (r.dataSources.includes(KubernetesDeployDataSources.RoleBindingSpec)) ?
+        await loadKubernetesSpec(p, "role-binding") : undefined;
+
+    return {
+        deploymentSpec,
+        serviceSpec,
+        ingressSpec,
+        roleSpec,
+        serviceAccountSpec,
+        roleBindingSpec,
+    };
+}
+
 /**
  * Remove any invalid characters from Docker image name component
  * `name` to make it a valid Docker image name component.  If
@@ -249,7 +268,10 @@ export async function dockerPort(p: Project): Promise<number | undefined> {
  * @return Valid Docker image name component.
  */
 function dockerImageNameComponent(name: string, hubOwner: boolean = false): string {
-    const cleanName = name.toLocaleLowerCase().replace(/^[^a-z0-9]+/, "").replace(/[^a-z0-9]+$/, "").replace(/[^-_/.a-z0-9]+/g, "");
+    const cleanName = name.toLocaleLowerCase()
+        .replace(/^[^a-z0-9]+/, "")
+        .replace(/[^a-z0-9]+$/, "")
+        .replace(/[^-_/.a-z0-9]+/g, "");
     if (hubOwner) {
         return cleanName.replace(/[^a-z0-9]+/g, "");
     } else {
