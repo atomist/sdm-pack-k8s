@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
+/**
+ * If removing invalid characters from the name results in an empty
+ * string, this value is used as the name.  You do not want more than
+ * one application per namespace to end up using this.
+ */
 export const defaultValidName = "valid-name";
 
 /**
  * Ensure the provided name is a valid Kubernetes resouce name.  The
  * validation regular expression for a resource is
- * /^[a-z]([-a-z0-9]*[a-z0-9])?$/ and it must be between 1 and 63
+ * `/^[a-z]([-a-z0-9]*[a-z0-9])?$/` and it must be between 1 and 63
  * characters long.
  *
  * @param name The resource name
