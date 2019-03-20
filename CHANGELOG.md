@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
--   Make data sources configurable, validate app name. [#43](https://github.com/atomist/sdm-pack-k8s/issues/43)
+-   Make data sources configurable. [#43](https://github.com/atomist/sdm-pack-k8s/issues/43)
 
 ### Fixed
 
--   Make data sources configurable, validate app name. [#43](https://github.com/atomist/sdm-pack-k8s/issues/43)
+-   Validate app name. [#43](https://github.com/atomist/sdm-pack-k8s/issues/43)
 
 ## [1.3.6](https://github.com/atomist/sdm-pack-k8s/compare/1.3.5...1.3.6) - 2019-03-12
 
