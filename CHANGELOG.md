@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.4.1](https://github.com/atomist/sdm-pack-k8s/compare/1.4.0...1.4.1) - 2019-03-20
 
+### Changed
+
+-   Update @kubernetes/client-node. [d689b74](https://github.com/atomist/sdm-pack-k8s/commit/d689b74a5cf72cf7e3176498c4f9f2c91cda2923)
+
 ## [1.4.0](https://github.com/atomist/sdm-pack-k8s/compare/1.3.6...1.4.0) - 2019-03-20
 
 ### Added
