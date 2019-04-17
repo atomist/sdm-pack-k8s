@@ -92,5 +92,6 @@ subscription KubernetesDeployRequestedSdmGoal($fulfillmentName: String!) {
     }
     preApprovalRequired
     data
+    version
   }
 }
