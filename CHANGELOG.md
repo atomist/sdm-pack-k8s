@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.4.1...HEAD)
 
+### Added
+
+-   Add version to subscription. [a30c972](https://github.com/atomist/sdm-pack-k8s/commit/a30c972688a09ad34e6d460806f60dd42b5a9d62)
+
 ## [1.4.1](https://github.com/atomist/sdm-pack-k8s/compare/1.4.0...1.4.1) - 2019-03-20
 
 ### Changed
