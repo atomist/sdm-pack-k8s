@@ -21,7 +21,7 @@ import {
 } from "../../lib/deploy/deploy";
 import { KubernetesApplication } from "../../lib/kubernetes/request";
 
-describe("kubernetes/deploy", () => {
+describe("deploy/deploy", () => {
 
     describe("deployDescription", () => {
 
