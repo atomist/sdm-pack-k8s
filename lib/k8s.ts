@@ -20,27 +20,12 @@ import {
 } from "@atomist/sdm";
 import * as _ from "lodash";
 import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
+import { SdmPackK8sOptions } from "./config";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
 import { providerStartupListener } from "./provider/kubernetesCluster";
 import { minikubeStartupListener } from "./support/minikube";
-
-/**
- * Configuration options to be passed to the extension pack creation.
- */
-export interface SdmPackK8sOptions {
-    /**
-     * Whether to add the undelete command.  Typically you would only
-     * want to enable this in one SDM per workspace.  If no value is
-     * provided, the comand is not added.
-     */
-    addCommands?: boolean;
-
-    /**
-     * Whether to register and converge a k8s cluster.  Typically this
-     * is used from k8s-sdm to manage k8s cluster it is running in.
-     */
-    registerCluster?: boolean;
-}
+import { syncGoals } from "./sync/goals";
+import { syncRepoStartupListener } from "./sync/startup";
 
 /**
  * Register Kubernetes deployment support for provided goals.  Any
@@ -54,6 +39,9 @@ export interface SdmPackK8sOptions {
  *
  * The [[kubernetesDeployHandler]] event handler for this SDM is added
  * to the SDM.
+ *
+ * If `sync.repo` is a valid repo ref, synchronizing Kubernetes
+ * resources with a Git repository is enabled.
  *
  * The [[minikubeStartupListener]] is added to the SDM to assist
  * running in local mode against a
@@ -84,9 +72,11 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
 
             sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));
 
-            if (sdm.configuration.sdm.k8s.options.registerCluster) {
-                sdm.addStartupListener(providerStartupListener);
-            }
+            sdm.addStartupListener(providerStartupListener);
+
+            sdm.addStartupListener(syncRepoStartupListener);
+            syncGoals(sdm);
+
             sdm.addStartupListener(minikubeStartupListener);
 
         },

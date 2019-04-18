@@ -41,6 +41,9 @@ export const providerStartupListener: StartupListener = async context => {
         return;
     }
     const sdm = context.sdm;
+    if (!_.get(sdm, "configuration.sdm.k8s.options.registerCluster", false)) {
+        return;
+    }
     if (!sdm || !sdm.configuration || !sdm.configuration.workspaceIds) {
         logger.debug(`SDM configuration contains no workspace IDs, not creating KubernetesClusterProvider`);
     }
@@ -92,10 +95,7 @@ export const providerStartupListener: StartupListener = async context => {
 /**
  * Set the state of the resource provider identified by provided id.
  */
-async function setProviderState(gc: GraphClient,
-                                id: string,
-                                state: ResourceProviderStateName,
-                                error: string = ""): Promise<void> {
+async function setProviderState(gc: GraphClient, id: string, state: ResourceProviderStateName, error: string = ""): Promise<void> {
     await gc.mutate<SetResourceProviderState.Mutation, SetResourceProviderState.Variables>({
         name: "SetResourceProviderState",
         variables: {
