@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
@@ -31,34 +30,34 @@ import {
 
 export const defaultNamespace = "default";
 
-export interface UpsertNamespaceResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Namespace;
-}
-
 /**
  * Create or update a namespace.
  *
  * @param req Kuberenetes application request
+ * @return Kubernetes resource spec used to create/patch the resource
  */
-export async function upsertNamespace(req: KubernetesResourceRequest): Promise<UpsertNamespaceResponse> {
+export async function upsertNamespace(req: KubernetesResourceRequest): Promise<k8s.V1Namespace> {
+    const slug = req.ns;
+    const spec = await namespaceTemplate(req);
     try {
-        const resp = await req.clients.core.readNamespace(req.ns);
-        logger.debug(`Namespace ${req.ns} exists`);
-        return resp;
+        await req.clients.core.readNamespace(req.ns);
+        logger.debug(`Namespace ${slug} exists`);
     } catch (e) {
-        logger.debug(`Failed to get namespace ${req.ns}, creating: ${errMsg(e)}`);
-        const ns = await namespaceTemplate(req);
-        logger.debug(`Creating namespace ${req.ns} using '${stringify(ns)}'`);
-        return logRetry(() => req.clients.core.createNamespace(ns), `create namespace ${req.ns}`);
+        logger.debug(`Failed to get namespace ${slug}, creating: ${errMsg(e)}`);
+        logger.debug(`Creating namespace ${slug} using '${stringify(spec)}'`);
+        await logRetry(() => req.clients.core.createNamespace(spec), `create namespace ${slug}`);
+        return spec;
     }
+    logger.debug(`Namespace ${slug} exists, patching using '${stringify(spec)}'`);
+    await logRetry(() => req.clients.core.patchNamespace(req.ns, spec), `patch namespace ${slug}`);
+    return spec;
 }
 
 /**
  * Create namespace resource.
  *
  * @param req Kubernetes application
- * @return kubernetes namespace resource
+ * @return Kubernetes namespace resource
  */
 export async function namespaceTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1Namespace> {
     const allLabels = applicationLabels(req);

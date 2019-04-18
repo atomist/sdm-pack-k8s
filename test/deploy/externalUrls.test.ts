@@ -22,7 +22,7 @@ import {
 } from "../../lib/deploy/externalUrls";
 import { KubernetesApplication } from "../../lib/kubernetes/request";
 
-describe("kubernetes/endpoint", () => {
+describe("deploy/externalUrls", () => {
 
     describe("endpointBaseUrl", () => {
 

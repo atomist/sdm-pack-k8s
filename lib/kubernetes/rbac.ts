@@ -16,38 +16,32 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
-import * as stringify from "json-stringify-safe";
-import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
-import { logRetry } from "../support/retry";
-import { applicationLabels } from "./labels";
-import { metadataTemplate } from "./metadata";
 import {
     appName,
-    KubernetesApplication,
     KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
-    KubernetesSdm,
 } from "./request";
+import {
+    deleteRole,
+    upsertRole,
+} from "./role";
+import {
+    deleteRoleBinding,
+    upsertRoleBinding,
+} from "./roleBinding";
+import {
+    deleteServiceAccount,
+    upsertServiceAccount,
+} from "./serviceAccount";
 
 /**
- * Package the API responses for all the RBAC resources.
+ * Package the RBAC resource specs.
  */
-export interface UpsertRbacResponse {
-    role?: {
-        response: http.IncomingMessage;
-        body: k8s.V1Role | k8s.V1ClusterRole;
-    };
-    roleBinding?: {
-        response: http.IncomingMessage;
-        body: k8s.V1RoleBinding | k8s.V1ClusterRoleBinding;
-    };
-    serviceAccount?: {
-        response: http.IncomingMessage;
-        body: k8s.V1ServiceAccount;
-    };
+export interface RbacResources {
+    role?: k8s.V1Role | k8s.V1ClusterRole;
+    roleBinding?: k8s.V1RoleBinding | k8s.V1ClusterRoleBinding;
+    serviceAccount?: k8s.V1ServiceAccount;
 }
 
 /**
@@ -60,25 +54,25 @@ export interface UpsertRbacResponse {
  * patched.
  *
  * @param req Kuberenetes application request
- * @return Response from Kubernetes API if role is created or patched.
+ * @return Kubernetes RBAC resource specs that were created or patched, some may be undefined
  */
-export async function upsertRbac(req: KubernetesResourceRequest): Promise<UpsertRbacResponse> {
+export async function upsertRbac(req: KubernetesResourceRequest): Promise<RbacResources> {
     if (req.roleSpec && !req.serviceAccountSpec) {
         req.serviceAccountSpec = {};
     }
 
-    const response: UpsertRbacResponse = {};
+    const resources: RbacResources = {};
 
     if (req.serviceAccountSpec) {
-        response.serviceAccount = await upsertServiceAccount(req);
+        resources.serviceAccount = await upsertServiceAccount(req);
     }
 
     if (req.roleSpec) {
-        response.role = await upsertRole(req);
-        response.roleBinding = await upsertRoleBinding(req);
+        resources.role = await upsertRole(req);
+        resources.roleBinding = await upsertRoleBinding(req);
     }
 
-    return response;
+    return resources;
 }
 
 /**
@@ -86,310 +80,29 @@ export async function upsertRbac(req: KubernetesResourceRequest): Promise<Upsert
  * resource does not exist, do nothing.
  *
  * @param req Kuberenetes delete request
+ * @return Kuberenetes RBAC resources object with deleted resources, some may be undefined
  */
-export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<void> {
+export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<RbacResources> {
     const slug = appName(req);
+    const deleted: RbacResources = {};
     const errs: Error[] = [];
-
-    let roleBindingExists = false;
-    try {
-        await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
-        roleBindingExists = true;
-    } catch (e) {
-        logger.debug(`Role binding ${slug} does not exist: ${errMsg(e)}`);
-    }
-    if (roleBindingExists) {
+    const rbacDeleters = [
+        { key: "roleBinding", del: deleteRoleBinding },
+        { key: "role", del: deleteRole },
+        { key: "serviceAccount", del: deleteServiceAccount },
+    ];
+    for (const deleter of rbacDeleters) {
         try {
-            await logRetry(() => req.clients.rbac.deleteNamespacedRoleBinding(req.name, req.ns), `delete role binding ${slug}`);
+            deleted[deleter.key as keyof RbacResources] = await deleter.del(req);
         } catch (e) {
-            e.message = `Failed to delete role binding ${slug}: ${errMsg(e)}`;
+            e.message = `Failed to delete ${deleter.key}: ${errMsg(e)}`;
             errs.push(e);
         }
     }
-
-    let serviceAccountExists = false;
-    try {
-        await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
-        serviceAccountExists = true;
-    } catch (e) {
-        logger.debug(`Service account ${slug} does not exist: ${errMsg(e)}`);
-    }
-    if (serviceAccountExists) {
-        try {
-            await logRetry(() => req.clients.core.deleteNamespacedServiceAccount(req.name, req.ns), `delete service account ${slug}`);
-        } catch (e) {
-            e.message = `Failed to delete service account ${slug}: ${errMsg(e)}`;
-            errs.push(e);
-        }
-    }
-
-    let roleExists = false;
-    try {
-        await req.clients.rbac.readNamespacedRole(req.name, req.ns);
-        roleExists = true;
-    } catch (e) {
-        logger.debug(`Role ${slug} does not exist: ${errMsg(e)}`);
-    }
-    if (roleExists) {
-        try {
-            await logRetry(() => req.clients.rbac.deleteNamespacedRole(req.name, req.ns), `delete role ${slug}`);
-        } catch (e) {
-            e.message = `Failed to delete role ${slug}: ${errMsg(e)}`;
-            errs.push(e);
-        }
-    }
-
     if (errs.length > 0) {
         const msg = `Failed to delete RBAC resource(s) for ${slug}': ${errs.map(e => e.message).join("; ")}`;
         logger.error(msg);
         throw new Error(msg);
     }
-
-    return;
-}
-
-interface UpsertServiceAccountResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1ServiceAccount;
-}
-
-/** Create or patch service account. */
-async function upsertServiceAccount(req: KubernetesResourceRequest): Promise<UpsertServiceAccountResponse> {
-    const slug = appName(req);
-    const spec = await serviceAccountTemplate(req);
-    try {
-        await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
-    } catch (e) {
-        logger.debug(`Failed to read service account ${slug}, creating: ${errMsg(e)}`);
-        return logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, spec),
-            `create service account ${slug}`);
-    }
-    logger.debug(`Service account ${slug} exists, patching using '${stringify(spec)}'`);
-    return logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, spec),
-        `patch service account ${slug}`);
-}
-
-interface UpsertRoleResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Role | k8s.V1ClusterRole;
-}
-
-/** Create or patch role or cluster role. */
-async function upsertRole(req: KubernetesResourceRequest): Promise<UpsertRoleResponse> {
-    const slug = appName(req);
-    if (req.roleSpec.kind === "ClusterRole") {
-        const spec = await clusterRoleTemplate(req);
-        try {
-            await req.clients.rbac.readClusterRole(req.name);
-        } catch (e) {
-            logger.debug(`Failed to read cluster role ${slug}, creating: ${errMsg(e)}`);
-            logger.debug(`Creating cluster role ${slug} using '${stringify(spec)}'`);
-            return logRetry(() => req.clients.rbac.createClusterRole(spec), `create cluster role ${slug}`);
-        }
-        logger.debug(`Cluster role ${slug} exists, patching using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.rbac.patchClusterRole(req.name, spec), `patch cluster role ${slug}`);
-    } else {
-        const spec = await roleTemplate(req);
-        try {
-            await req.clients.rbac.readNamespacedRole(req.name, req.ns);
-        } catch (e) {
-            logger.debug(`Failed to read role ${slug}, creating: ${errMsg(e)}`);
-            return logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, spec), `create role ${slug}`);
-        }
-        logger.debug(`Role ${slug} exists, patching using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, spec), `patch role ${slug}`);
-    }
-}
-
-interface UpsertRoleBindingResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1RoleBinding | k8s.V1ClusterRoleBinding;
-}
-
-/** Create or patch role binding. */
-async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<UpsertRoleBindingResponse> {
-    const slug = appName(req);
-    if (req.roleSpec.kind === "ClusterRole") {
-        const spec = await clusterRoleBindingTemplate(req);
-        try {
-            await req.clients.rbac.readClusterRoleBinding(req.name);
-        } catch (e) {
-            logger.debug(`Failed to read cluster role binding ${slug}, creating: ${errMsg(e)}`);
-            return logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
-                `create cluster role binding ${slug}`);
-        }
-        logger.debug(`Cluster role binding ${slug} exists, patching using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.rbac.patchClusterRoleBinding(req.name, spec),
-            `patch cluster role binding ${slug}`);
-    } else {
-        const spec = await roleBindingTemplate(req);
-        try {
-            await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
-        } catch (e) {
-            logger.debug(`Failed to read role binding ${slug}, creating: ${errMsg(e)}`);
-            return logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),
-                `create role binding ${slug}`);
-        }
-        logger.debug(`Role binding ${slug} exists, patching using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, spec),
-            `patch role binding ${slug}`);
-    }
-}
-
-/**
- * Create role spec for a Kubernetes application.  The
- * `req.rbac.roleSpec` is merged into the spec created by this
- * function using `lodash.merge(default, req.rbac.roleSpec)`.
- *
- * @param req application request
- * @return role resource specification
- */
-export async function roleTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1Role> {
-    const labels = applicationLabels(req);
-    const metadata = metadataTemplate({
-        name: req.name,
-        labels,
-    });
-    const r: k8s.V1Role = {
-        kind: "Role",
-        apiVersion: "rbac.authorization.k8s.io/v1",
-        metadata,
-        rules: [],
-    };
-    _.merge(r, req.roleSpec);
-    return r;
-}
-
-/**
- * Create role spec for a Kubernetes application.  The
- * `req.rbac.roleSpec` is merged into the spec created by this
- * function using `lodash.merge(default, req.rbac.roleSpec)`.
- *
- * @param req application request
- * @return role resource specification
- */
-export async function clusterRoleTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1ClusterRole> {
-    const labels = applicationLabels(req);
-    const metadata = metadataTemplate({
-        name: req.name,
-        labels,
-    });
-    const r: Partial<k8s.V1ClusterRole> = {
-        kind: "ClusterRole",
-        apiVersion: "rbac.authorization.k8s.io/v1",
-        metadata,
-        rules: [],
-    };
-    _.merge(r, req.roleSpec);
-    return r as k8s.V1ClusterRole;
-}
-
-/**
- * Create service account spec for a Kubernetes application.  The
- * `req.rbac.serviceAccountSpec`, if it not false, is merged into the
- * spec created by this function using `lodash.merge(default,
- * req.rbac.serviceAccountSpec)`.
- *
- * @param req application request
- * @return service account resource specification
- */
-export async function serviceAccountTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1ServiceAccount> {
-    const labels = applicationLabels(req);
-    const metadata = metadataTemplate({
-        name: req.name,
-        labels,
-    });
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const sa: DeepPartial<k8s.V1ServiceAccount> = {
-        kind: "ServiceAccount",
-        apiVersion: "v1",
-        metadata,
-    };
-    if (req.serviceAccountSpec) {
-        _.merge(sa, req.serviceAccountSpec);
-    }
-    return sa as k8s.V1ServiceAccount;
-}
-
-/**
- * Create role binding spec for a Kubernetes application.  The
- * `req.rbac.roleBindingSpec`, if it is not false, is merged into the
- * spec created by this function using `lodash.merge(default,
- * req.rbac.roleBindingSpec)`.
- *
- * @param req application request
- * @return role binding resource specification
- */
-export async function roleBindingTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1RoleBinding> {
-    const labels = applicationLabels(req);
-    const metadata = metadataTemplate({
-        name: req.name,
-        labels,
-    });
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const rb: DeepPartial<k8s.V1RoleBinding> = {
-        kind: "RoleBinding",
-        apiVersion: "rbac.authorization.k8s.io/v1",
-        metadata,
-        roleRef: {
-            apiGroup: "rbac.authorization.k8s.io",
-            kind: "Role",
-            name: req.name,
-        },
-        subjects: [
-            {
-                kind: "ServiceAccount",
-                name: req.name,
-            },
-        ],
-    };
-    if (req.serviceAccountSpec && req.serviceAccountSpec.metadata && req.serviceAccountSpec.metadata.name) {
-        rb.subjects[0].name = req.serviceAccountSpec.metadata.name;
-    }
-    if (req.roleBindingSpec) {
-        _.merge(rb, req.roleBindingSpec);
-    }
-    return rb as k8s.V1RoleBinding;
-}
-
-/**
- * Create cluster role binding spec for a Kubernetes application.  The
- * `req.rbac.roleBindingSpec` is merged into the
- * spec created by this function using `lodash.merge(default,
- * req.rbac.roleBindingSpec)`.
- *
- * @param req application request
- * @return cluster role binding resource specification
- */
-export async function clusterRoleBindingTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1ClusterRoleBinding> {
-    const labels = applicationLabels(req);
-    const metadata = metadataTemplate({
-        name: req.name,
-        labels,
-    });
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const rb: DeepPartial<k8s.V1ClusterRoleBinding> = {
-        kind: "ClusterRoleBinding",
-        apiVersion: "rbac.authorization.k8s.io/v1",
-        metadata,
-        roleRef: {
-            apiGroup: "rbac.authorization.k8s.io",
-            kind: "ClusterRole",
-            name: req.name,
-        },
-        subjects: [
-            {
-                kind: "ServiceAccount",
-                name: req.name,
-                namespace: req.ns,
-            },
-        ],
-    };
-    if (req.serviceAccountSpec && req.serviceAccountSpec.metadata && req.serviceAccountSpec.metadata.name) {
-        rb.subjects[0].name = req.serviceAccountSpec.metadata.name;
-    }
-    if (req.roleBindingSpec) {
-        _.merge(rb, req.roleBindingSpec);
-    }
-    return rb as k8s.V1ClusterRoleBinding;
+    return deleted;
 }
