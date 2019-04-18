@@ -36,6 +36,7 @@ describe("kubernetes/deployment", () => {
             const d = await deploymentTemplate(r);
             assert(d.kind === "Deployment");
             assert(d.metadata.name === r.name);
+            assert(d.metadata.namespace === r.ns);
             assert(d.metadata.labels["app.kubernetes.io/managed-by"] === r.sdmFulfiller);
             assert(d.metadata.labels["app.kubernetes.io/name"] === r.name);
             assert(d.metadata.labels["app.kubernetes.io/part-of"] === r.name);
@@ -108,6 +109,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -224,6 +226,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -334,6 +337,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -408,6 +412,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -496,6 +501,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,

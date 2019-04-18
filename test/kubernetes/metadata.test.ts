@@ -16,7 +16,12 @@
 
 import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
-import { metadataTemplate } from "../../lib/kubernetes/metadata";
+import {
+    appMetadata,
+    AppMetadataOptions,
+    metadataTemplate,
+} from "../../lib/kubernetes/metadata";
+import { KubernetesDelete } from "../../lib/kubernetes/request";
 
 describe("kubernetes/metadata", () => {
 
@@ -46,6 +51,67 @@ describe("kubernetes/metadata", () => {
             };
             const m = metadataTemplate(p);
             const e: k8s.V1ObjectMeta = p as any;
+            assert.deepStrictEqual(m, e);
+        });
+
+    });
+
+    describe("appMetadata", () => {
+
+        it("should return a namespace object", () => {
+            const a: KubernetesDelete = {
+                name: "good-girl-gone-bad",
+                ns: "rihanna",
+                workspaceId: "AR14NN4",
+            };
+            const o: AppMetadataOptions = { ns: "namespace" };
+            const m = appMetadata(a, o);
+            const e = {
+                labels: {
+                    "app.kubernetes.io/name": "good-girl-gone-bad",
+                    "atomist.com/workspaceId": "AR14NN4",
+                },
+                name: "rihanna",
+            };
+            assert.deepStrictEqual(m, e);
+        });
+
+        it("should return a namespaced object", () => {
+            ["namespaced", "", undefined, "junk"].forEach(n => {
+                const a: KubernetesDelete = {
+                    name: "good-girl-gone-bad",
+                    ns: "rihanna",
+                    workspaceId: "AR14NN4",
+                };
+                const o: AppMetadataOptions = { ns: n as any };
+                const m = appMetadata(a, o);
+                const e = {
+                    labels: {
+                        "app.kubernetes.io/name": "good-girl-gone-bad",
+                        "atomist.com/workspaceId": "AR14NN4",
+                    },
+                    name: "good-girl-gone-bad",
+                    namespace: "rihanna",
+                };
+                assert.deepStrictEqual(m, e);
+            });
+        });
+
+        it("should return a cluster object", () => {
+            const a: KubernetesDelete = {
+                name: "good-girl-gone-bad",
+                ns: "rihanna",
+                workspaceId: "AR14NN4",
+            };
+            const o: AppMetadataOptions = { ns: "cluster" };
+            const m = appMetadata(a, o);
+            const e = {
+                labels: {
+                    "app.kubernetes.io/name": "good-girl-gone-bad",
+                    "atomist.com/workspaceId": "AR14NN4",
+                },
+                name: "good-girl-gone-bad",
+            };
             assert.deepStrictEqual(m, e);
         });
 

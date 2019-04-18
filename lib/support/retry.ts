@@ -18,7 +18,7 @@ import { logger } from "@atomist/automation-client";
 import * as pRetry from "p-retry";
 import { errMsg } from "./error";
 
-const defaultRetryOptions: pRetry.Options = {
+export const DefaultLogRetryOptions: pRetry.Options = {
     retries: 5,
     factor: 2,
     minTimeout: 0.1 * 1000,
@@ -29,7 +29,7 @@ const defaultRetryOptions: pRetry.Options = {
 /**
  * Add logging to promise-based retry.
  */
-export async function logRetry<T>(f: () => Promise<T>, desc: string, options: pRetry.Options = defaultRetryOptions): Promise<T> {
+export async function logRetry<T>(f: () => Promise<T>, desc: string, options: pRetry.Options = DefaultLogRetryOptions): Promise<T> {
     const opts: pRetry.Options = {
         onFailedAttempt: e => {
             logger.debug(`Error in ${desc} attempt ${e.attemptNumber}: ${errMsg(e)}`);

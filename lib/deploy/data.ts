@@ -306,6 +306,8 @@ export async function defaultImage(goalEvent: SdmGoalEvent, k8Deploy: Kubernetes
             goalEvent.branch, context);
     } catch (e) {
         logger.warn(`Failed to read version for goal ${slug}:${goalEvent.sha}: ${e.message}`);
+    }
+    if (!version) {
         version = "latest";
     }
     const tag = version.replace(/^[-.]/, "").replace(/[^-.\w]+/, "").substring(0, 128);

@@ -15,7 +15,11 @@
  */
 
 import * as assert from "power-assert";
-import { serviceTemplate } from "../../lib/kubernetes/service";
+import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
+import {
+    serviceTemplate,
+    upsertService,
+} from "../../lib/kubernetes/service";
 
 describe("kubernetes/service", () => {
 
@@ -35,13 +39,14 @@ describe("kubernetes/service", () => {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
-                    name: r.name,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
                         "app.kubernetes.io/part-of": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
+                    name: "cloudbusting",
+                    namespace: "hounds-of-love",
                 },
                 spec: {
                     ports: [
@@ -94,7 +99,6 @@ describe("kubernetes/service", () => {
                     annotation: {
                         "music.com/genre": "Art Rock",
                     },
-                    name: r.name,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -102,6 +106,8 @@ describe("kubernetes/service", () => {
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },
+                    name: "cloudbusting",
+                    namespace: "hounds-of-love",
                 },
                 spec: {
                     externalTrafficPolicy: "Local",
@@ -122,6 +128,19 @@ describe("kubernetes/service", () => {
                 },
             };
             assert.deepStrictEqual(s, e);
+        });
+
+    });
+
+    describe("upsertService", () => {
+
+        it("should not do anything if port is not defined", async () => {
+            const a: KubernetesResourceRequest = {
+                name: "brotherhood",
+                ns: "new-order",
+            } as any;
+            const i = await upsertService(a);
+            assert(i === undefined);
         });
 
     });
