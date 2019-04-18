@@ -17,7 +17,9 @@
 import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
 import {
+    decryptSecret,
     encodeSecret,
+    encryptSecret,
     secretTemplate,
 } from "../../lib/kubernetes/secret";
 
@@ -189,6 +191,82 @@ describe("kubernetes/secret", () => {
                 data: {},
             };
             assert.deepStrictEqual(k, e);
+        });
+
+    });
+
+    describe("encryptSecret", () => {
+
+        it("should encrypt secret data values", async () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "TmV2ZXJtaW5k",
+                    beck: "TWVsbG93IEdvbGQ=",
+                    nin: "UHJldHR5IEhhdGUgTWFjaGluZQ==",
+                },
+            };
+            const k = "Th1$W@yC0m3$";
+            const v = await encryptSecret(s, k);
+            const e = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "kMeF2arsPWte+lHrGLAG8A==",
+                    beck: "RQ9Y12tHp2u2K0YlsFqc5uXULfSmi4vqP0a+3yySwm4=",
+                    nin: "/rNYc6pGZgCqYz+ooLnMLqFsojvdzKXOloe6VEuubwA=",
+                },
+            };
+            assert.deepStrictEqual(v, e);
+        });
+
+    });
+
+    describe("decryptSecret", () => {
+
+        it("should decrypt secret data values", async () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "kMeF2arsPWte+lHrGLAG8A==",
+                    beck: "RQ9Y12tHp2u2K0YlsFqc5uXULfSmi4vqP0a+3yySwm4=",
+                    nin: "/rNYc6pGZgCqYz+ooLnMLqFsojvdzKXOloe6VEuubwA=",
+                },
+            };
+            const k = "Th1$W@yC0m3$";
+            const v = await decryptSecret(s, k);
+            const e = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "TmV2ZXJtaW5k",
+                    beck: "TWVsbG93IEdvbGQ=",
+                    nin: "UHJldHR5IEhhdGUgTWFjaGluZQ==",
+                },
+            };
+            assert.deepStrictEqual(v, e);
         });
 
     });

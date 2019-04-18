@@ -15,29 +15,25 @@
  */
 
 import * as assert from "power-assert";
-import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
-import {
-    serviceTemplate,
-    upsertService,
-} from "../../lib/kubernetes/service";
+import { serviceAccountTemplate } from "../../lib/kubernetes/serviceAccount";
 
-describe("kubernetes/service", () => {
+describe("kubernetes/serviceAccount", () => {
 
-    describe("serviceTemplate", () => {
+    describe("serviceAccountTemplate", () => {
 
-        it("should create a service spec", async () => {
+        it("should create a service account spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                port: 5510,
                 sdmFulfiller: "EMI",
+                roleSpec: {},
             };
-            const s = await serviceTemplate(r);
+            const s = await serviceAccountTemplate(r);
             const e = {
                 apiVersion: "v1",
-                kind: "Service",
+                kind: "ServiceAccount",
                 metadata: {
                     name: r.name,
                     labels: {
@@ -47,35 +43,18 @@ describe("kubernetes/service", () => {
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                 },
-                spec: {
-                    ports: [
-                        {
-                            name: "http",
-                            port: 5510,
-                            protocol: "TCP",
-                            targetPort: "http",
-                        },
-                    ],
-                    selector: {
-                        "app.kubernetes.io/name": r.name,
-                        "atomist.com/workspaceId": r.workspaceId,
-                    },
-                    sessionAffinity: "None",
-                    type: "NodePort",
-                },
             };
             assert.deepStrictEqual(s, e);
         });
 
-        it("should merge in provided service spec", async () => {
+        it("should merge in provided service account spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
                 ns: "hounds-of-love",
                 name: "cloudbusting",
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
-                port: 5510,
                 sdmFulfiller: "EMI",
-                serviceSpec: {
+                serviceAccountSpec: {
                     metadata: {
                         annotation: {
                             "music.com/genre": "Art Rock",
@@ -84,16 +63,12 @@ describe("kubernetes/service", () => {
                             "emi.com/producer": "Kate Bush",
                         },
                     },
-                    spec: {
-                        externalTrafficPolicy: "Local",
-                        sessionAffinity: "ClusterIP",
-                    },
-                } as any,
+                },
             };
-            const s = await serviceTemplate(r);
+            const s = await serviceAccountTemplate(r);
             const e = {
                 apiVersion: "v1",
-                kind: "Service",
+                kind: "ServiceAccount",
                 metadata: {
                     annotation: {
                         "music.com/genre": "Art Rock",
@@ -107,38 +82,48 @@ describe("kubernetes/service", () => {
                         "emi.com/producer": "Kate Bush",
                     },
                 },
-                spec: {
-                    externalTrafficPolicy: "Local",
-                    ports: [
-                        {
-                            name: "http",
-                            port: 5510,
-                            protocol: "TCP",
-                            targetPort: "http",
-                        },
-                    ],
-                    selector: {
-                        "app.kubernetes.io/name": r.name,
-                        "atomist.com/workspaceId": r.workspaceId,
-                    },
-                    sessionAffinity: "ClusterIP",
-                    type: "NodePort",
-                },
             };
             assert.deepStrictEqual(s, e);
         });
 
-    });
-
-    describe("upsertService", () => {
-
-        it("should not do anything if port is not defined", async () => {
-            const a: KubernetesResourceRequest = {
-                name: "brotherhood",
-                ns: "new-order",
-            } as any;
-            const i = await upsertService(a);
-            assert(i === undefined);
+        it("should use provided service account name", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
+                serviceAccountSpec: {
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                        name: "peter-gabriel",
+                    },
+                },
+            };
+            const s = await serviceAccountTemplate(r);
+            const e = {
+                apiVersion: "v1",
+                kind: "ServiceAccount",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: "peter-gabriel",
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+            };
+            assert.deepStrictEqual(s, e);
         });
 
     });

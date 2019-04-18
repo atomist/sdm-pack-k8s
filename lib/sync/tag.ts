@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-import * as assert from "power-assert";
-import { upsertRbac } from "../../lib/kubernetes/rbac";
-import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
+import {
+    Configuration,
+    configurationValue,
+} from "@atomist/automation-client";
 
-describe("kubernetes/rbac", () => {
-
-    describe("upsertRbac", () => {
-
-        it("should return nothing", async () => {
-            const r: KubernetesResourceRequest = {} as any;
-            const v = await upsertRbac(r);
-            assert.deepStrictEqual(v, {});
-        });
-
-    });
-
-});
+/**
+ * Unique tag to include in sync commits made by this SDM.
+ *
+ * @param config the SDM configuration
+ * @return unique commit tag string
+ */
+export function commitTag(config?: Configuration): string {
+    const name = (config && config.name) ? config.name : configurationValue<string>("name", "@atomist/sdm-pack-k8s");
+    return `[atomist:sync-commit=${name}]`;
+}

@@ -16,9 +16,12 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import {
+    decrypt,
+    encrypt,
+} from "../support/crypto";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
@@ -34,11 +37,6 @@ import {
     KubernetesSdm,
 } from "./request";
 
-export interface UpsertSecretResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Secret;
-}
-
 /**
  * Create application secrets if they do not exist.  If a secret in
  * `req.secrets` exists, the secret is patched.  The provided secrets
@@ -46,10 +44,9 @@ export interface UpsertSecretResponse {
  * `req.secrets` is false or any empty array, no secrets are modified.
  *
  * @param req Kuberenetes application request
- * @return Response from Kubernetes API if resource is created or patched,
- *         `void` otherwise.
+ * @return Array of secret specs created/patched, which array may be empty
  */
-export async function upsertSecrets(req: KubernetesResourceRequest): Promise<UpsertSecretResponse[]> {
+export async function upsertSecrets(req: KubernetesResourceRequest): Promise<k8s.V1Secret[]> {
     const slug = appName(req);
     if (!req.secrets || req.secrets.length < 1) {
         logger.debug(`No secrets provided, will not create secrets for ${slug}`);
@@ -62,12 +59,14 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
             await req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
-            return logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),
+            await logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),
                 `create secret ${secretName} for ${slug}`);
+            return spec;
         }
         logger.debug(`Secret ${secretName} exists, patching`);
-        return logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, spec),
+        await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, spec),
             `patch secret ${secretName} for ${slug}`);
+        return spec;
     }));
 }
 
@@ -75,27 +74,29 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
  * Delete secrets associated with application described by `req`, if
  * any exists.  If no such secrets exist, do nothing.
  *
- * @param req Kuberenetes delete request
+ * @param req Kubernetes application delete request
+ * @return Array of deleted secret specs, which may be empty
  */
-export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promise<void> {
+export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Secret[]> {
     const slug = appName(req);
     let secrets: k8s.V1SecretList;
     const matchers = matchLabels(req);
     const labelSelector = Object.keys(matchers).map(l => `${l}=${matchers[l]}`).join(",");
     try {
-        const listResp = await Promise.resolve(req.clients.core.listNamespacedSecret(req.ns, undefined, undefined,
-            undefined, undefined, labelSelector));
+        const listResp = await req.clients.core.listNamespacedSecret(req.ns, undefined, undefined,
+            undefined, undefined, labelSelector);
         secrets = listResp.body;
     } catch (e) {
-        logger.debug(`Failed to list secrets in namespace ${req.ns}, not deleting secrets for ${slug}: ${errMsg(e)}`);
-        return;
+        e.message = `Failed to list secrets in namespace for ${slug}: ${errMsg(e)}`;
+        logger.error(e.message);
+        throw e;
     }
-    for (const secret of secrets.items) {
+    return Promise.all(secrets.items.map(async secret => {
         const secretName = `${req.ns}/${secret.metadata.name}`;
         await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns),
             `delete secret ${secretName}`);
-    }
-    return;
+        return secret;
+    }));
 }
 
 /**
@@ -119,9 +120,9 @@ export async function secretTemplate(req: KubernetesApplication & KubernetesSdm,
 }
 
 /**
- * Create encoded opaque secret object from key-value pairs.
+ * Create encoded opaque secret object from key/value pairs.
  *
- * @param secrets key-value pairs of secrets, the values are base64 encoded
+ * @param secrets Key/value pairs of secrets, the values will be base64 encoded in the returned secret
  * @return Kubernetes secret object
  */
 export function encodeSecret(name: string, data: { [key: string]: string }): k8s.V1Secret {
@@ -135,5 +136,31 @@ export function encodeSecret(name: string, data: { [key: string]: string }): k8s
         data: {},
     };
     Object.keys(data).forEach(key => secret.data[key] = Buffer.from(data[key]).toString("base64"));
+    return secret as k8s.V1Secret;
+}
+
+/**
+ * Encrypt secret values, which should already be base64 encoded.
+ *
+ * @param secret Kubernetes secret with base64 encoded data values
+ * @return Kubernetes secret object with encrypted data values
+ */
+export async function encryptSecret(secret: DeepPartial<k8s.V1Secret>, key: string): Promise<k8s.V1Secret> {
+    for (const datum of Object.keys(secret.data)) {
+        secret.data[datum] = await encrypt(secret.data[datum], key);
+    }
+    return secret as k8s.V1Secret;
+}
+
+/**
+ * Dencrypt secret values.
+ *
+ * @param secret Kubernetes secret with encrypted data values
+ * @return Kubernetes secret object with base64 encoded data values
+ */
+export async function decryptSecret(secret: DeepPartial<k8s.V1Secret>, key: string): Promise<k8s.V1Secret> {
+    for (const datum of Object.keys(secret.data)) {
+        secret.data[datum] = await decrypt(secret.data[datum], key);
+    }
     return secret as k8s.V1Secret;
 }

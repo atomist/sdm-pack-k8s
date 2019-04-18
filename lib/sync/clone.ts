@@ -14,20 +14,11 @@
  * limitations under the License.
  */
 
-import * as assert from "power-assert";
-import { upsertRbac } from "../../lib/kubernetes/rbac";
-import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
+import { CloneOptions } from "@atomist/automation-client";
 
-describe("kubernetes/rbac", () => {
-
-    describe("upsertRbac", () => {
-
-        it("should return nothing", async () => {
-            const r: KubernetesResourceRequest = {} as any;
-            const v = await upsertRbac(r);
-            assert.deepStrictEqual(v, {});
-        });
-
-    });
-
-});
+export const cloneOptions: CloneOptions = {
+    alwaysDeep: false,
+    depth: 1,
+    detachHead: false,
+    keep: false,
+};
