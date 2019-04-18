@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { RepoRef } from "@atomist/automation-client";
+import { ProviderType } from "@atomist/automation-client/lib/operations/common/RepoId";
 import {
     ExtensionPack,
     metadata,
@@ -23,6 +25,23 @@ import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
 import { providerStartupListener } from "./provider/kubernetesCluster";
 import { minikubeStartupListener } from "./support/minikube";
+import { syncRepoStartupListener } from "./sync/syncRepoStartup";
+
+/**
+ * Information needed to create a proper RemoteRepoRef for the
+ * [[SdmPackK8sOptions.syncRepo]].  If `apiBase` and `providerType`
+ * are not provided, cortex is queried to find the information.
+ */
+export interface SyncRepoRef extends RepoRef {
+    /**
+     * Root API URL.
+     */
+    apiBase?: string;
+    /*
+     * Git SDM provider, e.g., "github_com"
+     */
+    providerType?: ProviderType;
+}
 
 /**
  * Configuration options to be passed to the extension pack creation.
@@ -40,6 +59,15 @@ export interface SdmPackK8sOptions {
      * is used from k8s-sdm to manage k8s cluster it is running in.
      */
     registerCluster?: boolean;
+
+    /**
+     * To synchronize resources in k8s cluster with a Git repo,
+     * provide a repo ref as the value of this property.  On startup,
+     * the contents of this repo ref will be synchronized with the
+     * cluster and subsequent resource deployments will update the
+     * contents of the repo.
+     */
+    syncRepo?: SyncRepoRef;
 }
 
 /**
@@ -86,6 +114,10 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
 
             if (sdm.configuration.sdm.k8s.options.registerCluster) {
                 sdm.addStartupListener(providerStartupListener);
+            }
+            if (sdm.configuration.sdm.k8s.options.syncRepo) {
+                sdm.addStartupListener(syncRepoStartupListener);
+                // TODO: set goals on push to syncRepo
             }
             sdm.addStartupListener(minikubeStartupListener);
 
