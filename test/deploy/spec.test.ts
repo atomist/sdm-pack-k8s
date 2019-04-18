@@ -97,28 +97,34 @@ describe("deploy/spec", () => {
         });
 
         it("should not find the wrong spec", async () => {
-            const p = InMemoryProject.of({ path: ".atomist/kubernetes/nick.json", content: "{}\n" });
+            const p = InMemoryProject.of({ path: "nick.json", content: "{}\n" });
             const s = await parseKubernetesSpec(p, "drake.json");
             assert(s === undefined);
         });
 
         it("should find the spec", async () => {
-            const p = InMemoryProject.of({ path: ".atomist/kubernetes/nick.json", content: "{}\n" });
+            const p = InMemoryProject.of({ path: "nick.json", content: "{}\n" });
             const s = await parseKubernetesSpec(p, "nick.json");
+            assert.deepStrictEqual(s, {});
+        });
+
+        it("should find the nested spec", async () => {
+            const p = InMemoryProject.of({ path: "bryter/layter/nick.json", content: "{}\n" });
+            const s = await parseKubernetesSpec(p, "bryter/layter/nick.json");
             assert.deepStrictEqual(s, {});
         });
 
         it("should find the right spec", async () => {
             const p = InMemoryProject.of(
-                { path: ".atomist/kubernetes/nick.json", content: "{}\n" },
-                { path: ".atomist/kubernetes/drake.json", content: `{"which":"will"}\n` },
+                { path: "nick.json", content: "{}\n" },
+                { path: "drake.json", content: `{"which":"will"}\n` },
             );
             const s = await parseKubernetesSpec(p, "drake.json");
             assert.deepStrictEqual(s, { which: "will" });
         });
 
         it("should parse empty YAML", async () => {
-            const p = InMemoryProject.of({ path: ".atomist/kubernetes/nick.yml", content: "" });
+            const p = InMemoryProject.of({ path: "nick.yml", content: "" });
             const s = await parseKubernetesSpec(p, "nick.yml");
             assert(s === undefined);
         });
@@ -130,7 +136,7 @@ describe("deploy/spec", () => {
       serviceAccountName: sdm-serviceaccount
       terminationGracePeriodSeconds: 180
 `;
-            const p = InMemoryProject.of({ path: ".atomist/kubernetes/nick.yaml", content: c });
+            const p = InMemoryProject.of({ path: "nick.yaml", content: c });
             const s = await parseKubernetesSpec(p, "nick.yaml");
             const e = {
                 spec: {

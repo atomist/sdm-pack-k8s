@@ -37,6 +37,7 @@ describe("kubernetes/ingress", () => {
                 kind: "Ingress",
                 metadata: {
                     name: "cloudbusting",
+                    namespace: "hounds-of-love",
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -90,6 +91,7 @@ describe("kubernetes/ingress", () => {
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                     name: "cloudbusting",
+                    namespace: "hounds-of-love",
                 },
                 spec: {
                     rules: [
@@ -164,6 +166,7 @@ describe("kubernetes/ingress", () => {
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                     name: "cloudbusting",
+                    namespace: "hounds-of-love",
                 },
                 spec: {
                     rules: [
