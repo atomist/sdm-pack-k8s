@@ -24,11 +24,13 @@ import {
     ProgressLog,
     SdmGoalEvent,
 } from "@atomist/sdm";
+import { K8sObject } from "../kubernetes/api";
 import { upsertApplication } from "../kubernetes/application";
 import {
     isKubernetesApplication,
     KubernetesApplication,
 } from "../kubernetes/request";
+import { syncApplication } from "../sync/application";
 import { getCluster } from "./cluster";
 import { getKubernetesGoalEventData } from "./data";
 import { appExternalUrls } from "./externalUrls";
@@ -45,7 +47,6 @@ import { appExternalUrls } from "./externalUrls";
  *         ingress properties are set
  */
 export async function deployApplication(goalEvent: SdmGoalEvent, context: HandlerContext, log: ProgressLog): Promise<ExecuteGoalResult> {
-
     let appId = deployAppId(goalEvent, context);
     llog(`Processing ${appId}`, logger.debug, log);
     let dest = destination(goalEvent);
@@ -64,8 +65,9 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     appId = deployAppId(goalEvent, context, app);
 
     llog(`Deploying ${appId} to Kubernetes`, logger.info, log);
+    let resources: K8sObject[];
     try {
-        await upsertApplication(app, goalEvent.fulfillment.name);
+        resources = await upsertApplication(app, goalEvent.fulfillment.name);
     } catch (e) {
         return logAndFailDeploy(`Failed to deploy ${appId} to Kubernetes: ${e.message}`, log, dest);
     }
@@ -73,6 +75,11 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     llog(message, logger.info, log);
     const description = `Deployed \`${dest}\``;
     const externalUrls = await appExternalUrls(app, goalEvent);
+    try {
+        await syncApplication(app, resources);
+    } catch (e) {
+        return logAndFailDeploy(`Deployed ${appId} to Kubernetes but failed to update sync repo: ${e.message}`, log, dest);
+    }
     return { code: 0, description, externalUrls, message };
 }
 

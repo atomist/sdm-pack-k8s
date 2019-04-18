@@ -41,6 +41,9 @@ async function patchWithHeaders(api: any, patcher: any, args: any[]) {
 }
 
 class Core_v1Api_Patch extends k8s.Core_v1Api {
+    patchNamespace(...args: any[]) {
+        return patchWithHeaders(this, super.patchNamespace, args);
+    }
     patchNamespacedSecret(...args: any[]) {
         return patchWithHeaders(this, super.patchNamespacedSecret, args);
     }
