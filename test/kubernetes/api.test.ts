@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-import * as k8s from "@kubernetes/client-node";
+import { execPromise } from "@atomist/sdm";
 import * as assert from "power-assert";
-import { specUriPath } from "../../lib/kubernetes/api";
+import {
+    EssentialKubernetesObject,
+    specUriPath,
+} from "../../lib/kubernetes/api";
+import { applySpec } from "../../lib/kubernetes/apply";
+import { deleteSpec } from "../../lib/kubernetes/delete";
 
 describe("kubernetes/api", () => {
 
     describe("specPath", () => {
 
         it("should return a namespaced path", () => {
-            const o: k8s.KubernetesObject = {
+            const o: EssentialKubernetesObject = {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
@@ -36,7 +41,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should return a non-namespaced path", () => {
-            const o: k8s.KubernetesObject = {
+            const o: EssentialKubernetesObject = {
                 apiVersion: "v1",
                 kind: "Namespace",
                 metadata: {
@@ -48,7 +53,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should return a namespaced path for non-core resource", () => {
-            const o: k8s.KubernetesObject = {
+            const o: EssentialKubernetesObject = {
                 apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
@@ -61,7 +66,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should return properly pluralize", () => {
-            const o: k8s.KubernetesObject = {
+            const o: EssentialKubernetesObject = {
                 apiVersion: "extensions/v1beta1",
                 kind: "Ingress",
                 metadata: {
@@ -92,7 +97,7 @@ describe("kubernetes/api", () => {
             ];
             /* tslint:enable:max-line-length */
             a.forEach(k => {
-                const o: k8s.KubernetesObject = {
+                const o: EssentialKubernetesObject = {
                     apiVersion: k.apiVersion,
                     kind: k.kind,
                     metadata: {
@@ -106,6 +111,62 @@ describe("kubernetes/api", () => {
                 assert(r === k.e);
             });
         });
+
+    });
+
+    describe("integration", () => {
+
+        before(async function(): Promise<void> {
+            try {
+                // see if minikube is available and responding
+                await execPromise("kubectl", ["config", "use-context", "minikube"]);
+                await execPromise("kubectl", ["get", "pods"]);
+            } catch (e) {
+                // tslint:disable-next-line:no-invalid-this
+                this.skip();
+            }
+        });
+
+        it("should apply and delete a resource", async () => {
+            const o: EssentialKubernetesObject = {
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    name: `sdm-pack-k8s-api-int-${Math.floor(Math.random() * 100000)}`,
+                    namespace: "default",
+                },
+                spec: {
+                    selector: {
+                        matchLabels: {
+                            app: "sleep",
+                        },
+                    },
+                    template: {
+                        metadata: {
+                            labels: {
+                                app: "sleep",
+                            },
+                        },
+                        spec: {
+                            containers: [
+                                {
+                                    args: ["60"],
+                                    command: ["sleep"],
+                                    image: "alpine",
+                                    name: "sleep",
+                                },
+                            ],
+                        },
+                    },
+                },
+            } as any;
+            await applySpec(o);
+            const p0 = await execPromise("kubectl", ["get", "-n", o.metadata.namespace, "deployments"]);
+            assert(p0.stdout.includes(o.metadata.name));
+            await deleteSpec(o);
+            const p1 = await execPromise("kubectl", ["get", "-n", o.metadata.namespace, "deployments"]);
+            assert(!p1.stdout.includes(o.metadata.name));
+        }).timeout(5000);
 
     });
 

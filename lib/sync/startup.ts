@@ -59,7 +59,7 @@ export const syncRepoStartupListener: StartupListener = async context => {
         logger.warn(`SDM configuration contains no workspace IDs, not syncing with repo`);
         return;
     }
-    const repoRef: RepoRef = _.get(sdm, "configuration.sdm.k8s.options.syncRepo");
+    const repoRef: RepoRef = _.get(sdm, "configuration.sdm.k8s.options.sync.repo");
     if (!repoRef || !repoRef.owner || !repoRef.repo) {
         logger.error(`Provided repo ref does not contain all required properties: ${stringify(repoRef)}`);
         return;

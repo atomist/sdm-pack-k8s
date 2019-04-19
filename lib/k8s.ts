@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-import { RepoRef } from "@atomist/automation-client";
-import { ProviderType } from "@atomist/automation-client/lib/operations/common/RepoId";
+import {
+    RepoRef,
+    ScmProviderType,
+} from "@atomist/automation-client";
 import {
     ExtensionPack,
     metadata,
@@ -34,13 +36,13 @@ import { syncRepoStartupListener } from "./sync/startup";
  */
 export interface SyncRepoRef extends RepoRef {
     /**
-     * Root API URL.
+     * Root API URL.  Default is dependent on [[providerType]].
      */
     apiBase?: string;
     /*
-     * Git SDM provider, e.g., "github_com"
+     * Git SDM provider, e.g., "github_com".  Default is "github_com".
      */
-    providerType?: ProviderType;
+    providerType?: ScmProviderType;
 }
 
 /**
@@ -61,13 +63,18 @@ export interface SdmPackK8sOptions {
     registerCluster?: boolean;
 
     /**
-     * To synchronize resources in k8s cluster with a Git repo,
-     * provide a repo ref as the value of this property.  On startup,
-     * the contents of this repo ref will be synchronized with the
-     * cluster and subsequent resource deployments will update the
-     * contents of the repo.
+     * Synchronize resources in k8s cluster with a Git repo.
      */
-    syncRepo?: SyncRepoRef;
+    sync?: {
+        /**
+         * To synchronize resources in k8s cluster with a Git repo,
+         * provide a repo ref as the value of this property.  On startup,
+         * the contents of this repo ref will be synchronized with the
+         * cluster and subsequent resource deployments will update the
+         * contents of the repo.
+         */
+        repo: SyncRepoRef;
+    };
 }
 
 /**
@@ -82,6 +89,9 @@ export interface SdmPackK8sOptions {
  *
  * The [[kubernetesDeployHandler]] event handler for this SDM is added
  * to the SDM.
+ *
+ * If `sync.repo` is a valid repo ref, synchronizing Kubernetes
+ * resources with a Git repository is enabled.
  *
  * The [[minikubeStartupListener]] is added to the SDM to assist
  * running in local mode against a
@@ -115,7 +125,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
             if (sdm.configuration.sdm.k8s.options.registerCluster) {
                 sdm.addStartupListener(providerStartupListener);
             }
-            if (sdm.configuration.sdm.k8s.options.syncRepo) {
+            if (sdm.configuration.sdm.k8s.options.sync && sdm.configuration.sdm.k8s.options.sync.repo) {
                 sdm.addStartupListener(syncRepoStartupListener);
                 // TODO: set goals on push to syncRepo
             }

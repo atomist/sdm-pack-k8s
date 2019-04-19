@@ -23,6 +23,7 @@ import * as stringify from "json-stringify-safe";
 import * as tmp from "tmp-promise";
 import { errMsg } from "../support/error";
 import {
+    EssentialKubernetesObject,
     ObjectResponse,
     specUriPath,
 } from "./api";
@@ -57,14 +58,14 @@ export async function applySpecFile(specPath: string): Promise<ObjectResponse> {
  * @param spec Kuberenetes resource spec sufficient to identify and create the resource
  * @return response from the Kubernetes API.
  */
-export async function applySpec(spec: k8s.KubernetesObject): Promise<ObjectResponse> {
+export async function applySpec(spec: EssentialKubernetesObject): Promise<ObjectResponse> {
     const slug = specUriPath(spec);
     let specFile: tmp.FileResult;
+    let result: ObjectResponse;
     try {
-        specFile = await tmp.file({ prefix: "sdm-pack-k8s-spec", postfix: ".json" });
+        specFile = await tmp.file({ prefix: "sdm-pack-k8s-spec-", postfix: ".json" });
         await fs.writeFile(specFile.fd, stringify(spec));
-        await fs.close(specFile.fd);
-        return applySpecFile(specFile.path);
+        result = await applySpecFile(specFile.path);
     } catch (e) {
         e.message = `Failed to apply ${slug} spec: ${e.message}`;
         logger.error(e.message);
@@ -74,4 +75,5 @@ export async function applySpec(spec: k8s.KubernetesObject): Promise<ObjectRespo
             specFile.cleanup();
         }
     }
+    return result;
 }

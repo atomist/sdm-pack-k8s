@@ -17,6 +17,7 @@
 import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as request from "request";
+import { DeepPartial } from "ts-essentials";
 
 export interface ObjectResponse {
     body: k8s.KubernetesObject;
@@ -28,12 +29,22 @@ export interface DeleteResponse {
     response: http.IncomingMessage;
 }
 
+export interface EssentialV1Metadata extends DeepPartial<k8s.V1ObjectMeta> {
+    name: string;
+}
+
+export interface EssentialKubernetesObject extends DeepPartial<k8s.KubernetesObject> {
+    apiVersion: string;
+    kind: string;
+    metadata: EssentialV1Metadata;
+}
+
 export class KubernetesObjectApi extends k8s.ApisApi {
 
     /**
      * Read any Kubernetes resource.
      */
-    public async read(spec: k8s.KubernetesObject): Promise<ObjectResponse> {
+    public async read(spec: EssentialKubernetesObject): Promise<ObjectResponse> {
         const requestOptions = this.baseRequestOptions();
         requestOptions.uri += specUriPath(spec);
         return this.requestPromise(requestOptions) as unknown as ObjectResponse;
@@ -42,7 +53,7 @@ export class KubernetesObjectApi extends k8s.ApisApi {
     /**
      * Delete any Kubernetes resource.
      */
-    public async delete(spec: k8s.KubernetesObject, body: any = { propagationPolicy: "Background" }): Promise<DeleteResponse> {
+    public async delete(spec: EssentialKubernetesObject, body: any = { propagationPolicy: "Background" }): Promise<DeleteResponse> {
         const requestOptions = this.baseRequestOptions("DELETE");
         requestOptions.uri += specUriPath(spec);
         requestOptions.body = body;
@@ -93,7 +104,7 @@ export class KubernetesObjectApi extends k8s.ApisApi {
 /**
  * Use spec information to construct resource URI path.
  */
-export function specUriPath(spec: k8s.KubernetesObject): string {
+export function specUriPath(spec: EssentialKubernetesObject): string {
     const plural = spec.kind.toLowerCase().replace(/s$/, "se").replace(/y$/, "ie") + "s";
     const parts = (spec.metadata.namespace) ?
         [spec.apiVersion, "namespaces", spec.metadata.namespace, plural, spec.metadata.name] :
