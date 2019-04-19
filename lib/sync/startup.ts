@@ -38,6 +38,8 @@ import {
 import * as cluster from "cluster";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
+import * as path from "path";
+import { applySpecFile } from "../kubernetes/apply";
 import {
     RepoScmProvider,
     ScmProviders,
@@ -81,9 +83,16 @@ export const syncRepoStartupListener: StartupListener = async context => {
  * @param syncRepo repository of specs to sync
  */
 async function initialSync(syncRepo: GitProject): Promise<void> {
-    const specs = await sortSpecs(syncRepo);
-    for (const spec of specs) {
-        logger.debug(`Processing spec ${spec.path}`);
+    const specFiles = await sortSpecs(syncRepo);
+    for (const specFile of specFiles) {
+        logger.debug(`Processing spec ${specFile.path}`);
+        try {
+            await applySpecFile(path.join(syncRepo.baseDir, specFile.path));
+        } catch (e) {
+            e.message = `Failed to apply '${specFile.path}': ${e.message}`;
+            logger.error(e.message);
+            throw e;
+        }
     }
     return;
 }

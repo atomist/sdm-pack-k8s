@@ -28,16 +28,22 @@
   "types": "./index.d.ts",
   "dependencies": {
     "@kubernetes/client-node": "^0.8.2",
+    "@types/fs-extra": "^5.0.5",
     "@types/js-yaml": "^3.11.4",
     "@types/json-stringify-safe": "^5.0.0",
     "@types/lodash": "^4.14.118",
     "@types/node": "^10.12.10",
     "@types/p-retry": "^2.0.0",
+    "@types/request": "^2.48.1",
+    "@types/tmp": "0.0.33",
     "docker-file-parser": "^1.0.3",
+    "fs-extra": "^7.0.1",
     "js-yaml": "^3.13.0",
     "json-stringify-safe": "^5.0.1",
     "lodash": "^4.17.11",
     "p-retry": "^3.0.0",
+    "request": "^2.88.0",
+    "tmp-promise": "^1.0.5",
     "ts-essentials": "^1.0.2"
   },
   "peerDependencies": {

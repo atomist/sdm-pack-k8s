@@ -25,7 +25,7 @@ import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
 import { providerStartupListener } from "./provider/kubernetesCluster";
 import { minikubeStartupListener } from "./support/minikube";
-import { syncRepoStartupListener } from "./sync/syncRepoStartup";
+import { syncRepoStartupListener } from "./sync/startup";
 
 /**
  * Information needed to create a proper RemoteRepoRef for the

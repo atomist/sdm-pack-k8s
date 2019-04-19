@@ -34,7 +34,7 @@ import {
     repoCredentials,
     scmCredentials,
     sortSpecs,
-} from "../../lib/sync/syncRepoStartup";
+} from "../../lib/sync/startup";
 import {
     RepoScmProvider,
     ScmProviders,
