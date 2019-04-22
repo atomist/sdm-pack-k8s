@@ -15,65 +15,43 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import { execPromise } from "@atomist/sdm";
-import * as k8s from "@kubernetes/client-node";
-import * as fs from "fs-extra";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
-import * as tmp from "tmp-promise";
 import { errMsg } from "../support/error";
+import { logRetry } from "../support/retry";
 import {
     EssentialKubernetesObject,
-    ObjectResponse,
+    KubernetesObjectApi,
+    KubernetesObjectResponse,
     specUriPath,
 } from "./api";
+import { loadKubeConfig } from "./config";
 
 /**
- * Create or update a Kubernetes resource defined in a file.  This
- * uses the `kubectl` command-line utility rather than re-implement
- * its complicated apply logic since [server-side
- * apply](https://github.com/kubernetes/enhancements/issues/555) is in
- * the works.
- *
- * @param specPath path to Kuberenetes resource spec sufficient to identify and create the resource
- * @return response from the Kubernetes API.
- */
-export async function applySpecFile(specPath: string): Promise<ObjectResponse> {
-    try {
-        const result = await execPromise("kubectl", ["apply", "-f", specPath, "-o", "json"]);
-        const body: k8s.KubernetesObject = JSON.parse(result.stdout);
-        const response: http.IncomingMessage = { statusCode: 200 } as any;
-        return { body, response };
-    } catch (e) {
-        e.message = `Failed to apply '${specPath}' spec: ${errMsg(e)}`;
-        logger.error(e.message);
-        throw e;
-    }
-}
-
-/**
- * Create or update a Kubernetes resource.  It creates a temporary
- * file and calls [[applySpecFile]] on it.
+ * Create or update a Kubernetes resource.  This implmentation uses
+ * get, patch, and create, but will likely switch to [server-side
+ * apply](https://github.com/kubernetes/enhancements/issues/555) when
+ * it is available.
  *
  * @param spec Kuberenetes resource spec sufficient to identify and create the resource
  * @return response from the Kubernetes API.
  */
-export async function applySpec(spec: EssentialKubernetesObject): Promise<ObjectResponse> {
+export async function applySpec(spec: EssentialKubernetesObject): Promise<KubernetesObjectResponse> {
     const slug = specUriPath(spec);
-    let specFile: tmp.FileResult;
-    let result: ObjectResponse;
+    let client: KubernetesObjectApi;
     try {
-        specFile = await tmp.file({ prefix: "sdm-pack-k8s-spec-", postfix: ".json" });
-        await fs.writeFile(specFile.fd, stringify(spec));
-        result = await applySpecFile(specFile.path);
+        const kc = loadKubeConfig();
+        client = kc.makeApiClient(KubernetesObjectApi);
     } catch (e) {
-        e.message = `Failed to apply ${slug} spec: ${e.message}`;
+        e.message = `Failed to create Kubernetes client: ${errMsg(e)}`;
         logger.error(e.message);
         throw e;
-    } finally {
-        if (specFile) {
-            specFile.cleanup();
-        }
     }
-    return result;
+    try {
+        await client.read(spec);
+    } catch (e) {
+        logger.debug(`Failed to read resource ${slug}: ${errMsg(e)}`);
+        logger.error(`Creating resource ${slug} using '${stringify(spec)}'`);
+        return logRetry(() => client.create(spec), `create resource ${slug}`);
+    }
+    return logRetry(() => client.patch(spec), `patch resource ${slug}`);
 }

@@ -18,8 +18,8 @@ import { logger } from "@atomist/automation-client";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
-    DeleteResponse,
     EssentialKubernetesObject,
+    KubernetesDeleteResponse,
     KubernetesObjectApi,
     specUriPath,
 } from "./api";
@@ -32,7 +32,7 @@ import { loadKubeConfig } from "./config";
  * @param spec Kuberenetes spec of resource to delete
  * @return DeleteResponse if object existed and was deleted, void if it did not exist
  */
-export async function deleteSpec(spec: EssentialKubernetesObject): Promise<DeleteResponse | void> {
+export async function deleteSpec(spec: EssentialKubernetesObject): Promise<KubernetesDeleteResponse | void> {
     const slug = specUriPath(spec);
     let client: KubernetesObjectApi;
     try {
