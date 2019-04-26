@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-export {
-    KubernetesDeploy,
-    KubernetesDeployRegistration,
-} from "./lib/deploy/goal";
-export {
-    SdmPackK8sOptions,
-} from "./lib/config";
-export {
-    k8sSupport,
-} from "./lib/k8s";
-export {
-    KubernetesApplication,
-    KubernetesDelete,
-} from "./lib/kubernetes/request";
-export {
-    encodeSecret,
-} from "./lib/kubernetes/secret";
+import { Configuration } from "@atomist/automation-client";
+import * as _ from "lodash";
+
+/**
+ * Unique tag to include in commits made by this SDM.
+ *
+ * @param sdm this SDM object
+ * @return unique commit tag string
+ */
+export function commitTag(config: Configuration): string {
+    const name = _.get(config, "name", "@atomist/sdm-pack-k8s");
+    return `[atomist:commit:${name}]`;
+}

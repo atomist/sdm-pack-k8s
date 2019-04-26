@@ -15,67 +15,16 @@
  */
 
 import {
-    RepoRef,
-    ScmProviderType,
-} from "@atomist/automation-client";
-import {
     ExtensionPack,
     metadata,
 } from "@atomist/sdm";
 import * as _ from "lodash";
 import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
+import { SdmPackK8sOptions } from "./config";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
 import { providerStartupListener } from "./provider/kubernetesCluster";
 import { minikubeStartupListener } from "./support/minikube";
 import { syncRepoStartupListener } from "./sync/startup";
-
-/**
- * Information needed to create a proper RemoteRepoRef for the
- * [[SdmPackK8sOptions.syncRepo]].  If `apiBase` and `providerType`
- * are not provided, cortex is queried to find the information.
- */
-export interface SyncRepoRef extends RepoRef {
-    /**
-     * Root API URL.  Default is dependent on [[providerType]].
-     */
-    apiBase?: string;
-    /*
-     * Git SDM provider, e.g., "github_com".  Default is "github_com".
-     */
-    providerType?: ScmProviderType;
-}
-
-/**
- * Configuration options to be passed to the extension pack creation.
- */
-export interface SdmPackK8sOptions {
-    /**
-     * Whether to add the undelete command.  Typically you would only
-     * want to enable this in one SDM per workspace.  If no value is
-     * provided, the comand is not added.
-     */
-    addCommands?: boolean;
-
-    /**
-     * Whether to register and converge a k8s cluster.  Typically this
-     * is used from k8s-sdm to manage k8s cluster it is running in.
-     */
-    registerCluster?: boolean;
-
-    /**
-     * Synchronize resources in k8s cluster with a Git repo.
-     */
-    sync?: {
-        /**
-         * To synchronize resources in k8s cluster with a Git repo,
-         * provide a repo ref as the value of this property.  On startup,
-         * the contents of this repo ref will be synchronized with the
-         * cluster and subsequent resource deployments will update the
-         * contents of the repo.
-         */
-        repo: SyncRepoRef;
-    };
-}
 
 /**
  * Register Kubernetes deployment support for provided goals.  Any

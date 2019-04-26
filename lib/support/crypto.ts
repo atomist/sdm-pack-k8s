@@ -46,5 +46,7 @@ const algo = "aes-256-cbc";
 
 async function deriveKey(key: string, length: number = 32): Promise<Buffer> {
     const pScrypt: (k: string, s: string, l: number) => Promise<Buffer> = promisify(crypto.scrypt);
-    return pScrypt(key, key.substring(0, 16), length);
+    const saltLength = 16;
+    const salt = (key.repeat(Math.floor(saltLength / key.length) + 1)).substring(0, saltLength);
+    return pScrypt(key, salt, length);
 }

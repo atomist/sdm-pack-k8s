@@ -18,7 +18,6 @@ import {
     GitProject,
     logger,
     ProjectFile,
-    RepoRef,
 } from "@atomist/automation-client";
 import {
     ProjectLoadingParameters,
@@ -26,11 +25,11 @@ import {
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as cluster from "cluster";
-import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { EssentialKubernetesObject } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { cloneOptions } from "./clone";
+import { k8sSpecGlob } from "./diff";
 import { queryForScmProvider } from "./repo";
 
 /**
@@ -43,13 +42,11 @@ export const syncRepoStartupListener: StartupListener = async context => {
         return;
     }
     const sdm = context.sdm;
-    const repoRef: RepoRef = _.get(sdm, "configuration.sdm.k8s.options.sync.repo");
-    const repoCreds = await queryForScmProvider(sdm, repoRef);
+    const repoCreds = await queryForScmProvider(sdm);
     if (!repoCreds) {
-        logger.warn(`Failed to find sync repo: ${stringify(repoRef)}`);
+        logger.warn(`Failed to find sync repo`);
         return;
     }
-    _.merge(context.sdm.configuration.sdm.k8s.options.sync, repoCreds);
     const projectLoadingParameters: ProjectLoadingParameters = {
         credentials: repoCreds.credentials,
         cloneOptions,
@@ -59,7 +56,7 @@ export const syncRepoStartupListener: StartupListener = async context => {
     try {
         await sdm.configuration.sdm.projectLoader.doWithProject(projectLoadingParameters, initialSync);
     } catch (e) {
-        e.message = `Failed to perform inital sync using repo ${repoRef.owner}/${repoRef.repo}: ${e.message}`;
+        e.message = `Failed to perform inital sync using repo ${repoCreds.repo.owner}/${repoCreds.repo.repo}: ${e.message}`;
         logger.error(e.message);
     }
     return;
@@ -103,7 +100,7 @@ async function initialSync(syncRepo: GitProject): Promise<void> {
  */
 export function sortSpecs(syncRepo: GitProject): Promise<ProjectFile[]> {
     return new Promise<ProjectFile[]>((resolve, reject) => {
-        const specsStream = syncRepo.streamFiles("*.@(json|yaml|yml)");
+        const specsStream = syncRepo.streamFiles(k8sSpecGlob);
         const specs: ProjectFile[] = [];
         specsStream.on("data", f => specs.push(f));
         specsStream.on("error", reject);

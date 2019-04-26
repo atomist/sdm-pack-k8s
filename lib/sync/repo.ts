@@ -25,6 +25,8 @@ import {
 import { SoftwareDeliveryMachine } from "@atomist/sdm";
 import { DefaultRepoRefResolver } from "@atomist/sdm-core";
 import * as stringify from "json-stringify-safe";
+import * as _ from "lodash";
+import { SyncOptions } from "../config";
 import {
     RepoScmProvider,
     ScmProviders,
@@ -36,34 +38,43 @@ export interface RepoCredentials {
     repo: RemoteRepoRef;
 }
 
+const defaultDefaultBranch = "master";
+
 /**
  * Cycling through all workspaces, query cortex for a repo matching
  * the provided `repoRef`.  If none found, cycle through all the
  * workspaces again querying for all SCM providers and try to clone
  * the repo with the SCM provider credentials.  Once a repo is found
  * using either method, an object is returned with its remote repo ref
- * and credentials able to clone it.
+ * and credentials able to clone it.  In addition, the `sdm` passed in
+ * will have its `sdm.configuration.sdm.k8s.options.sync` updated with
+ * the object returned, with properties set under the
+ * `sdm.configuration` taking precedence over those found by querying
+ * cortex, which may or may not be a good idea but maybe you know
+ * better than the graph.
  *
- * @param sdm this SDM object
+ * @param sdm this SDM object (modified if repo credentials found)
  * @param repoRef repository to look for
  * @return repository credentials for the repo or undefined if no repo found
  */
-export async function queryForScmProvider(sdm: SoftwareDeliveryMachine, repoRef: RepoRef): Promise<RepoCredentials | undefined> {
-    if (!sdm || !sdm.configuration) {
-        logger.warn(`SDM contains no configuration, not syncing with repo`);
+export async function queryForScmProvider(sdm: SoftwareDeliveryMachine): Promise<RepoCredentials | undefined> {
+    const syncOptions: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
+    if (!syncOptions) {
+        logger.warn(`SDM configuration contains to sync repo`);
         return undefined;
     }
+    const repoRef = syncOptions.repo;
     if (!repoRef || !repoRef.owner || !repoRef.repo) {
         logger.error(`Provided repo ref does not contain all required properties: ${stringify(repoRef)}`);
         return undefined;
     }
 
-    const repoRepo = await queryRepo(sdm, repoRef);
-    if (repoRepo) {
-        return repoRepo;
+    const repoCreds = await queryRepo(sdm, repoRef) || await queryScm(sdm, repoRef);
+    if (repoCreds) {
+        _.defaultsDeep(sdm.configuration.sdm.k8s.options.sync, repoCreds);
+        return sdm.configuration.sdm.k8s.options.sync;
     }
-
-    return queryScm(sdm, repoRef);
+    return repoCreds;
 }
 
 export function repoCredentials(repoRef: RepoRef, repo: RepoScmProvider.Repo): RepoCredentials | undefined {
@@ -133,6 +144,8 @@ async function queryRepo(sdm: SoftwareDeliveryMachine, repoRef: RepoRef): Promis
         for (const repo of repos.Repo) {
             const rc = repoCredentials(repoRef, repo);
             if (rc) {
+                // hack to record default branch if we know it
+                rc.repo.branch = repo.defaultBranch || defaultDefaultBranch;
                 logger.warn(`Returning first ${slug} repo with valid SCM provider`);
                 return rc;
             }
@@ -165,6 +178,8 @@ async function queryScm(sdm: SoftwareDeliveryMachine, repoRef: RepoRef): Promise
                 try {
                     const p = await GitCommandGitProject.cloned(rc.credentials, rc.repo, cloneOptions);
                     if (p) {
+                        // hack to record default branch
+                        rc.repo.branch = p.branch || defaultDefaultBranch;
                         return rc;
                     }
                 } catch (e) {

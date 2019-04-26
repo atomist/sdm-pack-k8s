@@ -47,8 +47,28 @@ describe("support/crypt", () => {
     describe("integration", () => {
 
         it("should encrypt and decrypt", async () => {
-            const t = "$0m3$3cr3t";
+            const t = `Take me out tonight
+Where there's music and there's people
+And they're young and alive
+Driving in your car
+I never never want to go home
+Because I haven't got one
+Anymore`;
             const k = "thereisalightthatnevergoesout";
+            const e = await encrypt(t, k);
+            const o = await decrypt(e, k);
+            assert(o === t);
+        });
+
+        it("should encrypt and decrypt with short key", async () => {
+            const t = `Take me out tonight
+Because I want to see people and I
+Want to see life
+Driving in your car
+Oh, please don't drop me home
+Because it's not my home, it's their
+Home, and I'm welcome no more`;
+            const k = "light";
             const e = await encrypt(t, k);
             const o = await decrypt(e, k);
             assert(o === t);

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* tslint:disable:max-file-line-count */
+
 import {
     BitBucketServerRepoRef,
     GitCommandGitProject,
@@ -158,15 +160,13 @@ describe("sync/repo", () => {
             assert(rc.repo.remoteBase === "ghe.sugar.com");
             assert(rc.repo.repo === "sugar");
             assert((rc.repo as GitHubRepoRef).scheme === "https://");
-            assert(rc.repo.sha === undefined);
         });
 
-        it("should use sha and branch", () => {
+        it("should use branch", () => {
             const r: RepoRef = {
                 branch: "beaster",
                 owner: "bob-mould",
                 repo: "sugar",
-                sha: "3ffe13c1f532a3d8e2d44b1b66e6f8235c35f94a",
                 url: "https://github.com/bob-mould/sugar",
             };
             const s: ScmProviders.ScmProvider = {
@@ -186,7 +186,6 @@ describe("sync/repo", () => {
             assert(rc.repo.remoteBase === "github.com");
             assert(rc.repo.repo === "sugar");
             assert((rc.repo as GitHubRepoRef).scheme === "https://");
-            assert(rc.repo.sha === "3ffe13c1f532a3d8e2d44b1b66e6f8235c35f94a");
         });
 
         it("should create a bitbucket ref", () => {
@@ -194,7 +193,6 @@ describe("sync/repo", () => {
                 branch: "FunHouse",
                 owner: "TheStooges",
                 repo: "iggy",
-                sha: "bb94dbf2a40b3754f2e62797c80923b938f60fb3",
                 url: "https://bitbucket.iggyandthestooges.com/TheStooges/iggy",
             };
             const s: ScmProviders.ScmProvider = {
@@ -215,7 +213,6 @@ describe("sync/repo", () => {
             assert(rc.repo.remoteBase === "bitbucket.iggyandthestooges.com");
             assert(rc.repo.repo === "iggy");
             assert((rc.repo as BitBucketServerRepoRef).scheme === "https://");
-            assert(rc.repo.sha === "bb94dbf2a40b3754f2e62797c80923b938f60fb3");
         });
 
     });
@@ -288,7 +285,6 @@ describe("sync/repo", () => {
             assert(rc.repo.remoteBase === "github.com");
             assert(rc.repo.repo === "sugar");
             assert((rc.repo as GitHubRepoRef).scheme === "https://");
-            assert(rc.repo.sha === undefined);
         });
 
         it("should create a gitlab ref", () => {
@@ -296,7 +292,6 @@ describe("sync/repo", () => {
                 branch: "too-much-too-soon",
                 owner: "NewYorkDolls",
                 repo: "trash",
-                sha: "bb94dbf2a40b3754f2e62797c80923b938f60fb3",
                 url: "http://gitlab.nydolls.com/NewYorkDolls/trash",
             };
             const s: RepoScmProvider.Repo = {
@@ -323,7 +318,6 @@ describe("sync/repo", () => {
             assert(rc.repo.remoteBase === "gitlab.nydolls.com");
             assert(rc.repo.repo === "trash");
             assert((rc.repo as GitlabRepoRef).scheme === "http://");
-            assert(rc.repo.sha === "bb94dbf2a40b3754f2e62797c80923b938f60fb3");
         });
 
     });
@@ -346,6 +340,8 @@ describe("sync/repo", () => {
                                             return {
                                                 Repo: [
                                                     {
+                                                        defaultBranch: "copper-blue",
+                                                        name: "sugar",
                                                         org: {
                                                             scmProvider: {
                                                                 apiUrl: "https://api.github.com",
@@ -354,6 +350,7 @@ describe("sync/repo", () => {
                                                                 },
                                                             },
                                                         },
+                                                        owner: "bob-mould",
                                                     },
                                                 ],
                                             };
@@ -364,17 +361,24 @@ describe("sync/repo", () => {
                             },
                         },
                     },
+                    sdm: {
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        branch: "beaster",
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
+                    },
                     workspaceIds: ["A4USK34DU"],
                 },
             } as any;
-            const r: RepoRef = {
-                branch: "beaster",
-                owner: "bob-mould",
-                repo: "sugar",
-                sha: "3ffe13c1f532a3d8e2d44b1b66e6f8235c35f94a",
-                url: "https://github.com/bob-mould/sugar",
-            };
-            const rc = await queryForScmProvider(s, r);
+            const rc = await queryForScmProvider(s);
             assert(rc, "no RepoCredentials returned");
             assert(queried, "query method never called");
             assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
@@ -386,7 +390,93 @@ describe("sync/repo", () => {
             assert(rc.repo.remoteBase === "github.com");
             assert(rc.repo.repo === "sugar");
             assert((rc.repo as GitHubRepoRef).scheme === "https://");
-            assert(rc.repo.sha === "3ffe13c1f532a3d8e2d44b1b66e6f8235c35f94a");
+            const ss = s.configuration.sdm.k8s.options.sync;
+            assert(ss.credentials.token === "m@n-0n-th3-m00n");
+            assert(ss.repo.apiBase === "api.github.com");
+            assert(ss.repo.branch === "beaster");
+            assert(ss.repo.owner === "bob-mould");
+            assert(ss.repo.path === undefined);
+            assert(ss.repo.providerType === ScmProviderType.github_com);
+            assert(ss.repo.remoteBase === "github.com");
+            assert(ss.repo.repo === "sugar");
+            assert(ss.repo.scheme === "https://");
+        });
+
+        it("should use the default branch", async () => {
+            let queried = false;
+            const s: SoftwareDeliveryMachine = {
+                configuration: {
+                    graphql: {
+                        client: {
+                            factory: {
+                                create: () => ({
+                                    query: async (o: any) => {
+                                        queried = true;
+                                        assert(o.variables.owner === "bob-mould");
+                                        assert(o.variables.repo === "sugar");
+                                        if (o.name === "RepoScmProvider") {
+                                            return {
+                                                Repo: [
+                                                    {
+                                                        defaultBranch: "copper-blue",
+                                                        name: "sugar",
+                                                        org: {
+                                                            scmProvider: {
+                                                                apiUrl: "https://api.github.com",
+                                                                credential: {
+                                                                    secret: "m@n-0n-th3-m00n",
+                                                                },
+                                                            },
+                                                        },
+                                                        owner: "bob-mould",
+                                                    },
+                                                ],
+                                            };
+                                        }
+                                        return { SCMProvider: [] as any[] };
+                                    },
+                                }),
+                            },
+                        },
+                    },
+                    sdm: {
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    workspaceIds: ["A4USK34DU"],
+                },
+            } as any;
+            const rc = await queryForScmProvider(s);
+            assert(rc, "no RepoCredentials returned");
+            assert(queried, "query method never called");
+            assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
+            assert((rc.repo as GitHubRepoRef).apiBase === "api.github.com");
+            assert(rc.repo.branch === "copper-blue");
+            assert(rc.repo.owner === "bob-mould");
+            assert(rc.repo.path === undefined);
+            assert(rc.repo.providerType === ScmProviderType.github_com);
+            assert(rc.repo.remoteBase === "github.com");
+            assert(rc.repo.repo === "sugar");
+            assert((rc.repo as GitHubRepoRef).scheme === "https://");
+            const ss = s.configuration.sdm.k8s.options.sync;
+            assert(ss.credentials.token === "m@n-0n-th3-m00n");
+            assert(ss.repo.apiBase === "api.github.com");
+            assert(ss.repo.branch === "copper-blue");
+            assert(ss.repo.owner === "bob-mould");
+            assert(ss.repo.path === undefined);
+            assert(ss.repo.providerType === ScmProviderType.github_com);
+            assert(ss.repo.remoteBase === "github.com");
+            assert(ss.repo.repo === "sugar");
+            assert(ss.repo.scheme === "https://");
         });
 
         it("should find nothing", async () => {
@@ -405,17 +495,24 @@ describe("sync/repo", () => {
                             },
                         },
                     },
+                    sdm: {
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        branch: "beaster",
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
+                    },
                     workspaceIds: ["A4USK34DU"],
                 },
             } as any;
-            const r: RepoRef = {
-                branch: "beaster",
-                owner: "bob-mould",
-                repo: "sugar",
-                sha: "3ffe13c1f532a3d8e2d44b1b66e6f8235c35f94a",
-                url: "https://github.com/bob-mould/sugar",
-            };
-            const rc = await queryForScmProvider(s, r);
+            const rc = await queryForScmProvider(s);
             assert(queried, "query method never called");
             assert(rc === undefined);
         });
@@ -440,7 +537,7 @@ describe("sync/repo", () => {
                                                         credential: {
                                                             secret: "1w@nn@b3y0u4d0g",
                                                         },
-                                                        providerType: "bitbucket" as any,
+                                                        providerType: "bitbucket",
                                                     },
                                                 ],
                                             };
@@ -451,17 +548,25 @@ describe("sync/repo", () => {
                             },
                         },
                     },
+                    sdm: {
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        branch: "FunHouse",
+                                        owner: "TheStooges",
+                                        path: "cluster/specs",
+                                        repo: "iggy",
+                                        url: "https://bitbucket.iggyandthestooges.com/TheStooges/iggy",
+                                    },
+                                },
+                            },
+                        },
+                    },
                     workspaceIds: ["A4USK34DU"],
                 },
             } as any;
-            const r: RepoRef = {
-                branch: "FunHouse",
-                owner: "TheStooges",
-                repo: "iggy",
-                sha: "bb94dbf2a40b3754f2e62797c80923b938f60fb3",
-                url: "https://bitbucket.iggyandthestooges.com/TheStooges/iggy",
-            };
-            const rc = await queryForScmProvider(s, r);
+            const rc = await queryForScmProvider(s);
             GitCommandGitProject.cloned = clonedOrig;
             assert(rc, "no RepoCredentials returned");
             assert(queried, "query method never called");
@@ -469,12 +574,21 @@ describe("sync/repo", () => {
             assert((rc.repo as BitBucketServerRepoRef).apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
             assert(rc.repo.branch === "FunHouse");
             assert(rc.repo.owner === "TheStooges");
-            assert(rc.repo.path === undefined);
+            assert(rc.repo.path === "cluster/specs");
             assert(rc.repo.providerType === ScmProviderType.bitbucket);
             assert(rc.repo.remoteBase === "bitbucket.iggyandthestooges.com");
             assert(rc.repo.repo === "iggy");
             assert((rc.repo as BitBucketServerRepoRef).scheme === "https://");
-            assert(rc.repo.sha === "bb94dbf2a40b3754f2e62797c80923b938f60fb3");
+            const ss = s.configuration.sdm.k8s.options.sync;
+            assert(ss.credentials.token === "1w@nn@b3y0u4d0g");
+            assert(ss.repo.apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
+            assert(ss.repo.branch === "FunHouse");
+            assert(ss.repo.owner === "TheStooges");
+            assert(ss.repo.path === "cluster/specs");
+            assert(ss.repo.providerType === ScmProviderType.bitbucket);
+            assert(ss.repo.remoteBase === "bitbucket.iggyandthestooges.com");
+            assert(ss.repo.repo === "iggy");
+            assert(ss.repo.scheme === "https://");
         });
 
     });
