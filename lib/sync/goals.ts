@@ -23,8 +23,8 @@ import {
     IndependentOfEnvironment,
     LogSuppressor,
     minimalClone,
-    PushTest,
     pushTest,
+    PushTest,
     SoftwareDeliveryMachine,
     whenPushSatisfies,
 } from "@atomist/sdm";
