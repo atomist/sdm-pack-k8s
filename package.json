@@ -1,7 +1,7 @@
 {
   "name": "@atomist/sdm-pack-k8s",
   "version": "1.4.3",
-  "description": "Extension Pack for an Atomist SDM to integrate Kubernetes deployments",
+  "description": "Test branch of extension Pack for an Atomist SDM to integrate Kubernetes deployments",
   "author": {
     "name": "Atomist",
     "email": "support@atomist.com",
