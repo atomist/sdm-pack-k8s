@@ -15,15 +15,14 @@
  */
 
 import { Configuration } from "@atomist/automation-client";
-import * as _ from "lodash";
 
 /**
- * Unique tag to include in commits made by this SDM.
+ * Unique tag to include in sync commits made by this SDM.
  *
- * @param sdm this SDM object
+ * @param config the SDM configuration
  * @return unique commit tag string
  */
 export function commitTag(config: Configuration): string {
-    const name = _.get(config, "name", "@atomist/sdm-pack-k8s");
-    return `[atomist:commit:${name}]`;
+    const name = (config && config.name) ? config.name : "@atomist/sdm-pack-k8s";
+    return `[atomist:sync-commit:${name}]`;
 }
