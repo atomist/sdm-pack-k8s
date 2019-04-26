@@ -40,16 +40,17 @@ export interface PushDiff {
 }
 
 /**
- * Determine all changed files in a push.  Changes are returned in
- * commit order, with the commit order unchanged from the push event
- * sent by cortex, which it typically chronologically with the oldest
- * commit first.  Within a commit, the changes are sorted first by
- * operation, with deletes before applies, and then by path using
- * `sort(localCompare)`.  Deletes are sorted first because renames are
- * processed as adds and deletes and we want to avoid a rename
- * resulting in a resource being deleted.  If you want to control the
- * order of operations, spread the operations across multiple commits
- * in the same push.
+ * Determine all changed Kubernetes resource spec files in a push.  A
+ * file is considered a Kubernetes resource spec if it matches
+ * [[k8sSpecRegExp]].  Changes are returned in commit order, with the
+ * commit order unchanged from the push event sent by cortex, which it
+ * typically chronologically with the oldest commit first.  Within a
+ * commit, the changes are sorted first by operation, with deletes
+ * before applies, and then by path using `sort(localCompare)`.
+ * Deletes are sorted first because renames are processed as adds and
+ * deletes and we want to avoid a rename resulting in a resource being
+ * deleted.  If you want to control the order of operations, spread
+ * the operations across multiple commits in the same push.
  *
  * @param project project with the changed Kubernetes resource specs.
  * @param push git push with changes
@@ -63,7 +64,7 @@ export async function diffPush(project: LocalProject, push: PushFields.Fragment,
     for (const commit of commits) {
         try {
             const sha = commit.sha;
-            const args = ["-z", "--no-renames", "--name-status", "--diff-filter=ADM", `${sha}~1`, sha];
+            const args = ["diff", "-z", "--no-renames", "--name-status", "--diff-filter=ADM", `${sha}~1`, sha, "--"];
             const opts = { cwd: project.baseDir };
             const diffResult = await execPromise("git", args, opts);
             const newChanges = parseNameStatusDiff(sha, diffResult.stdout);
