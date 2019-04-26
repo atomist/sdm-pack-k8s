@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
+import { logger } from "@atomist/automation-client";
 import {
-    logger,
-    Success,
-} from "@atomist/automation-client";
-import {
-    doWithProject,
     ExecuteGoal,
     ExecuteGoalResult,
+    goals,
     GoalWithFulfillment,
     IndependentOfEnvironment,
     LogSuppressor,
@@ -34,7 +31,8 @@ import {
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { SyncOptions } from "../config";
-import { cloneOptions } from "./clone";
+import { changeResource } from "./change";
+import { diffPush } from "./diff";
 import { queryForScmProvider } from "./repo";
 import { commitTag } from "./tag";
 
@@ -85,7 +83,8 @@ export async function syncGoals(sdm: SoftwareDeliveryMachine): Promise<SoftwareD
         goalExecutor: K8sSync,
         logInterpreter: LogSuppressor,
     });
-    sdm.addGoalContributions(whenPushSatisfies(syncRepoPushTest).setGoals(sync));
+    const syncGoalSet = goals("Sync Kubernetes Resources").plan(sync);
+    sdm.addGoalContributions(whenPushSatisfies(syncRepoPushTest).setGoals(syncGoalSet));
     return sdm;
 }
 
@@ -95,27 +94,32 @@ export async function syncGoals(sdm: SoftwareDeliveryMachine): Promise<SoftwareD
  */
 export const K8sSync: ExecuteGoal = async gi => {
     const push = gi.goalEvent.push;
+    const log = gi.progressLog;
     const params = {
         cloneOptions: minimalClone(push),
         context: gi.context,
         credentials: gi.credentials,
         id: gi.id,
-        log: gi.progressLog,
+        log,
         readOnly: true,
     };
     const tag = commitTag(gi.configuration);
     return gi.configuration.sdm.projectLoader.doWithProject<ExecuteGoalResult>(params, async p => {
-        push.commits.filter(c => !c.message.includes(tag)).forEach(c => {
-
-        });
-        return Success;
+        const changes = await diffPush(p, push, tag, log);
+        const errs: Error[] = [];
+        for (const change of changes) {
+            try {
+                await changeResource(p, change);
+            } catch (e) {
+                e.message = `Failed to ${change.change} '${change.path}' resource for commit ${change.sha}: ${e.message}`;
+                logger.error(e.message);
+                log.write(e.message);
+                errs.push(e);
+            }
+        }
+        if (errs.length > 0) {
+            return { code: errs.length, message: errs.map(e => e.message).join("; ") };
+        }
+        return { code: 0, message: `Changed ${changes.length} resources` };
     });
 };
-export const K8sSyncDWP = doWithProject(async pagi => {
-    const changes: Array<{ [path: string]: "added" | "changed" | "deleted" }> = [];
-    const tag = commitTag(pagi.configuration);
-    pagi.goalEvent.push.commits.filter(c => !c.message.includes(tag)).forEach(c => {
-        changes.push({ [c.sha]: "added" });
-    });
-    return Success;
-}, { ...cloneOptions, depth: 50, readOnly: true });
