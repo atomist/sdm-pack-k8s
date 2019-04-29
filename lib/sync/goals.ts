@@ -36,20 +36,20 @@ import { diffPush } from "./diff";
 import { queryForScmProvider } from "./repo";
 import { commitTag } from "./tag";
 
-export async function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): Promise<PushTest | undefined> {
+export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undefined {
     const syncOptions: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
     if (!syncOptions || !syncOptions.repo) {
         logger.warn(`SDM configuration contains to sync repo`);
         return undefined;
     }
-    if (!syncOptions.credentials) {
-        const repoCreds = await queryForScmProvider(sdm);
-        if (!repoCreds) {
-            logger.warn(`Failed to find sync repo: ${stringify(syncOptions.repo)}`);
-            return undefined;
-        }
-    }
     return pushTest("IsSyncRepoCommit", async p => {
+        if (!syncOptions.credentials) {
+            const repoCreds = await queryForScmProvider(sdm);
+            if (!repoCreds) {
+                logger.warn(`Failed to find sync repo: ${stringify(syncOptions.repo)}`);
+                return false;
+            }
+        }
         if (p.id.providerType === syncOptions.repo.providerType &&
             p.id.owner === syncOptions.repo.owner &&
             p.id.repo === syncOptions.repo.repo &&
@@ -64,10 +64,10 @@ export async function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): Promise<Pu
 /**
  * Add goals for pushes on the sync repo.
  */
-export async function syncGoals(sdm: SoftwareDeliveryMachine): Promise<SoftwareDeliveryMachine> {
-    const syncRepoPushTest = await isSyncRepoCommit(sdm);
+export function syncGoals(sdm: SoftwareDeliveryMachine): SoftwareDeliveryMachine {
+    const syncRepoPushTest = isSyncRepoCommit(sdm);
     if (!syncRepoPushTest) {
-        logger.warn(`Unable to create push test for sync repo, will not repond to pushes`);
+        logger.warn(`No sync repo configured`);
         return sdm;
     }
     const sync = new GoalWithFulfillment({

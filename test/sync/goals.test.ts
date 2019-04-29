@@ -27,7 +27,7 @@ describe("sync/goals", () => {
 
     describe("isSyncRepoCommit", () => {
 
-        it("should return undefined if no sync options", async () => {
+        it("should return undefined if no sync options", () => {
             const s: SoftwareDeliveryMachine = {
                 configuration: {
                     sdm: {
@@ -37,11 +37,11 @@ describe("sync/goals", () => {
                     },
                 },
             } as any;
-            const t = await isSyncRepoCommit(s);
+            const t = isSyncRepoCommit(s);
             assert(t === undefined);
         });
 
-        it("should return undefined sync repo not found", async () => {
+        it("should return false if sync repo not found", async () => {
             const s: SoftwareDeliveryMachine = {
                 configuration: {
                     graphql: {
@@ -72,8 +72,24 @@ describe("sync/goals", () => {
                     workspaceIds: ["AM0441SS3Y"],
                 },
             } as any;
-            const t = await isSyncRepoCommit(s);
-            assert(t === undefined);
+            const p: PushListenerInvocation = {
+                id: {
+                    branch: "a-rush-and-a-push",
+                    owner: "TheSmiths",
+                    providerType: ScmProviderType.github_com,
+                    repo: "strangeways",
+                    sha: "bb94dbf2a40b3754f2e62797c80923b938f60fb3",
+                },
+                push: {
+                    commits: [
+                        { message: "Stop me if you think you've heard this one before" },
+                    ],
+                },
+            } as any;
+            const t = isSyncRepoCommit(s);
+            assert(t, "no push test was returned");
+            const r = await t.mapping(p);
+            assert(r === false, "push test result was true");
         });
 
         it("should query repo and return test", async () => {
@@ -144,7 +160,7 @@ describe("sync/goals", () => {
                     ],
                 },
             } as any;
-            const t = await isSyncRepoCommit(s);
+            const t = isSyncRepoCommit(s);
             assert(t, "no push test was returned");
             const r = await t.mapping(p);
             assert(r === true, "push test result was false");
@@ -189,7 +205,7 @@ describe("sync/goals", () => {
                     ],
                 },
             } as any;
-            const t = await isSyncRepoCommit(s);
+            const t = isSyncRepoCommit(s);
             assert(t, "no push test was returned");
             const r = await t.mapping(p);
             assert(r === true, "push test result was false");
@@ -237,7 +253,7 @@ describe("sync/goals", () => {
                     ],
                 },
             } as any;
-            const t = await isSyncRepoCommit(s);
+            const t = isSyncRepoCommit(s);
             assert(t, "no push test was returned");
             const r = await t.mapping(p);
             assert(r === false, "push test result was true");
@@ -283,7 +299,7 @@ describe("sync/goals", () => {
                     ],
                 },
             } as any;
-            const t = await isSyncRepoCommit(s);
+            const t = isSyncRepoCommit(s);
             assert(t, "no push test was returned");
             const fs = [
                 { branch: "girlfriend-in-a-coma" },

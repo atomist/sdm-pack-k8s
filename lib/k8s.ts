@@ -24,6 +24,7 @@ import { SdmPackK8sOptions } from "./config";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
 import { providerStartupListener } from "./provider/kubernetesCluster";
 import { minikubeStartupListener } from "./support/minikube";
+import { syncGoals } from "./sync/goals";
 import { syncRepoStartupListener } from "./sync/startup";
 
 /**
@@ -76,7 +77,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
             }
             if (sdm.configuration.sdm.k8s.options.sync && sdm.configuration.sdm.k8s.options.sync.repo) {
                 sdm.addStartupListener(syncRepoStartupListener);
-                // TODO: set goals on push to syncRepo
+                syncGoals(sdm);
             }
             sdm.addStartupListener(minikubeStartupListener);
 
