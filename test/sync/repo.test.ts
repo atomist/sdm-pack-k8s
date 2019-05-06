@@ -26,6 +26,7 @@ import {
     TokenCredentials,
 } from "@atomist/automation-client";
 import { SoftwareDeliveryMachine } from "@atomist/sdm";
+import { DefaultRepoRefResolver } from "@atomist/sdm-core";
 import * as assert from "power-assert";
 import {
     queryForScmProvider,
@@ -42,17 +43,31 @@ describe("sync/repo", () => {
     describe("scmCredentials", () => {
 
         it("should return undefined if not provided enough information", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
                 url: "https://github.com/bob-mould/sugar",
             };
             const s: ScmProviders.ScmProvider = {};
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert(rc === undefined);
         });
 
         it("should return undefined if no apiUrl", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
@@ -63,11 +78,18 @@ describe("sync/repo", () => {
                     secret: "m@n-0n-th3-m00n",
                 },
             };
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert(rc === undefined);
         });
 
         it("should return undefined if no credential", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
@@ -76,11 +98,18 @@ describe("sync/repo", () => {
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
             };
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert(rc === undefined);
         });
 
         it("should return undefined if no secret", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
@@ -90,20 +119,34 @@ describe("sync/repo", () => {
                 apiUrl: "https://api.github.com",
                 credential: {},
             };
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert.deepStrictEqual(rc, undefined);
         });
 
         it("should return undefined if no repo ref", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
                 credential: {},
             };
-            const rc = scmCredentials(undefined, s);
+            const rc = scmCredentials(m, undefined, s);
             assert(rc === undefined);
         });
 
         it("should return undefined if no owner", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "",
                 repo: "sugar",
@@ -115,11 +158,18 @@ describe("sync/repo", () => {
                     secret: "m@n-0n-th3-m00n",
                 },
             };
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert(rc === undefined);
         });
 
         it("should return undefined if no repo", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "",
@@ -131,11 +181,18 @@ describe("sync/repo", () => {
                     secret: "m@n-0n-th3-m00n",
                 },
             };
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert(rc === undefined);
         });
 
         it("should return ghe repo ref", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
@@ -149,7 +206,7 @@ describe("sync/repo", () => {
                 providerType: "ghe" as any,
                 url: "https://ghe.sugar.com/",
             };
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
             assert((rc.repo as GitHubRepoRef).apiBase === "ghe.sugar.com/api/v3");
@@ -163,6 +220,13 @@ describe("sync/repo", () => {
         });
 
         it("should use branch", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 branch: "beaster",
                 owner: "bob-mould",
@@ -175,7 +239,7 @@ describe("sync/repo", () => {
                     secret: "m@n-0n-th3-m00n",
                 },
             };
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
             assert((rc.repo as GitHubRepoRef).apiBase === "api.github.com");
@@ -189,6 +253,13 @@ describe("sync/repo", () => {
         });
 
         it("should create a bitbucket ref", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 branch: "FunHouse",
                 owner: "TheStooges",
@@ -202,7 +273,7 @@ describe("sync/repo", () => {
                 },
                 providerType: "bitbucket" as any,
             };
-            const rc = scmCredentials(r, s);
+            const rc = scmCredentials(m, r, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "1w@nn@b3y0u4d0g");
             assert((rc.repo as BitBucketServerRepoRef).apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
@@ -220,17 +291,31 @@ describe("sync/repo", () => {
     describe("repoCredentials", () => {
 
         it("should return undefined if not provided enough information", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
                 url: "https://github.com/bob-mould/sugar",
             };
             const s: RepoScmProvider.Repo = {};
-            const rc = repoCredentials(r, s);
+            const rc = repoCredentials(m, r, s);
             assert(rc === undefined);
         });
 
         it("should return undefined if no scmProvider", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
@@ -239,11 +324,18 @@ describe("sync/repo", () => {
             const s: RepoScmProvider.Repo = {
                 org: {},
             };
-            const rc = repoCredentials(r, s);
+            const rc = repoCredentials(m, r, s);
             assert(rc === undefined);
         });
 
         it("should return undefined if no scmProvider properties", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
@@ -254,11 +346,18 @@ describe("sync/repo", () => {
                     scmProvider: {},
                 },
             };
-            const rc = repoCredentials(r, s);
+            const rc = repoCredentials(m, r, s);
             assert(rc === undefined);
         });
 
         it("should return remote repo ref", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 owner: "bob-mould",
                 repo: "sugar",
@@ -274,7 +373,7 @@ describe("sync/repo", () => {
                     },
                 },
             };
-            const rc = repoCredentials(r, s);
+            const rc = repoCredentials(m, r, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
             assert((rc.repo as GitHubRepoRef).apiBase === "api.github.com");
@@ -288,6 +387,13 @@ describe("sync/repo", () => {
         });
 
         it("should create a gitlab ref", () => {
+            const m: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                },
+            } as any;
             const r: RepoRef = {
                 branch: "too-much-too-soon",
                 owner: "NewYorkDolls",
@@ -306,7 +412,7 @@ describe("sync/repo", () => {
                     },
                 },
             };
-            const rc = repoCredentials(r, s);
+            const rc = repoCredentials(m, r, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "P34$0n@l1tyC41$1$");
             // GitlabReporef overrides apiBase to include the scheme and not strip any trailing slash
@@ -374,6 +480,7 @@ describe("sync/repo", () => {
                                 },
                             },
                         },
+                        repoRefResolver: new DefaultRepoRefResolver(),
                     },
                     workspaceIds: ["A4USK34DU"],
                 },
@@ -451,6 +558,7 @@ describe("sync/repo", () => {
                                 },
                             },
                         },
+                        repoRefResolver: new DefaultRepoRefResolver(),
                     },
                     workspaceIds: ["A4USK34DU"],
                 },
@@ -508,6 +616,7 @@ describe("sync/repo", () => {
                                 },
                             },
                         },
+                        repoRefResolver: new DefaultRepoRefResolver(),
                     },
                     workspaceIds: ["A4USK34DU"],
                 },
@@ -562,6 +671,7 @@ describe("sync/repo", () => {
                                 },
                             },
                         },
+                        repoRefResolver: new DefaultRepoRefResolver(),
                     },
                     workspaceIds: ["A4USK34DU"],
                 },

@@ -23,7 +23,6 @@ import {
     RepoRef,
 } from "@atomist/automation-client";
 import { SoftwareDeliveryMachine } from "@atomist/sdm";
-import { DefaultRepoRefResolver } from "@atomist/sdm-core";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { SyncOptions } from "../config";
@@ -77,16 +76,16 @@ export async function queryForScmProvider(sdm: SoftwareDeliveryMachine): Promise
     return repoCreds;
 }
 
-export function repoCredentials(repoRef: RepoRef, repo: RepoScmProvider.Repo): RepoCredentials | undefined {
+export function repoCredentials(sdm: SoftwareDeliveryMachine, repoRef: RepoRef, repo: RepoScmProvider.Repo): RepoCredentials | undefined {
     if (repo.org && repo.org.scmProvider) {
-        return scmCredentials(repoRef, repo.org.scmProvider);
+        return scmCredentials(sdm, repoRef, repo.org.scmProvider);
     }
     return undefined;
 }
 
-export function scmCredentials(repoRef: RepoRef, scm: ScmProviders.ScmProvider): RepoCredentials | undefined {
+export function scmCredentials(sdm: SoftwareDeliveryMachine, repoRef: RepoRef, scm: ScmProviders.ScmProvider): RepoCredentials | undefined {
     if (repoRef && repoRef.owner && repoRef.repo && scm.apiUrl && scm.credential && scm.credential.secret) {
-        const repoResolver = new DefaultRepoRefResolver();
+        const repoResolver = sdm.configuration.sdm.repoRefResolver;
         const repoFrag = {
             owner: repoRef.owner,
             name: repoRef.repo,
@@ -142,7 +141,7 @@ async function queryRepo(sdm: SoftwareDeliveryMachine, repoRef: RepoRef): Promis
             logger.warn(`More than repo found in workspace ${workspaceId} with owner/repo ${slug}`);
         }
         for (const repo of repos.Repo) {
-            const rc = repoCredentials(repoRef, repo);
+            const rc = repoCredentials(sdm, repoRef, repo);
             if (rc) {
                 // hack to record default branch if we know it
                 rc.repo.branch = repo.defaultBranch || defaultDefaultBranch;
@@ -172,7 +171,7 @@ async function queryScm(sdm: SoftwareDeliveryMachine, repoRef: RepoRef): Promise
             continue;
         }
         for (const provider of providers.SCMProvider) {
-            const rc = scmCredentials(repoRef, provider);
+            const rc = scmCredentials(sdm, repoRef, provider);
             if (rc) {
                 logger.debug(`Attempting to clone ${slug} using ${rc.repo.cloneUrl}`);
                 try {
