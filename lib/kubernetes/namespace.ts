@@ -42,16 +42,18 @@ export interface UpsertNamespaceResponse {
  * @param req Kuberenetes application request
  */
 export async function upsertNamespace(req: KubernetesResourceRequest): Promise<UpsertNamespaceResponse> {
+    const slug = req.ns;
+    const spec = await namespaceTemplate(req);
     try {
-        const resp = await req.clients.core.readNamespace(req.ns);
-        logger.debug(`Namespace ${req.ns} exists`);
-        return resp;
+        await req.clients.core.readNamespace(req.ns);
+        logger.debug(`Namespace ${slug} exists`);
     } catch (e) {
-        logger.debug(`Failed to get namespace ${req.ns}, creating: ${errMsg(e)}`);
-        const ns = await namespaceTemplate(req);
-        logger.debug(`Creating namespace ${req.ns} using '${stringify(ns)}'`);
-        return logRetry(() => req.clients.core.createNamespace(ns), `create namespace ${req.ns}`);
+        logger.debug(`Failed to get namespace ${slug}, creating: ${errMsg(e)}`);
+        logger.debug(`Creating namespace ${slug} using '${stringify(spec)}'`);
+        return logRetry(() => req.clients.core.createNamespace(spec), `create namespace ${slug}`);
     }
+    logger.debug(`Namespace ${slug} exists, patching using '${stringify(spec)}'`);
+    return logRetry(() => req.clients.core.patchNamespace(req.ns, spec), `patch namespace ${slug}`);
 }
 
 /**

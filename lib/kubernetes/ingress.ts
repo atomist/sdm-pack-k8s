@@ -46,11 +46,15 @@ export interface UpsertIngressResponse {
  * @return Response from Kubernetes API is ingress is created or patched,
  *         `void` otherwise.
  */
-export async function upsertIngress(req: KubernetesResourceRequest): Promise<UpsertIngressResponse | void> {
+export async function upsertIngress(req: KubernetesResourceRequest): Promise<UpsertIngressResponse | undefined> {
     const slug = appName(req);
+    if (!req.port) {
+        logger.debug(`Port not provided, will not create ingress ${slug}`);
+        return undefined;
+    }
     if (!req.path) {
         logger.debug(`Path not provided, will not upsert ingress ${slug}`);
-        return;
+        return undefined;
     }
     const spec = await ingressTemplate(req);
     try {

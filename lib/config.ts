@@ -27,21 +27,26 @@ import {
  */
 export interface SyncRepoRef extends RepoRef {
     /**
-     * Root API URL.  Default is dependent on [[providerType]].
+     * Root API URL.  Default is dependent on [[providerType]].  This
+     * value is typically not set but rather looked up in cortex.
      */
     apiBase?: string;
     /**
      * If branch is provided, it is used.  If it is not provided,
      * things get complicated.  If the repo exists in the graph and it
-     * has the defaultBranch property set, then it is used.  If the
-     * repo does not exist in the graph or its defaultBranch property
-     * is not set, "master" is used.  Long story short, even though
+     * has the defaultBranch property set, then the defaultBranch is
+     * used.  If the repo does not exist in the graph or its
+     * defaultBranch property is not set, "master" is used.  Since the
+     * repo defaultBranch property could not be set initially but get
+     * set at a later time, how sync repo behaves can change even if
+     * the configuration does not.  Long story short, even though
      * branch is optional, set it if you want sync repo to behave
      * deterministically.
      */
     branch?: string;
-    /*
-     * Git SDM provider, e.g., "github_com".  Default is "github_com".
+    /**
+     * Git SDM provider, e.g., "github_com".  Typically this value is
+     * not set and looked up in cortex.
      */
     providerType?: ScmProviderType;
 }

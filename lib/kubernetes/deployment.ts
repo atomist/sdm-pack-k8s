@@ -63,8 +63,7 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
             `create deployment ${slug}`);
     }
     logger.debug(`Updating deployment ${slug} using '${stringify(spec)}'`);
-    return logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec),
-        `patch deployment ${slug}`);
+    return logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec), `patch deployment ${slug}`);
 }
 
 /**

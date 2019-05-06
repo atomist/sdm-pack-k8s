@@ -49,11 +49,11 @@ export interface UpsertServiceResponse {
  * @return Response from Kubernetes API if service is created or patched,
  *         `void` otherwise.
  */
-export async function upsertService(req: KubernetesResourceRequest): Promise<UpsertServiceResponse | void> {
+export async function upsertService(req: KubernetesResourceRequest): Promise<UpsertServiceResponse | undefined> {
     const slug = appName(req);
     if (!req.port) {
         logger.debug(`Port not provided, will not create service ${slug}`);
-        return;
+        return undefined;
     }
     const spec = await serviceTemplate(req);
     try {

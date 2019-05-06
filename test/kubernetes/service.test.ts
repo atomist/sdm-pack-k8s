@@ -15,7 +15,11 @@
  */
 
 import * as assert from "power-assert";
-import { serviceTemplate } from "../../lib/kubernetes/service";
+import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
+import {
+    serviceTemplate,
+    upsertService,
+} from "../../lib/kubernetes/service";
 
 describe("kubernetes/service", () => {
 
@@ -122,6 +126,19 @@ describe("kubernetes/service", () => {
                 },
             };
             assert.deepStrictEqual(s, e);
+        });
+
+    });
+
+    describe("upsertService", () => {
+
+        it("should not do anything if port is not defined", async () => {
+            const a: KubernetesResourceRequest = {
+                name: "brotherhood",
+                ns: "new-order",
+            } as any;
+            const i = await upsertService(a);
+            assert(i === undefined);
         });
 
     });
