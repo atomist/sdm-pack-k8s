@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { Configuration } from "@atomist/automation-client";
+import {
+    Configuration,
+    configurationValue,
+} from "@atomist/automation-client";
 
 /**
  * Unique tag to include in sync commits made by this SDM.
@@ -22,7 +25,7 @@ import { Configuration } from "@atomist/automation-client";
  * @param config the SDM configuration
  * @return unique commit tag string
  */
-export function commitTag(config: Configuration): string {
-    const name = (config && config.name) ? config.name : "@atomist/sdm-pack-k8s";
-    return `[atomist:sync-commit:${name}]`;
+export function commitTag(config?: Configuration): string {
+    const name = (config && config.name) ? config.name : configurationValue("name", "@atomist/sdm-pack-k8s");
+    return `[atomist:sync-commit=${name}]`;
 }

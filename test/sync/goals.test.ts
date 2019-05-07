@@ -248,10 +248,10 @@ describe("sync/goals", () => {
                 },
                 push: {
                     commits: [
-                        { message: "Stop me\n\n[atomist:sync-commit:@atomist/k8s-sdm_i-started-something]" },
-                        { message: "If you've\n\n[atomist:sync-commit:@atomist/k8s-sdm_i-started-something]" },
-                        { message: "Head this\n\n[atomist:sync-commit:@atomist/k8s-sdm_i-started-something]" },
-                        { message: "One before\n\n[atomist:sync-commit:@atomist/k8s-sdm_i-started-something]" },
+                        { message: "Stop me\n\n[atomist:sync-commit=@atomist/k8s-sdm_i-started-something]" },
+                        { message: "If you've\n\n[atomist:sync-commit=@atomist/k8s-sdm_i-started-something]" },
+                        { message: "Head this\n\n[atomist:sync-commit=@atomist/k8s-sdm_i-started-something]" },
+                        { message: "One before\n\n[atomist:sync-commit=@atomist/k8s-sdm_i-started-something]" },
                     ],
                 },
             } as any;
