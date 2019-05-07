@@ -75,27 +75,29 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
  * Delete secrets associated with application described by `req`, if
  * any exists.  If no such secrets exist, do nothing.
  *
- * @param req Kuberenetes delete request
+ * @param req Kubernetes application delete request
+ * @return array of deleted secrets, which may be empty
  */
-export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promise<void> {
+export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Secret[]> {
     const slug = appName(req);
     let secrets: k8s.V1SecretList;
     const matchers = matchLabels(req);
     const labelSelector = Object.keys(matchers).map(l => `${l}=${matchers[l]}`).join(",");
     try {
-        const listResp = await Promise.resolve(req.clients.core.listNamespacedSecret(req.ns, undefined, undefined,
-            undefined, undefined, labelSelector));
+        const listResp = await req.clients.core.listNamespacedSecret(req.ns, undefined, undefined,
+            undefined, undefined, labelSelector);
         secrets = listResp.body;
     } catch (e) {
-        logger.debug(`Failed to list secrets in namespace ${req.ns}, not deleting secrets for ${slug}: ${errMsg(e)}`);
-        return;
+        e.message = `Failed to list secrets in namespace ${req.ns}, not deleting secrets for ${slug}: ${errMsg(e)}`;
+        logger.error(e.message);
+        throw e;
     }
-    for (const secret of secrets.items) {
+    return Promise.all(secrets.items.map(async secret => {
         const secretName = `${req.ns}/${secret.metadata.name}`;
         await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns),
             `delete secret ${secretName}`);
-    }
-    return;
+        return secret;
+    }));
 }
 
 /**

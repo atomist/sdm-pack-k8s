@@ -19,6 +19,7 @@ import {
     PushListenerInvocation,
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
+import { DefaultRepoRefResolver } from "@atomist/sdm-core";
 import * as _ from "lodash";
 import * as assert from "power-assert";
 import { isSyncRepoCommit } from "../../lib/sync/goals";
@@ -142,6 +143,7 @@ describe("sync/goals", () => {
                                 },
                             },
                         },
+                        repoRefResolver: new DefaultRepoRefResolver(),
                     },
                     workspaceIds: ["AM0441SS3Y"],
                 },

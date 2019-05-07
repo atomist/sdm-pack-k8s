@@ -16,6 +16,8 @@
 
 import * as k8s from "@kubernetes/client-node";
 import { DeepPartial } from "ts-essentials";
+import { matchLabels } from "./labels";
+import { KubernetesDelete } from "./request";
 
 /**
  * Workaround for all properties erroneously being required in
@@ -26,4 +28,40 @@ import { DeepPartial } from "ts-essentials";
  */
 export function metadataTemplate(partial: DeepPartial<k8s.V1ObjectMeta> = {}): k8s.V1ObjectMeta {
     return partial as k8s.V1ObjectMeta;
+}
+
+/**
+ * Tune the metadata returned by [[appMetadata]].
+ */
+export interface AppMetadataOptions {
+    /**
+     * If "cluster", do not set `namespace` property.  If "namespace",
+     * do not set `namespace` property and set `name` to the value of
+     * `app.ns`.  If "namespaced" or anything else, set `name` and
+     * `namespace` from the values in the `app`.
+     */
+    ns?: "cluster" | "namespace" | "namespaced";
+}
+
+/**
+ * Generate the minimal metadata for the provided Kubernetes
+ * application.
+ *
+ * @param app Kubernetes application object
+ * @param opts optional tweaks to returned metadata
+ * @return valid Kubernetes resource metadata
+ */
+export function appMetadata(app: KubernetesDelete, opts: AppMetadataOptions = {}): k8s.V1ObjectMeta {
+    const md: DeepPartial<k8s.V1ObjectMeta> = {
+        labels: matchLabels(app),
+    };
+    if (opts.ns === "cluster") {
+        md.name = app.name;
+    } else if (opts.ns === "namespace") {
+        md.name = app.ns;
+    } else {
+        md.name = app.name;
+        md.namespace = app.ns;
+    }
+    return metadataTemplate(md);
 }

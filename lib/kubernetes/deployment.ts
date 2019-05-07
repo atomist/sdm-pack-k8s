@@ -70,20 +70,23 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
  * Delete a deployment if it exists.  If the resource does not exist,
  * do nothing.
  *
- * @param req Kuberenetes delete request
+ * @param req Kuberenetes application delete request
+ * @return deleted object or undefined if resource does not exist
  */
-export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Promise<void> {
+export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Deployment | undefined> {
     const slug = appName(req);
+    let dep: k8s.V1Deployment;
     try {
-        await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
+        const resp = await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
+        dep = resp.body;
     } catch (e) {
         logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
-        return;
+        return undefined;
     }
     const body: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
     await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, "", body),
         `delete deployment ${slug}`);
-    return;
+    return dep;
 }
 
 /**

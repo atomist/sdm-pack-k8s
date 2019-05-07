@@ -60,7 +60,7 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<U
  * Create namespace resource.
  *
  * @param req Kubernetes application
- * @return kubernetes namespace resource
+ * @return Kubernetes namespace resource
  */
 export async function namespaceTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1Namespace> {
     const allLabels = applicationLabels(req);

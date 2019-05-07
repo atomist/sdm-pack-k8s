@@ -73,17 +73,20 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
  * nothing.
  *
  * @param req Kuberenetes delete request
+ * @return deleted service object or undefined if resource does not exist
  */
-export async function deleteService(req: KubernetesDeleteResourceRequest): Promise<void> {
+export async function deleteService(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Service | undefined> {
     const slug = appName(req);
+    let svc: k8s.V1Service;
     try {
-        await req.clients.core.readNamespacedService(req.name, req.ns);
+        const resp = await req.clients.core.readNamespacedService(req.name, req.ns);
+        svc = resp.body;
     } catch (e) {
         logger.debug(`Service ${slug} does not exist: ${errMsg(e)}`);
-        return;
+        return undefined;
     }
     await logRetry(() => req.clients.core.deleteNamespacedService(req.name, req.ns), `delete service ${slug}`);
-    return;
+    return svc;
 }
 
 /**

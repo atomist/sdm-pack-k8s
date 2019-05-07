@@ -51,8 +51,9 @@ import {
  *
  * @param app Kubernetes application creation request
  * @param sdmFulfiller The registered name of the SDM fulfilling the deployment goal.
+ * @return an array of all the resources upserted
  */
-export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<void> {
+export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<k8s.KubernetesObject[]> {
     let config: k8s.KubeConfig;
     try {
         config = loadKubeConfig();
@@ -65,12 +66,20 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
     const req = { ...app, sdmFulfiller, clients };
 
     try {
-        await upsertNamespace(req);
-        await upsertRbac(req);
-        await upsertService(req);
-        await upsertSecrets(req);
-        await upsertDeployment(req);
-        await upsertIngress(req);
+        const k8sResources: k8s.KubernetesObject[] = [];
+        const nsResult = await upsertNamespace(req);
+        k8sResources.push(nsResult.body);
+        const rbacResult = await upsertRbac(req);
+        k8sResources.push(...Object.values<{ body: k8s.KubernetesObject }>(rbacResult as any).filter(r => !!r).map(r => r.body));
+        const svcResult = await upsertService(req);
+        k8sResources.push(svcResult.body);
+        const secResult = await upsertSecrets(req);
+        k8sResources.push(...secResult.map(s => s.body));
+        const depResult = await upsertDeployment(req);
+        k8sResources.push(depResult.body);
+        const ingResult = await upsertIngress(req);
+        k8sResources.push(ingResult.body);
+        return k8sResources.filter(r => !!r);
     } catch (e) {
         e.message = `Failed to upsert '${reqString(req)}': ${e.message}`;
         logger.error(e.message);
@@ -84,8 +93,9 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
  * is returned.
  *
  * @param req delete application request object
+ * @return array of deleted objects
  */
-export async function deleteApplication(del: KubernetesDelete): Promise<void> {
+export async function deleteApplication(del: KubernetesDelete): Promise<k8s.KubernetesObject[]> {
     const slug = `${del.ns}/${del.name}`;
     let config: k8s.KubeConfig;
     try {
@@ -98,33 +108,34 @@ export async function deleteApplication(del: KubernetesDelete): Promise<void> {
     const clients = makeApiClients(config);
     const req = { ...del, clients };
 
+    const deleted: k8s.KubernetesObject[] = [];
     const errs: Error[] = [];
     try {
-        await deleteIngress(req);
+        deleted.push(await deleteIngress(req));
     } catch (e) {
         e.message = `Failed to delete ingress ${slug}: ${e.message}`;
         errs.push(e);
     }
     try {
-        await deleteDeployment(req);
+        deleted.push(await deleteDeployment(req));
     } catch (e) {
         e.message = `Failed to delete deployment ${slug}: ${e.message}`;
         errs.push(e);
     }
     try {
-        await deleteSecrets(req);
+        deleted.push(...(await deleteSecrets(req)));
     } catch (e) {
         e.message = `Failed to delete secrets of ${slug}: ${e.message}`;
         errs.push(e);
     }
     try {
-        await deleteService(req);
+        deleted.push(await deleteService(req));
     } catch (e) {
         e.message = `Failed to delete service ${slug}: ${e.message}`;
         errs.push(e);
     }
     try {
-        await deleteRbac(req);
+        deleted.push(...(await deleteRbac(req)));
     } catch (e) {
         e.message = `Failed to delete RBAC resources for ${slug}: ${e.message}`;
         errs.push(e);
@@ -134,6 +145,7 @@ export async function deleteApplication(del: KubernetesDelete): Promise<void> {
         logger.error(msg);
         throw new Error(msg);
     }
+    return deleted.filter(d => !!d);
 }
 
 /** Stringify filter for a Kubernetes request object. */
