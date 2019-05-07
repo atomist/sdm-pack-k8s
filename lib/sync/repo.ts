@@ -73,7 +73,7 @@ export async function queryForScmProvider(sdm: SoftwareDeliveryMachine): Promise
         _.defaultsDeep(sdm.configuration.sdm.k8s.options.sync, repoCreds);
         return sdm.configuration.sdm.k8s.options.sync;
     }
-    return repoCreds;
+    return undefined;
 }
 
 export function repoCredentials(sdm: SoftwareDeliveryMachine, repoRef: RepoRef, repo: RepoScmProvider.Repo): RepoCredentials | undefined {

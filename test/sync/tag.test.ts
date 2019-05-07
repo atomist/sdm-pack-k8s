@@ -26,7 +26,7 @@ describe("sync/tag", () => {
             // tslint:disable-next-line:no-null-keyword
             [undefined, null, {}, { version: "0.1.0" }].forEach((c: Configuration) => {
                 const t = commitTag(c);
-                const e = "[atomist:sync-commit:@atomist/sdm-pack-k8s]";
+                const e = "[atomist:sync-commit=@atomist/sdm-pack-k8s]";
                 assert(t === e);
             });
         });
@@ -37,7 +37,7 @@ describe("sync/tag", () => {
                 version: "0.1.0",
             };
             const t = commitTag(c);
-            const e = "[atomist:sync-commit:@atomist/sdm-pack-k8s_new-york]";
+            const e = "[atomist:sync-commit=@atomist/sdm-pack-k8s_new-york]";
             assert(t === e);
         });
 

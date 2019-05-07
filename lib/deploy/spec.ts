@@ -17,6 +17,7 @@
 import {
     logger,
     Project,
+    ProjectFile,
 } from "@atomist/automation-client";
 import * as yaml from "js-yaml";
 import * as path from "path";
@@ -33,7 +34,8 @@ import * as path from "path";
 export async function loadKubernetesSpec(p: Project, base: string): Promise<any | undefined> {
     for (const ext of ["json", "yaml", "yml"]) {
         const specFile = `${base}.${ext}`;
-        const spec = await parseKubernetesSpec(p, specFile);
+        const specPath = path.join(".atomist", "kubernetes", specFile);
+        const spec = await parseKubernetesSpec(p, specPath);
         if (spec) {
             return spec;
         }
@@ -42,37 +44,46 @@ export async function loadKubernetesSpec(p: Project, base: string): Promise<any 
 }
 
 /**
- * Reads and parses Kubernetes JSON or YAML spec from the project's
- * .atomist/kubernetes folder.  It swallows all exceptions, returning
- * undefined if one occurs.
+ * Reads and parses Kubernetes JSON or YAML spec from the project.
+ * It swallows all exceptions, returning undefined if one occurs.
  *
- * If the `name` of the file ends with `.yaml` or `.yml`, the file
+ * If the `specPath` of the file ends with `.yaml` or `.yml`, the file
  * contents are parsed as YAML.  Otherwise it is parsed as JSON.
  *
- * You probably do not want to call this directly, use
- * [[loadKubernetesSpec]] instead.
- *
  * @param p Project to look for spec file in
- * @param name File name of spec under .atomist/kubernetes
- * @returns the parsed object if the spec was successfully read and parsed, undefined otherwise
+ * @param specPath Path of spec file to load
+ * @return Parsed object if the spec was successfully read and parsed, undefined otherwise
  */
-export async function parseKubernetesSpec(p: Project, name: string): Promise<any | undefined> {
-    const specPath = path.join(".atomist", "kubernetes", name);
+export async function parseKubernetesSpec(p: Project, specPath: string): Promise<any | undefined> {
     try {
         const specFile = await p.getFile(specPath);
         if (!specFile) {
             return undefined;
         }
-        const specString = await specFile.getContent();
-        let spec: any;
-        if (/\.ya?ml$/.test(name)) {
-            spec = yaml.safeLoad(specString);
-        } else {
-            spec = JSON.parse(specString);
-        }
+        const spec = await parseKubernetesSpecFile(specFile);
         return spec;
     } catch (e) {
         logger.warn(`Failed to read and parse spec file ${specPath}: ${e.message}`);
     }
     return undefined;
+}
+
+/**
+ * Reads and parses Kubernetes JSON or YAML spec from the project.
+ *
+ * If the `specFile.path` of the file ends with `.yaml` or `.yml`, the file
+ * contents are parsed as YAML.  Otherwise it is parsed as JSON.
+ *
+ * @param specFile File object of spec file to load
+ * @return Parsed object of the spec
+ */
+export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<any> {
+    const specString = await specFile.getContent();
+    let spec: any;
+    if (/\.ya?ml$/.test(specFile.path)) {
+        spec = yaml.safeLoad(specString);
+    } else {
+        spec = JSON.parse(specString);
+    }
+    return spec;
 }

@@ -26,6 +26,7 @@ import {
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as cluster from "cluster";
 import * as _ from "lodash";
+import { parseKubernetesSpecFile } from "../deploy/spec";
 import { EssentialKubernetesObject } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { cloneOptions } from "./clone";
@@ -67,15 +68,14 @@ export const syncRepoStartupListener: StartupListener = async context => {
  * Kubernetes cluster.  If the resource does not exist, it is created
  * using the spec.  If it does exist, it is patched using the spec.
  *
- * @param syncRepo repository of specs to sync
+ * @param syncRepo Repository of specs to sync
  */
 async function initialSync(syncRepo: GitProject): Promise<void> {
     const specFiles = await sortSpecs(syncRepo);
     for (const specFile of specFiles) {
         logger.debug(`Processing spec ${specFile.path}`);
         try {
-            const specContent = await specFile.getContent();
-            const spec: EssentialKubernetesObject = JSON.parse(specContent);
+            const spec: EssentialKubernetesObject = await parseKubernetesSpecFile(specFile);
             await applySpec(spec);
         } catch (e) {
             e.message = `Failed to apply '${specFile.path}': ${e.message}`;
@@ -95,8 +95,8 @@ async function initialSync(syncRepo: GitProject): Promise<void> {
  * Essentially, this function converts a FileStream into a Promise of
  * sorted ProjectFiles.
  *
- * @param syncRepo repository of specs to sort
- * @return sorted array of specs in project
+ * @param syncRepo Repository of specs to sort
+ * @return Sorted array of specs in project
  */
 export function sortSpecs(syncRepo: GitProject): Promise<ProjectFile[]> {
     return new Promise<ProjectFile[]>((resolve, reject) => {
