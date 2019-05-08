@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
@@ -32,18 +31,13 @@ import {
     KubernetesSdm,
 } from "./request";
 
-interface UpsertRoleBindingResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1RoleBinding | k8s.V1ClusterRoleBinding;
-}
-
 /**
  * Create or patch role or cluster rolebinding.
  *
- * @param req Kubernetes application request.
- * @return response from create or patch request
+ * @param req Kubernetes application request
+ * @return Kubernetes resource spec used to create/patch the resource
  */
-export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<UpsertRoleBindingResponse> {
+export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise<k8s.V1RoleBinding | k8s.V1ClusterRoleBinding> {
     const slug = appName(req);
     if (req.roleSpec.kind === "ClusterRole") {
         const spec = await clusterRoleBindingTemplate(req);
@@ -51,24 +45,28 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
             await req.clients.rbac.readClusterRoleBinding(req.name);
         } catch (e) {
             logger.debug(`Failed to read cluster role binding ${slug}, creating: ${errMsg(e)}`);
-            return logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
+            await logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
                 `create cluster role binding ${slug}`);
+            return spec;
         }
         logger.debug(`Cluster role binding ${slug} exists, patching using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.rbac.patchClusterRoleBinding(req.name, spec),
+        await logRetry(() => req.clients.rbac.patchClusterRoleBinding(req.name, spec),
             `patch cluster role binding ${slug}`);
+        return spec;
     } else {
         const spec = await roleBindingTemplate(req);
         try {
             await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read role binding ${slug}, creating: ${errMsg(e)}`);
-            return logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),
+            await logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),
                 `create role binding ${slug}`);
+            return spec;
         }
         logger.debug(`Role binding ${slug} exists, patching using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, spec),
+        await logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, spec),
             `patch role binding ${slug}`);
+        return spec;
     }
 }
 
@@ -78,42 +76,30 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
  * @param req Kuberenetes delete request
  * @return deleted role or cluster role binding object, or undefined if no (cluster) role binding exists
  */
-export async function deleteRoleBinding(req: KubernetesDeleteResourceRequest): Promise<k8s.KubernetesObject | undefined> {
+export async function deleteRoleBinding(req: KubernetesDeleteResourceRequest): Promise<k8s.V1RoleBinding | k8s.V1ClusterRoleBinding | undefined> {
     const slug = appName(req);
-    let deleted: k8s.KubernetesObject;
+    let roleBinding: k8s.V1RoleBinding | k8s.V1ClusterRoleBinding;
 
     try {
         const resp = await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
-        deleted = resp.body;
+        roleBinding = resp.body;
     } catch (e) {
         logger.debug(`Role binding ${slug} does not exist: ${errMsg(e)}`);
     }
-    if (deleted) {
-        try {
-            await logRetry(() => req.clients.rbac.deleteNamespacedRoleBinding(req.name, req.ns), `delete role binding ${slug}`);
-            return deleted;
-        } catch (e) {
-            e.message = `Failed to delete role binding ${slug}: ${errMsg(e)}`;
-            logger.error(e.message);
-            throw e;
-        }
+    if (roleBinding) {
+        await logRetry(() => req.clients.rbac.deleteNamespacedRoleBinding(req.name, req.ns), `delete role binding ${slug}`);
+        return roleBinding;
     }
 
     try {
         const resp = await req.clients.rbac.readClusterRoleBinding(req.name, req.ns);
-        deleted = resp.body;
+        roleBinding = resp.body;
     } catch (e) {
         logger.debug(`Cluster role binding ${slug} does not exist: ${errMsg(e)}`);
     }
-    if (deleted) {
-        try {
-            await logRetry(() => req.clients.rbac.deleteClusterRoleBinding(req.name, req.ns), `delete cluster role binding ${slug}`);
-            return deleted;
-        } catch (e) {
-            e.message = `Failed to delete cluster role binding ${slug}: ${errMsg(e)}`;
-            logger.error(e.message);
-            throw e;
-        }
+    if (roleBinding) {
+        await logRetry(() => req.clients.rbac.deleteClusterRoleBinding(req.name, req.ns), `delete cluster role binding ${slug}`);
+        return roleBinding;
     }
 
     return undefined;
