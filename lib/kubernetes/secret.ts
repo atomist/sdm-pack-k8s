@@ -111,14 +111,14 @@ export async function secretTemplate(req: KubernetesApplication & KubernetesSdm,
         namespace: req.ns,
         labels,
     });
+    const apiVersion = "v1";
+    const kind = "Secret";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const s: Partial<k8s.V1Secret> = {
-        kind: "Secret",
-        apiVersion: "v1",
         type: "Opaque",
         metadata,
     };
-    _.merge(s, secret);
+    _.merge(s, secret, { apiVersion, kind });
     return s as k8s.V1Secret;
 }
 

@@ -90,14 +90,16 @@ export async function serviceAccountTemplate(req: KubernetesApplication & Kubern
         namespace: req.ns,
         labels,
     });
+    const apiVersion = "v1";
+    const kind = "ServiceAccount";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const sa: DeepPartial<k8s.V1ServiceAccount> = {
-        kind: "ServiceAccount",
-        apiVersion: "v1",
+        apiVersion,
+        kind,
         metadata,
     };
     if (req.serviceAccountSpec) {
-        _.merge(sa, req.serviceAccountSpec);
+        _.merge(sa, req.serviceAccountSpec, { apiVersion, kind });
     }
     return sa as k8s.V1ServiceAccount;
 }

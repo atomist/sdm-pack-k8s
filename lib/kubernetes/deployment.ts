@@ -114,10 +114,12 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
     const selector: k8s.V1LabelSelector = {
         matchLabels: matchers,
     } as any;
+    const apiVersion = "apps/v1";
+    const kind = "Deployment";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const d: DeepPartial<k8s.V1Deployment> = {
-        apiVersion: "apps/v1",
-        kind: "Deployment",
+        apiVersion,
+        kind,
         metadata,
         spec: {
             replicas: (req.replicas || req.replicas === 0) ? req.replicas : 1,
@@ -182,7 +184,7 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
         d.spec.template.spec.serviceAccountName = _.get(req, "serviceAccountSpec.metadata.name", req.name);
     }
     if (req.deploymentSpec) {
-        _.merge(d, req.deploymentSpec);
+        _.merge(d, req.deploymentSpec, { apiVersion, kind });
     }
     return d as k8s.V1Deployment;
 }
