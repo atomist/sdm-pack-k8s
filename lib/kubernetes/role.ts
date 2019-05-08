@@ -115,14 +115,14 @@ export async function roleTemplate(req: KubernetesApplication & KubernetesSdm): 
         name: req.name,
         labels,
     });
-    const r: k8s.V1Role = {
-        kind: "Role",
-        apiVersion: "rbac.authorization.k8s.io/v1",
+    const apiVersion = "rbac.authorization.k8s.io/v1";
+    const kind = "Role";
+    const r: Partial<k8s.V1Role> = {
         metadata,
         rules: [],
     };
-    _.merge(r, req.roleSpec);
-    return r;
+    _.merge(r, req.roleSpec, { apiVersion, kind });
+    return r as k8s.V1Role;
 }
 
 /**
@@ -139,12 +139,12 @@ export async function clusterRoleTemplate(req: KubernetesApplication & Kubernete
         name: req.name,
         labels,
     });
+    const apiVersion = "rbac.authorization.k8s.io/v1";
+    const kind = "ClusterRole";
     const r: Partial<k8s.V1ClusterRole> = {
-        kind: "ClusterRole",
-        apiVersion: "rbac.authorization.k8s.io/v1",
         metadata,
         rules: [],
     };
-    _.merge(r, req.roleSpec);
+    _.merge(r, req.roleSpec, { apiVersion, kind });
     return r as k8s.V1ClusterRole;
 }

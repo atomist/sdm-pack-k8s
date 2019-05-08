@@ -128,6 +128,69 @@ describe("kubernetes/service", () => {
             assert.deepStrictEqual(s, e);
         });
 
+        it("should merge in service spec fixing API version and kind", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                sdmFulfiller: "EMI",
+                serviceSpec: {
+                    apiVersion: "extensions/v1beta1",
+                    kind: "Sorvice",
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                    },
+                    spec: {
+                        externalTrafficPolicy: "Local",
+                        sessionAffinity: "ClusterIP",
+                    },
+                } as any,
+            };
+            const s = await serviceTemplate(r);
+            const e = {
+                apiVersion: "v1",
+                kind: "Service",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+                spec: {
+                    externalTrafficPolicy: "Local",
+                    ports: [
+                        {
+                            name: "http",
+                            port: 5510,
+                            protocol: "TCP",
+                            targetPort: "http",
+                        },
+                    ],
+                    selector: {
+                        "app.kubernetes.io/name": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                    sessionAffinity: "ClusterIP",
+                    type: "NodePort",
+                },
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
     });
 
     describe("upsertService", () => {

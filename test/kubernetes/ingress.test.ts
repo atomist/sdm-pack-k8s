@@ -199,6 +199,66 @@ describe("kubernetes/ingress", () => {
             assert.deepStrictEqual(s, e);
         });
 
+        it("should correct API version and kind in provided spec", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/bush/kate/hounds-of-love/cloudbusting",
+                host: "emi.com",
+                protocol: "https" as "https",
+                sdmFulfiller: "EMI",
+                tlsSecret: "emi-com",
+                ingressSpec: {
+                    apiVersion: "v1",
+                    kind: "Egress",
+                } as any,
+            };
+            const s = await ingressTemplate(r);
+            const e = {
+                apiVersion: "extensions/v1beta1",
+                kind: "Ingress",
+                metadata: {
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                    name: "cloudbusting",
+                },
+                spec: {
+                    rules: [
+                        {
+                            host: r.host,
+                            http: {
+                                paths: [
+                                    {
+                                        backend: {
+                                            serviceName: r.name,
+                                            servicePort: "http",
+                                        },
+                                        path: r.path,
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                    tls: [
+                        {
+                            hosts: [
+                                "emi.com",
+                            ],
+                            secretName: "emi-com",
+                        },
+                    ],
+                },
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
     });
 
     describe("upsertIngress", () => {
