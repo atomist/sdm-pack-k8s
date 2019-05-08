@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import {
     appName,
     KubernetesDeleteResourceRequest,
@@ -36,21 +35,12 @@ import {
 } from "./serviceAccount";
 
 /**
- * Package the API responses for all the RBAC resources.
+ * Package the RBAC resource specs.
  */
-export interface UpsertRbacResponse {
-    role?: {
-        response: http.IncomingMessage;
-        body: k8s.V1Role | k8s.V1ClusterRole;
-    };
-    roleBinding?: {
-        response: http.IncomingMessage;
-        body: k8s.V1RoleBinding | k8s.V1ClusterRoleBinding;
-    };
-    serviceAccount?: {
-        response: http.IncomingMessage;
-        body: k8s.V1ServiceAccount;
-    };
+export interface RbacResources {
+    role?: k8s.V1Role | k8s.V1ClusterRole;
+    roleBinding?: k8s.V1RoleBinding | k8s.V1ClusterRoleBinding;
+    serviceAccount?: k8s.V1ServiceAccount;
 }
 
 /**
@@ -63,25 +53,25 @@ export interface UpsertRbacResponse {
  * patched.
  *
  * @param req Kuberenetes application request
- * @return Response from Kubernetes API if role is created or patched.
+ * @return Kubernetes RBAC resource specs that were created or patched, some may be undefined
  */
-export async function upsertRbac(req: KubernetesResourceRequest): Promise<UpsertRbacResponse> {
+export async function upsertRbac(req: KubernetesResourceRequest): Promise<RbacResources> {
     if (req.roleSpec && !req.serviceAccountSpec) {
         req.serviceAccountSpec = {};
     }
 
-    const response: UpsertRbacResponse = {};
+    const resources: RbacResources = {};
 
     if (req.serviceAccountSpec) {
-        response.serviceAccount = await upsertServiceAccount(req);
+        resources.serviceAccount = await upsertServiceAccount(req);
     }
 
     if (req.roleSpec) {
-        response.role = await upsertRole(req);
-        response.roleBinding = await upsertRoleBinding(req);
+        resources.role = await upsertRole(req);
+        resources.roleBinding = await upsertRoleBinding(req);
     }
 
-    return response;
+    return resources;
 }
 
 /**
@@ -89,15 +79,20 @@ export async function upsertRbac(req: KubernetesResourceRequest): Promise<Upsert
  * resource does not exist, do nothing.
  *
  * @param req Kuberenetes delete request
- * @return array of deleted objects, which may be empty
+ * @return Kuberenetes RBAC resources object with deleted resources, some may be undefined
  */
-export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<k8s.KubernetesObject[]> {
+export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<RbacResources> {
     const slug = appName(req);
-    const deleted: k8s.KubernetesObject[] = [];
+    const deleted: RbacResources = {};
     const errs: Error[] = [];
-    for (const deleteOp of [deleteRoleBinding, deleteServiceAccount, deleteRole]) {
+    const rbacDeleters = [
+        { key: "roleBinding", del: deleteRoleBinding },
+        { key: "role", del: deleteRole },
+        { key: "serviceAccount", del: deleteServiceAccount },
+    ];
+    for (const deleter of rbacDeleters) {
         try {
-            deleted.push(await deleteOp(req));
+            deleted[deleter.key as keyof RbacResources] = await deleter.del(req);
         } catch (e) {
             errs.push(e);
         }
@@ -107,5 +102,5 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
         logger.error(msg);
         throw new Error(msg);
     }
-    return deleted.filter(d => !!d);
+    return deleted;
 }

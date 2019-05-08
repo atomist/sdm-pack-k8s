@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
@@ -34,11 +33,6 @@ import {
     KubernetesSdm,
 } from "./request";
 
-export interface UpsertSecretResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Secret;
-}
-
 /**
  * Create application secrets if they do not exist.  If a secret in
  * `req.secrets` exists, the secret is patched.  The provided secrets
@@ -46,10 +40,9 @@ export interface UpsertSecretResponse {
  * `req.secrets` is false or any empty array, no secrets are modified.
  *
  * @param req Kuberenetes application request
- * @return Response from Kubernetes API if resource is created or patched,
- *         `void` otherwise.
+ * @return Array of secret specs created/patched, which array may be empty
  */
-export async function upsertSecrets(req: KubernetesResourceRequest): Promise<UpsertSecretResponse[]> {
+export async function upsertSecrets(req: KubernetesResourceRequest): Promise<k8s.V1Secret[]> {
     const slug = appName(req);
     if (!req.secrets || req.secrets.length < 1) {
         logger.debug(`No secrets provided, will not create secrets for ${slug}`);
@@ -62,12 +55,14 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
             await req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
-            return logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),
+            await logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),
                 `create secret ${secretName} for ${slug}`);
+            return spec;
         }
         logger.debug(`Secret ${secretName} exists, patching`);
-        return logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, spec),
+        await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, spec),
             `patch secret ${secretName} for ${slug}`);
+        return spec;
     }));
 }
 
@@ -76,7 +71,7 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<Ups
  * any exists.  If no such secrets exist, do nothing.
  *
  * @param req Kubernetes application delete request
- * @return array of deleted secrets, which may be empty
+ * @return Array of deleted secret specs, which may be empty
  */
 export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Secret[]> {
     const slug = appName(req);
@@ -88,7 +83,7 @@ export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promi
             undefined, undefined, labelSelector);
         secrets = listResp.body;
     } catch (e) {
-        e.message = `Failed to list secrets in namespace ${req.ns}, not deleting secrets for ${slug}: ${errMsg(e)}`;
+        e.message = `Failed to list secrets in namespace for ${slug}: ${errMsg(e)}`;
         logger.error(e.message);
         throw e;
     }

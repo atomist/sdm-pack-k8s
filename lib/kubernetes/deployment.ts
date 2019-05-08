@@ -19,7 +19,6 @@ import {
     webhookBaseUrl,
 } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
@@ -38,20 +37,15 @@ import {
     KubernetesSdm,
 } from "./request";
 
-export interface UpsertDeploymentResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Deployment;
-}
-
 /**
  * Create or update a deployment for a Kubernetes application.  Any
  * provided `req.deploymentSpec` is merged using
  * [[deploymentTemplate]] before creating/patching.
  *
  * @param req Kuberenetes application request
- * @return response from the Kubernetes API.
+ * @return Kubernetes spec used to create/update resource
  */
-export async function upsertDeployment(req: KubernetesResourceRequest): Promise<UpsertDeploymentResponse> {
+export async function upsertDeployment(req: KubernetesResourceRequest): Promise<k8s.V1Deployment> {
     const slug = appName(req);
     const spec = await deploymentTemplate(req);
     try {
@@ -59,11 +53,13 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
     } catch (e) {
         logger.debug(`Failed to read deployment ${slug}, creating: ${errMsg(e)}`);
         logger.debug(`Creating deployment ${slug} using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, spec),
+        await logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, spec),
             `create deployment ${slug}`);
+        return spec;
     }
     logger.debug(`Updating deployment ${slug} using '${stringify(spec)}'`);
-    return logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec), `patch deployment ${slug}`);
+    await logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec), `patch deployment ${slug}`);
+    return spec;
 }
 
 /**
@@ -83,8 +79,8 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
         logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
         return undefined;
     }
-    const body: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
-    await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, "", body),
+    const opts: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
+    await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, undefined, opts),
         `delete deployment ${slug}`);
     return dep;
 }

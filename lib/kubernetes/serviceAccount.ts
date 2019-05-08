@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
@@ -32,45 +31,47 @@ import {
     KubernetesSdm,
 } from "./request";
 
-interface UpsertServiceAccountResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1ServiceAccount;
-}
-
-/** Create or patch service account. */
-export async function upsertServiceAccount(req: KubernetesResourceRequest): Promise<UpsertServiceAccountResponse> {
+/**
+ * Create or patch service account.
+ *
+ * @param req Kuberenetes application request
+ * @return Kubernetes resource spec used to create/patch the resource
+ */
+export async function upsertServiceAccount(req: KubernetesResourceRequest): Promise<k8s.V1ServiceAccount> {
     const slug = appName(req);
     const spec = await serviceAccountTemplate(req);
     try {
         await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read service account ${slug}, creating: ${errMsg(e)}`);
-        return logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, spec),
+        await logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, spec),
             `create service account ${slug}`);
+        return spec;
     }
     logger.debug(`Service account ${slug} exists, patching using '${stringify(spec)}'`);
-    return logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, spec),
+    await logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, spec),
         `patch service account ${slug}`);
+    return spec;
 }
 
 /**
  * Delete Kubernetes application service account if it exists.
  *
  * @param req Kuberenetes delete request
- * @return deleted service account, or undefined it no service account exists
+ * @return Deleted service account spec, or undefined it no service account exists
  */
 export async function deleteServiceAccount(req: KubernetesDeleteResourceRequest): Promise<k8s.V1ServiceAccount | undefined> {
     const slug = appName(req);
-    let svc: k8s.V1ServiceAccount;
+    let sa: k8s.V1ServiceAccount;
     try {
         const resp = await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
-        svc = resp.body;
+        sa = resp.body;
     } catch (e) {
         logger.debug(`Service account ${slug} does not exist: ${errMsg(e)}`);
         return undefined;
     }
     await logRetry(() => req.clients.core.deleteNamespacedServiceAccount(req.name, req.ns), `delete service account ${slug}`);
-    return svc;
+    return sa;
 }
 
 /**

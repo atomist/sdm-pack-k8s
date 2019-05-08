@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
@@ -32,21 +31,15 @@ import {
     KubernetesSdm,
 } from "./request";
 
-export interface UpsertIngressResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1beta1Ingress;
-}
-
 /**
  * If `req.port` and `req.path` are truthy, create or patch an ingress
  * for a Kubernetes application.  Any provided `req.ingressSpec` is
  * merged using [[ingressTemplate]] before creating/patching.
  *
  * @param req Kuberenetes resource request
- * @return Response from Kubernetes API is ingress is created or patched,
- *         `void` otherwise.
+ * @return Kubernetes spec used to create/patch resource
  */
-export async function upsertIngress(req: KubernetesResourceRequest): Promise<UpsertIngressResponse | undefined> {
+export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s.V1beta1Ingress | undefined> {
     const slug = appName(req);
     if (!req.port) {
         logger.debug(`Port not provided, will not create ingress ${slug}`);
@@ -62,10 +55,12 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<Ups
     } catch (e) {
         logger.debug(`Failed to read ingress ${slug}, creating: ${errMsg(e)}`);
         logger.debug(`Creating ingress ${slug} using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.ext.createNamespacedIngress(req.ns, spec), `create ingress ${slug}`);
+        await logRetry(() => req.clients.ext.createNamespacedIngress(req.ns, spec), `create ingress ${slug}`);
+        return spec;
     }
     logger.debug(`Ingress ${slug} exists, patching using '${stringify(spec)}'`);
-    return logRetry(() => req.clients.ext.patchNamespacedIngress(req.name, req.ns, spec), `patch ingress ${slug}`);
+    await logRetry(() => req.clients.ext.patchNamespacedIngress(req.name, req.ns, spec), `patch ingress ${slug}`);
+    return spec;
 }
 
 /**
@@ -73,7 +68,7 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<Ups
  * nothing.
  *
  * @param req Kuberenetes delete request
- * @return deleted ingress object or undefined if resource does not exist
+ * @return Deleted ingress object or undefined if resource does not exist
  */
 export async function deleteIngress(req: KubernetesDeleteResourceRequest): Promise<k8s.V1beta1Ingress | undefined> {
     const slug = appName(req);

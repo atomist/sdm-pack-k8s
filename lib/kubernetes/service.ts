@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
@@ -35,21 +34,15 @@ import {
     KubernetesSdm,
 } from "./request";
 
-export interface UpsertServiceResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Service;
-}
-
 /**
  * If `req.port` is truthy, create a service if it does not exist and
  * patch it if it does.  Any provided `req.serviceSpec` is merged
  * using [[serviceTemplate]] before creating/patching.
  *
  * @param req Kuberenetes application request
- * @return Response from Kubernetes API if service is created or patched,
- *         `void` otherwise.
+ * @return Kubernetes resource spec used to create/patch resource, or undefined if port not defined
  */
-export async function upsertService(req: KubernetesResourceRequest): Promise<UpsertServiceResponse | undefined> {
+export async function upsertService(req: KubernetesResourceRequest): Promise<k8s.V1Service | undefined> {
     const slug = appName(req);
     if (!req.port) {
         logger.debug(`Port not provided, will not create service ${slug}`);
@@ -61,11 +54,13 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
     } catch (e) {
         logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
         logger.debug(`Creating service ${slug} using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.core.createNamespacedService(req.ns, spec), `create service ${slug}`);
+        await logRetry(() => req.clients.core.createNamespacedService(req.ns, spec), `create service ${slug}`);
+        return spec;
     }
     logger.debug(`Service ${slug} exists, patching using '${stringify(spec)}'`);
-    return logRetry(() => req.clients.core.patchNamespacedService(req.name, req.ns, spec),
+    await logRetry(() => req.clients.core.patchNamespacedService(req.name, req.ns, spec),
         `patch service ${slug}`);
+    return spec;
 }
 
 /**
@@ -73,7 +68,7 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<Ups
  * nothing.
  *
  * @param req Kuberenetes delete request
- * @return deleted service object or undefined if resource does not exist
+ * @return Simple deleted service spec, or undefined if resource does not exist
  */
 export async function deleteService(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Service | undefined> {
     const slug = appName(req);

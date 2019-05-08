@@ -15,6 +15,7 @@
  */
 
 import * as k8s from "@kubernetes/client-node";
+import { DeepPartial } from "ts-essentials";
 import { appMetadata } from "./metadata";
 import { KubernetesDelete } from "./request";
 
@@ -61,4 +62,27 @@ export function appObject(app: KubernetesDelete, kind: string): k8s.KubernetesOb
     }
     /* tslint:enable:no-switch-case-fall-through */
     return ko;
+}
+
+/**
+ * Convert a full Kubernetes resource spec into a minimal KubernetesObject.
+ *
+ * @param spec Kubernetes spec to convert
+ * @return Minimal Kubernetes object
+ */
+export function k8sObject(spec: k8s.KubernetesObject): k8s.KubernetesObject {
+    // avoid https://github.com/kubernetes-client/javascript/issues/52
+    const ko: DeepPartial<k8s.KubernetesObject> = {
+        apiVersion: spec.apiVersion,
+        kind: spec.kind,
+        metadata: {
+            name: spec.metadata.name,
+            namespace: spec.metadata.namespace,
+            labels: {
+                "app.kubernetes.io/name": spec.metadata.labels["app.kubernetes.io/name"],
+                "atomist.com/workspaceId": spec.metadata.labels["atomist.com/workspaceId"],
+            },
+        },
+    };
+    return ko as k8s.KubernetesObject;
 }

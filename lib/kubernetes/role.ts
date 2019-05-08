@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { errMsg } from "../support/error";
@@ -31,18 +30,13 @@ import {
     KubernetesSdm,
 } from "./request";
 
-interface UpsertRoleResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Role | k8s.V1ClusterRole;
-}
-
 /**
  * Create or patch role or cluster role.
  *
- * @param req Kubernetes application request.
- * @return response from create or patch request
+ * @param req Kubernetes application request
+ * @return Kubernetes resource spec used to create/update the resource
  */
-export async function upsertRole(req: KubernetesResourceRequest): Promise<UpsertRoleResponse> {
+export async function upsertRole(req: KubernetesResourceRequest): Promise<k8s.V1Role | k8s.V1ClusterRole> {
     const slug = appName(req);
     if (req.roleSpec.kind === "ClusterRole") {
         const spec = await clusterRoleTemplate(req);
@@ -51,20 +45,24 @@ export async function upsertRole(req: KubernetesResourceRequest): Promise<Upsert
         } catch (e) {
             logger.debug(`Failed to read cluster role ${slug}, creating: ${errMsg(e)}`);
             logger.debug(`Creating cluster role ${slug} using '${stringify(spec)}'`);
-            return logRetry(() => req.clients.rbac.createClusterRole(spec), `create cluster role ${slug}`);
+            await logRetry(() => req.clients.rbac.createClusterRole(spec), `create cluster role ${slug}`);
+            return spec;
         }
         logger.debug(`Cluster role ${slug} exists, patching using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.rbac.patchClusterRole(req.name, spec), `patch cluster role ${slug}`);
+        await logRetry(() => req.clients.rbac.patchClusterRole(req.name, spec), `patch cluster role ${slug}`);
+        return spec;
     } else {
         const spec = await roleTemplate(req);
         try {
             await req.clients.rbac.readNamespacedRole(req.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read role ${slug}, creating: ${errMsg(e)}`);
-            return logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, spec), `create role ${slug}`);
+            await logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, spec), `create role ${slug}`);
+            return spec;
         }
         logger.debug(`Role ${slug} exists, patching using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, spec), `patch role ${slug}`);
+        await logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, spec), `patch role ${slug}`);
+        return spec;
     }
 }
 
@@ -72,44 +70,32 @@ export async function upsertRole(req: KubernetesResourceRequest): Promise<Upsert
  * Delete Kubernetes application role or cluster role.
  *
  * @param req Kuberenetes delete request
- * @return deleted role or cluster role object, or undefined if no (cluster) role exists
+ * @return Deleted role or cluster role spec, or undefined if no (cluster) role exists
  */
-export async function deleteRole(req: KubernetesDeleteResourceRequest): Promise<k8s.KubernetesObject | undefined> {
+export async function deleteRole(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Role | k8s.V1ClusterRole | undefined> {
     const slug = appName(req);
-    let deleted: k8s.KubernetesObject;
+    let role: k8s.V1Role | k8s.V1ClusterRole;
 
     try {
         const resp = await req.clients.rbac.readNamespacedRole(req.name, req.ns);
-        deleted = resp.body;
+        role = resp.body;
     } catch (e) {
         logger.debug(`Role ${slug} does not exist: ${errMsg(e)}`);
     }
-    if (deleted) {
-        try {
-            await logRetry(() => req.clients.rbac.deleteNamespacedRole(req.name, req.ns), `delete role ${slug}`);
-            return deleted;
-        } catch (e) {
-            e.message = `Failed to delete role ${slug}: ${errMsg(e)}`;
-            logger.error(e.message);
-            throw e;
-        }
+    if (role) {
+        await logRetry(() => req.clients.rbac.deleteNamespacedRole(req.name, req.ns), `delete role ${slug}`);
+        return role;
     }
 
     try {
         const resp = await req.clients.rbac.readClusterRole(req.name, req.ns);
-        deleted = resp.body;
+        role = resp.body;
     } catch (e) {
         logger.debug(`Cluster role ${slug} does not exist: ${errMsg(e)}`);
     }
-    if (deleted) {
-        try {
-            await logRetry(() => req.clients.rbac.deleteClusterRole(req.name, req.ns), `delete cluster role ${slug}`);
-            return deleted;
-        } catch (e) {
-            e.message = `Failed to delete cluster role ${slug}: ${errMsg(e)}`;
-            logger.error(e.message);
-            throw e;
-        }
+    if (role) {
+        await logRetry(() => req.clients.rbac.deleteClusterRole(req.name, req.ns), `delete cluster role ${slug}`);
+        return role;
     }
 
     return undefined;
