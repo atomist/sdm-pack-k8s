@@ -113,6 +113,59 @@ describe("kubernetes/roleBinding", () => {
             assert.deepStrictEqual(s, e);
         });
 
+        it("should merge in role binding spec fixing API version and kind", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
+                roleBindingSpec: {
+                    apiVersion: "v1",
+                    kind: "RollBinding",
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                    },
+                },
+            };
+            const s = await roleBindingTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "RoleBinding",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: r.name,
+                    namespace: "hounds-of-love",
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+                roleRef: {
+                    apiGroup: "rbac.authorization.k8s.io",
+                    kind: "Role",
+                    name: r.name,
+                },
+                subjects: [
+                    {
+                        kind: "ServiceAccount",
+                        name: r.name,
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
         it("should create a role binding spec with provided service account", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
@@ -206,6 +259,59 @@ describe("kubernetes/roleBinding", () => {
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 sdmFulfiller: "EMI",
                 roleBindingSpec: {
+                    kind: "ClusterRoleBinding",
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                    },
+                },
+            };
+            const s = await clusterRoleBindingTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "ClusterRoleBinding",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+                roleRef: {
+                    apiGroup: "rbac.authorization.k8s.io",
+                    kind: "ClusterRole",
+                    name: r.name,
+                },
+                subjects: [
+                    {
+                        kind: "ServiceAccount",
+                        name: r.name,
+                        namespace: r.ns,
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should merge in cluster role binding spec fixing API version", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
+                roleBindingSpec: {
+                    apiVersion: "v1",
                     kind: "ClusterRoleBinding",
                     metadata: {
                         annotation: {
