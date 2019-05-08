@@ -120,10 +120,12 @@ export async function roleBindingTemplate(req: KubernetesApplication & Kubernete
         name: req.name,
         labels,
     });
+    const apiVersion = "rbac.authorization.k8s.io/v1";
+    const kind = "RoleBinding";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const rb: DeepPartial<k8s.V1RoleBinding> = {
-        kind: "RoleBinding",
-        apiVersion: "rbac.authorization.k8s.io/v1",
+        apiVersion,
+        kind,
         metadata,
         roleRef: {
             apiGroup: "rbac.authorization.k8s.io",
@@ -141,7 +143,7 @@ export async function roleBindingTemplate(req: KubernetesApplication & Kubernete
         rb.subjects[0].name = req.serviceAccountSpec.metadata.name;
     }
     if (req.roleBindingSpec) {
-        _.merge(rb, req.roleBindingSpec);
+        _.merge(rb, req.roleBindingSpec, { apiVersion, kind });
     }
     return rb as k8s.V1RoleBinding;
 }
@@ -161,10 +163,12 @@ export async function clusterRoleBindingTemplate(req: KubernetesApplication & Ku
         name: req.name,
         labels,
     });
+    const apiVersion = "rbac.authorization.k8s.io/v1";
+    const kind = "ClusterRoleBinding";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const rb: DeepPartial<k8s.V1ClusterRoleBinding> = {
-        kind: "ClusterRoleBinding",
-        apiVersion: "rbac.authorization.k8s.io/v1",
+        apiVersion,
+        kind,
         metadata,
         roleRef: {
             apiGroup: "rbac.authorization.k8s.io",
@@ -183,7 +187,7 @@ export async function clusterRoleBindingTemplate(req: KubernetesApplication & Ku
         rb.subjects[0].name = req.serviceAccountSpec.metadata.name;
     }
     if (req.roleBindingSpec) {
-        _.merge(rb, req.roleBindingSpec);
+        _.merge(rb, req.roleBindingSpec, { apiVersion, kind });
     }
     return rb as k8s.V1ClusterRoleBinding;
 }

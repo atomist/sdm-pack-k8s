@@ -134,6 +134,91 @@ describe("kubernetes/role", () => {
             assert.deepStrictEqual(s, e);
         });
 
+        it("should merge in role spec fixing API version and kind", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
+                roleSpec: {
+                    apiVersion: "v1",
+                    kind: "Roll",
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                    },
+                    rules: [
+                        {
+                            apiGroups: [""],
+                            resources: ["services"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["pods"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: ["extensions"],
+                            resources: ["ingresses"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["nodes"],
+                            verbs: ["list"],
+                        },
+                    ],
+                },
+            };
+            const s = await roleTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "Role",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+                rules: [
+                    {
+                        apiGroups: [""],
+                        resources: ["services"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: [""],
+                        resources: ["pods"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: ["extensions"],
+                        resources: ["ingresses"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: [""],
+                        resources: ["nodes"],
+                        verbs: ["list"],
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
     });
 
     describe("clusterRoleTemplate", () => {
@@ -165,7 +250,7 @@ describe("kubernetes/role", () => {
             assert.deepStrictEqual(s, e);
         });
 
-        it("should merge in provided role spec", async () => {
+        it("should merge in provided cluster role spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
                 ns: "hounds-of-love",
@@ -173,6 +258,91 @@ describe("kubernetes/role", () => {
                 image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
                 sdmFulfiller: "EMI",
                 roleSpec: {
+                    kind: "ClusterRole",
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                    },
+                    rules: [
+                        {
+                            apiGroups: [""],
+                            resources: ["services"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["pods"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: ["extensions"],
+                            resources: ["ingresses"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["nodes"],
+                            verbs: ["list"],
+                        },
+                    ],
+                },
+            };
+            const s = await clusterRoleTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "ClusterRole",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    name: r.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                },
+                rules: [
+                    {
+                        apiGroups: [""],
+                        resources: ["services"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: [""],
+                        resources: ["pods"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: ["extensions"],
+                        resources: ["ingresses"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: [""],
+                        resources: ["nodes"],
+                        verbs: ["list"],
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should merge in cluster role spec fixing API version", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
+                roleSpec: {
+                    apiVersion: "v1",
                     kind: "ClusterRole",
                     metadata: {
                         annotation: {

@@ -99,10 +99,12 @@ export async function serviceTemplate(req: KubernetesApplication & KubernetesSdm
         name: req.name,
         labels,
     });
+    const apiVersion = "v1";
+    const kind = "Service";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const s: DeepPartial<k8s.V1Service> = {
-        kind: "Service",
-        apiVersion: "v1",
+        apiVersion,
+        kind,
         metadata,
         spec: {
             ports: [
@@ -119,7 +121,7 @@ export async function serviceTemplate(req: KubernetesApplication & KubernetesSdm
         },
     };
     if (req.serviceSpec) {
-        _.merge(s, req.serviceSpec);
+        _.merge(s, req.serviceSpec, { apiVersion, kind });
     }
     return s as k8s.V1Service;
 }
