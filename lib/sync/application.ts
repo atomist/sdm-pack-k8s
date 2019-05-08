@@ -19,6 +19,7 @@ import {
     GitProject,
     guid,
     logger,
+    Project,
     ProjectFile,
     ProjectOperationCredentials,
     projectUtils,
@@ -35,21 +36,23 @@ import * as stringify from "json-stringify-safe";
 import { parseKubernetesSpecFile } from "../deploy/spec";
 import {
     appName,
-    KubernetesApplication,
+    KubernetesDelete,
 } from "../kubernetes/request";
 import { cloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
 import { commitTag } from "./tag";
 
+export type SyncAction = "upsert" | "delete";
+
 /**
  * Synchronize changes from deploying app to the configured syncRepo.
  * If no syncRepo is configured, do nothing.
  *
+ * @param app Kubernetes application change that triggered the sync
  * @param resources Kubernetes resource objects to synchronize
- * @param goalEvent SDM goal event triggering the application upsert
- * @param context SDM event handler context
+ * @param action Action performed, "upsert" or "delete"
  */
-export async function syncApplication(app: KubernetesApplication, resources: k8s.KubernetesObject[]): Promise<void> {
+export async function syncApplication(app: KubernetesDelete, resources: k8s.KubernetesObject[], action: SyncAction = "upsert"): Promise<void> {
     const slug = appName(app);
     const syncRepo: RemoteRepoRef = configurationValue("sdm.k8s.options.sync.repo", undefined);
     if (!syncRepo) {
@@ -67,13 +70,18 @@ export async function syncApplication(app: KubernetesApplication, resources: k8s
     };
     const projectLoader: ProjectLoader = configurationValue("sdm.projectLoader", new CachingProjectLoader());
     try {
-        await projectLoader.doWithProject(projectLoadingParameters, syncResources(app, resources));
+        await projectLoader.doWithProject(projectLoadingParameters, syncResources(app, resources, action));
     } catch (e) {
         e.message = `Failed to perform sync resources from ${slug} to sync repo ${syncRepo.owner}/${syncRepo.repo}: ${e.message}`;
         logger.error(e.message);
         throw e;
     }
     return;
+}
+
+export interface ProjectFileSpec {
+    file: ProjectFile;
+    spec: k8s.KubernetesObject;
 }
 
 /**
@@ -88,44 +96,30 @@ export async function syncApplication(app: KubernetesApplication, resources: k8s
  *
  * @param app Kubernetes application object
  * @param resources Resources that were upserted as part of this application
+ * @param action Action performed, "upsert" or "delete"
  * @return Function that updates the sync repo with the resource specs
  */
-export function syncResources(app: KubernetesApplication, resources: k8s.KubernetesObject[]): (p: GitProject) => Promise<void> {
+export function syncResources(app: KubernetesDelete, resources: k8s.KubernetesObject[], action: SyncAction): (p: GitProject) => Promise<void> {
     return async syncProject => {
-        const specs: Array<{ file: ProjectFile, spec: k8s.KubernetesObject }> = [];
-        await projectUtils.doWithFiles(syncProject, k8sSpecGlob, async specFile => {
+        const specs: ProjectFileSpec[] = [];
+        await projectUtils.doWithFiles(syncProject, k8sSpecGlob, async file => {
             try {
-                const spec: k8s.KubernetesObject = await parseKubernetesSpecFile(specFile);
-                specs.push({ file: specFile, spec });
+                const spec: k8s.KubernetesObject = await parseKubernetesSpecFile(file);
+                specs.push({ file, spec });
             } catch (e) {
-                logger.warn(`Failed to process sync repo spec ${specFile.path}, ignoring: ${e.message}`);
+                logger.warn(`Failed to process sync repo spec ${file.path}, ignoring: ${e.message}`);
             }
         });
+        const [syncAction, syncVerb] = (action === "delete") ? [resourceDeleted, "Delete"] : [resourceUpserted, "Update"];
         for (const resource of resources) {
-            let found = false;
-            for (const sf of specs) {
-                if (resource.apiVersion === sf.spec.apiVersion && resource.kind === sf.spec.kind &&
-                    resource.metadata.name === sf.spec.metadata.name && resource.metadata.namespace === sf.spec.metadata.namespace) {
-                    const specString = (/\.ya?ml$/.test(sf.file.path)) ? yaml.safeDump(resource) : stringifySpec(resource);
-                    await sf.file.setContent(specString);
-                    found = true;
-                }
-            }
-            if (!found) {
-                const specRoot = specFileBasename(resource);
-                const specExt = ".json";
-                let specPath = specRoot + specExt;
-                while (await syncProject.getFile(specPath)) {
-                    specPath = specRoot + "-" + guid().split("-")[0] + specExt;
-                }
-                await syncProject.addFile(specPath, stringifySpec(resource));
-            }
+            const fileSpec = matchSpec(resource, specs);
+            await syncAction(resource, syncProject, fileSpec);
         }
         if (await syncProject.isClean()) {
             return;
         }
         try {
-            await syncProject.commit(`Update specs for ${appName(app)}\n\n[atomist:generated] ${commitTag()}\n`);
+            await syncProject.commit(`${syncVerb} specs for ${appName(app)}\n\n[atomist:generated] ${commitTag()}\n`);
             await syncProject.push();
         } catch (e) {
             e.message = `Failed to commit and push resource changes to sync repo: ${e.message}`;
@@ -133,6 +127,57 @@ export function syncResources(app: KubernetesApplication, resources: k8s.Kuberne
             throw e;
         }
     };
+}
+
+/**
+ * Persist the upsert of a resource to the sync repo project.
+ *
+ * @param resource Kubernetes resource that was upserted
+ * @param p Sync repo project
+ * @param fs File and spec object that matches resource, may be undefined
+ */
+async function resourceUpserted(resource: k8s.KubernetesObject, p: Project, fs: ProjectFileSpec): Promise<void> {
+    if (fs) {
+        const specString = (/\.ya?ml$/.test(fs.file.path)) ? yaml.safeDump(resource) : stringifySpec(resource);
+        await fs.file.setContent(specString);
+    } else {
+        const specRoot = specFileBasename(resource);
+        const specExt = ".json";
+        let specPath = specRoot + specExt;
+        while (await p.getFile(specPath)) {
+            specPath = specRoot + "-" + guid().split("-")[0] + specExt;
+        }
+        await p.addFile(specPath, stringifySpec(resource));
+    }
+}
+
+/**
+ * Persist the deletion of a resource to the sync repo project.
+ *
+ * @param resource Kubernetes resource that was upserted
+ * @param p Sync repo project
+ * @param fs File and spec object that matches resource, may be undefined
+ */
+async function resourceDeleted(resource: k8s.KubernetesObject, p: Project, fs: ProjectFileSpec): Promise<void> {
+    if (fs) {
+        await p.deleteFile(fs.file.path);
+    }
+}
+
+/**
+ * Search `fileSpecs` for a spec that matches `spec`.  To be
+ * considered a match, the apiVersion, kind, name, and namespace,
+ * which may be undefined, must match.
+ *
+ * @param spec Kubernetes object spec to match
+ * @param fileSpecs Array of spec and file objects to search
+ * @return First file and spec object to match spec
+ */
+export function matchSpec(spec: k8s.KubernetesObject, fileSpecs: ProjectFileSpec[]): ProjectFileSpec | undefined {
+    return fileSpecs.find(fs => spec.apiVersion === fs.spec.apiVersion &&
+        spec.kind === fs.spec.kind &&
+        spec.metadata.name === fs.spec.metadata.name &&
+        spec.metadata.namespace === fs.spec.metadata.namespace);
 }
 
 /**

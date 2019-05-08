@@ -26,6 +26,7 @@ import {
 } from "@atomist/sdm";
 import { deleteApplication } from "../kubernetes/application";
 import { defaultNamespace } from "../kubernetes/namespace";
+import { syncApplication } from "../sync/application";
 
 @Parameters()
 export class KubernetesUndeployParameters {
@@ -77,8 +78,16 @@ export const kubernetesUndeploy: CommandHandlerRegistration<KubernetesUndeployPa
             message: `Successfully deleted ${slug} resources from Kubernetes`,
         };
         try {
-            await deleteApplication(delApp);
+            const deleted = await deleteApplication(delApp);
             logger.info(result.message);
+            try {
+                await syncApplication(delApp, deleted, "delete");
+            } catch (err) {
+                result.code++;
+                const msg = `Failed to delete resource specs from sync repo: ${err.message}`;
+                logger.error(msg);
+                result.message = `${result.message} but ${msg}`;
+            }
             try {
                 await ci.context.messageClient.respond(slackSuccessMessage("Kubernetes Undeploy", result.message));
             } catch (err) {
