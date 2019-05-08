@@ -72,6 +72,55 @@ describe("kubernetes/secret", () => {
             assert.deepStrictEqual(s, e);
         });
 
+        it("should fix incorrect API version and kind", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                sdmFulfiller: "EMI",
+            };
+            const p: k8s.V1Secret = {
+                apiVersion: "apps/v1",
+                kind: "Secrit",
+                metadata: {
+                    name: "musicians",
+                },
+                data: {
+                    piano: "S2F0ZSBCdXNo",
+                    guitar: "QWxhbiBNdXJwaHk=",
+                    bass: "RGVsIFBhbG1lciwgTWFydGluIEdsb3ZlciwgRWJlcmhhcmQgV2ViZXI=",
+                    drums: "U3R1YXJ0IEVsbGlvdHQgJiBDaGFybGllIE1vcmdhbg==",
+                    strings: "VGhlIE1lZGljaSBTZXh0ZXQ=",
+                },
+            } as any;
+            const s = await secretTemplate(r, p);
+            const e = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: p.metadata.name,
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "app.kubernetes.io/component": "secret",
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                data: {
+                    piano: "S2F0ZSBCdXNo",
+                    guitar: "QWxhbiBNdXJwaHk=",
+                    bass: "RGVsIFBhbG1lciwgTWFydGluIEdsb3ZlciwgRWJlcmhhcmQgV2ViZXI=",
+                    drums: "U3R1YXJ0IEVsbGlvdHQgJiBDaGFybGllIE1vcmdhbg==",
+                    strings: "VGhlIE1lZGljaSBTZXh0ZXQ=",
+                },
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
         it("should return a custom secret spec", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",

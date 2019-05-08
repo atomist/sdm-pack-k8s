@@ -104,14 +104,14 @@ export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promi
 export async function secretTemplate(req: KubernetesApplication & KubernetesSdm, secret: DeepPartial<k8s.V1Secret>): Promise<k8s.V1Secret> {
     const labels = applicationLabels({ ...req, component: "secret" });
     const metadata = metadataTemplate({ labels });
+    const apiVersion = "v1";
+    const kind = "Secret";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const s: Partial<k8s.V1Secret> = {
-        kind: "Secret",
-        apiVersion: "v1",
         type: "Opaque",
         metadata,
     };
-    _.merge(s, secret);
+    _.merge(s, secret, { apiVersion, kind });
     return s as k8s.V1Secret;
 }
 

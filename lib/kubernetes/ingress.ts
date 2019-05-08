@@ -124,10 +124,12 @@ export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm
     if (req.host) {
         rule.host = req.host;
     }
+    const apiVersion = "extensions/v1beta1";
+    const kind = "Ingress";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const i: DeepPartial<k8s.V1beta1Ingress> = {
-        kind: "Ingress",
-        apiVersion: "extensions/v1beta1",
+        apiVersion,
+        kind,
         metadata,
         spec: {
             rules: [rule],
@@ -144,7 +146,7 @@ export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm
         }
     }
     if (req.ingressSpec) {
-        _.merge(i, req.ingressSpec);
+        _.merge(i, req.ingressSpec, { apiVersion, kind });
     }
     return i as k8s.V1beta1Ingress;
 }
