@@ -19,8 +19,10 @@ import {
     Project,
     ProjectFile,
 } from "@atomist/automation-client";
+import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as path from "path";
+import { DeepPartial } from "ts-essentials";
 
 /**
  * Read and parse either JSON or YAML file with basename `base` under
@@ -77,9 +79,9 @@ export async function parseKubernetesSpec(p: Project, specPath: string): Promise
  * @param specFile File object of spec file to load
  * @return Parsed object of the spec
  */
-export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<any> {
+export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<DeepPartial<k8s.KubernetesObject>> {
     const specString = await specFile.getContent();
-    let spec: any;
+    let spec: DeepPartial<k8s.KubernetesObject>;
     if (/\.ya?ml$/.test(specFile.path)) {
         spec = yaml.safeLoad(specString);
     } else {

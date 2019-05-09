@@ -27,7 +27,6 @@ import { isInLocalMode } from "@atomist/sdm-core";
 import * as cluster from "cluster";
 import * as _ from "lodash";
 import { parseKubernetesSpecFile } from "../deploy/spec";
-import { EssentialKubernetesObject } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { cloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
@@ -80,7 +79,7 @@ async function initialSync(syncRepo: GitProject): Promise<void> {
     for (const specFile of specFiles) {
         logger.debug(`Processing spec ${specFile.path}`);
         try {
-            const spec: EssentialKubernetesObject = await parseKubernetesSpecFile(specFile);
+            const spec = await parseKubernetesSpecFile(specFile);
             await applySpec(spec);
         } catch (e) {
             e.message = `Failed to apply '${specFile.path}': ${e.message}`;

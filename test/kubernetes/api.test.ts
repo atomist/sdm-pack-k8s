@@ -15,12 +15,10 @@
  */
 
 import { execPromise } from "@atomist/sdm";
+import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
-import {
-    EssentialKubernetesObject,
-    ListKubernetesObject,
-    specUriPath,
-} from "../../lib/kubernetes/api";
+import { DeepPartial } from "ts-essentials";
+import { specUriPath } from "../../lib/kubernetes/api";
 import { applySpec } from "../../lib/kubernetes/apply";
 import { deleteSpec } from "../../lib/kubernetes/delete";
 
@@ -29,7 +27,7 @@ describe("kubernetes/api", () => {
     describe("specUriPath", () => {
 
         it("should return a namespaced path", () => {
-            const o: EssentialKubernetesObject = {
+            const o = {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
@@ -42,7 +40,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should return a non-namespaced path", () => {
-            const o: EssentialKubernetesObject = {
+            const o = {
                 apiVersion: "v1",
                 kind: "Namespace",
                 metadata: {
@@ -54,7 +52,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should return a namespaced path without name", () => {
-            const o: ListKubernetesObject = {
+            const o = {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
@@ -66,7 +64,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should return a non-namespaced path without name", () => {
-            const o: ListKubernetesObject = {
+            const o = {
                 apiVersion: "v1",
                 kind: "Namespace",
             };
@@ -75,7 +73,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should return a namespaced path for non-core resource", () => {
-            const o: EssentialKubernetesObject = {
+            const o = {
                 apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
@@ -88,7 +86,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should return properly pluralize", () => {
-            const o: EssentialKubernetesObject = {
+            const o = {
                 apiVersion: "extensions/v1beta1",
                 kind: "Ingress",
                 metadata: {
@@ -119,7 +117,7 @@ describe("kubernetes/api", () => {
             ];
             /* tslint:enable:max-line-length */
             a.forEach(k => {
-                const o: EssentialKubernetesObject = {
+                const o: DeepPartial<k8s.KubernetesObject> = {
                     apiVersion: k.apiVersion,
                     kind: k.kind,
                     metadata: {
@@ -151,7 +149,7 @@ describe("kubernetes/api", () => {
                 { apiVersion: "storage.k8s.io/v1", kind: "StorageClass", ns: false, e: "storage.k8s.io/v1/storageclasses" },
             ];
             a.forEach(k => {
-                const o: ListKubernetesObject = {
+                const o: DeepPartial<k8s.KubernetesObject> = {
                     apiVersion: k.apiVersion,
                     kind: k.kind,
                 };
@@ -164,35 +162,35 @@ describe("kubernetes/api", () => {
         });
 
         it("should throw an error if kind missing", () => {
-            const o: EssentialKubernetesObject = {
+            const o = {
                 apiVersion: "v1",
                 metadata: {
                     name: "repeater",
                     namespace: "fugazi",
                 },
-            } as any;
+            };
             assert.throws(() => specUriPath(o), /Spec does not contain kind:/);
         });
 
         it("should throw an error if apiVersion missing", () => {
-            const o: EssentialKubernetesObject = {
+            const o = {
                 kind: "Service",
                 metadata: {
                     name: "repeater",
                     namespace: "fugazi",
                 },
-            } as any;
+            };
             assert.throws(() => specUriPath(o), /Spec does not contain apiVersion:/);
         });
 
         it("should throw an error if name required and missing", () => {
-            const o: EssentialKubernetesObject = {
+            const o = {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
                     namespace: "fugazi",
                 },
-            } as any;
+            };
             assert.throws(() => specUriPath(o), /Spec does not contain name:/);
         });
 
@@ -215,7 +213,7 @@ describe("kubernetes/api", () => {
         });
 
         it("should apply and delete a resource", async () => {
-            const o: EssentialKubernetesObject = {
+            const o = {
                 apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
@@ -246,7 +244,7 @@ describe("kubernetes/api", () => {
                         },
                     },
                 },
-            } as any;
+            };
             await applySpec(o);
             const p0 = await execPromise("kubectl", ["get", "-n", o.metadata.namespace, "deployments"]);
             assert(p0.stdout.includes(o.metadata.name));

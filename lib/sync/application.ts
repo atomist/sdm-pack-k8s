@@ -32,6 +32,7 @@ import {
 import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as stringify from "json-stringify-safe";
+import { DeepPartial } from "ts-essentials";
 import { SyncOptions } from "../config";
 import { parseKubernetesSpecFile } from "../deploy/spec";
 import {
@@ -81,7 +82,7 @@ export async function syncApplication(app: KubernetesDelete, resources: k8s.Kube
 
 export interface ProjectFileSpec {
     file: ProjectFile;
-    spec: k8s.KubernetesObject;
+    spec: DeepPartial<k8s.KubernetesObject>;
 }
 
 /**
@@ -104,7 +105,7 @@ export function syncResources(app: KubernetesDelete, resources: k8s.KubernetesOb
         const specs: ProjectFileSpec[] = [];
         await projectUtils.doWithFiles(syncProject, k8sSpecGlob, async file => {
             try {
-                const spec: k8s.KubernetesObject = await parseKubernetesSpecFile(file);
+                const spec = await parseKubernetesSpecFile(file);
                 specs.push({ file, spec });
             } catch (e) {
                 logger.warn(`Failed to process sync repo spec ${file.path}, ignoring: ${e.message}`);

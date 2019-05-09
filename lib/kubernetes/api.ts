@@ -25,7 +25,7 @@ export interface KubernetesObjectResponse {
     response: http.IncomingMessage;
 }
 
-export interface KubernetesObjectsResponse {
+export interface KubernetesListResponse {
     body: k8s.KubernetesListObject;
     response: http.IncomingMessage;
 }
@@ -35,21 +35,6 @@ export interface KubernetesDeleteResponse {
     response: http.IncomingMessage;
 }
 
-export interface EssentialV1Metadata extends DeepPartial<k8s.V1ObjectMeta> {
-    name: string;
-}
-
-export interface EssentialKubernetesObject extends DeepPartial<k8s.KubernetesObject> {
-    apiVersion: string;
-    kind: string;
-    metadata: EssentialV1Metadata;
-}
-
-export interface ListKubernetesObject extends DeepPartial<k8s.KubernetesObject> {
-    apiVersion: string;
-    kind: string;
-}
-
 /**
  * Dynamically construct Kubernetes API request URIs so client does
  * not have to know what type of object it is acting on, create the
@@ -57,10 +42,12 @@ export interface ListKubernetesObject extends DeepPartial<k8s.KubernetesObject> 
  */
 export class KubernetesObjectApi extends k8s.ApisApi {
 
+    private readonly defaultDeleteBody: any = { propagationPolicy: "Background" };
+
     /**
      * Read any Kubernetes resource.
      */
-    public async create(spec: EssentialKubernetesObject): Promise<KubernetesObjectResponse> {
+    public async create(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
         const requestOptions = this.baseRequestOptions("POST");
         requestOptions.uri += specUriPath(spec, false);
         requestOptions.body = spec;
@@ -70,7 +57,7 @@ export class KubernetesObjectApi extends k8s.ApisApi {
     /**
      * Delete any Kubernetes resource.
      */
-    public async delete(spec: EssentialKubernetesObject, body: any = { propagationPolicy: "Background" }): Promise<KubernetesDeleteResponse> {
+    public async delete(spec: DeepPartial<k8s.KubernetesObject>, body: any = this.defaultDeleteBody): Promise<KubernetesDeleteResponse> {
         const requestOptions = this.baseRequestOptions("DELETE");
         requestOptions.uri += specUriPath(spec);
         requestOptions.body = body;
@@ -80,16 +67,16 @@ export class KubernetesObjectApi extends k8s.ApisApi {
     /**
      * List any Kubernetes resource.
      */
-    public async list(spec: ListKubernetesObject): Promise<KubernetesObjectsResponse> {
+    public async list(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesListResponse> {
         const requestOptions = this.baseRequestOptions();
         requestOptions.uri += specUriPath(spec, false);
-        return this.requestPromise(requestOptions) as any as KubernetesObjectsResponse;
+        return this.requestPromise(requestOptions) as any as KubernetesListResponse;
     }
 
     /**
      * Patch any Kubernetes resource.
      */
-    public async patch(spec: EssentialKubernetesObject): Promise<KubernetesObjectResponse> {
+    public async patch(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
         const requestOptions = this.baseRequestOptions("PATCH");
         requestOptions.uri += specUriPath(spec);
         requestOptions.body = spec;
@@ -100,7 +87,7 @@ export class KubernetesObjectApi extends k8s.ApisApi {
     /**
      * Read any Kubernetes resource.
      */
-    public async read(spec: EssentialKubernetesObject): Promise<KubernetesObjectResponse> {
+    public async read(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
         const requestOptions = this.baseRequestOptions();
         requestOptions.uri += specUriPath(spec);
         return this.requestPromise(requestOptions) as any as KubernetesObjectResponse;
@@ -109,7 +96,7 @@ export class KubernetesObjectApi extends k8s.ApisApi {
     /**
      * Replace any Kubernetes resource.
      */
-    public async replace(spec: EssentialKubernetesObject): Promise<KubernetesObjectResponse> {
+    public async replace(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
         const requestOptions = this.baseRequestOptions("PUT");
         requestOptions.uri += specUriPath(spec);
         requestOptions.body = spec;
@@ -165,7 +152,7 @@ export class KubernetesObjectApi extends k8s.ApisApi {
  * @param appendName if `true`, append name to path
  * @return tail of resource-specific URI
  */
-export function specUriPath(spec: EssentialKubernetesObject | ListKubernetesObject, appendName: boolean = true): string {
+export function specUriPath(spec: DeepPartial<k8s.KubernetesObject>, appendName: boolean = true): string {
     if (!spec.kind) {
         throw new Error(`Spec does not contain kind: ${stringify(spec)}`);
     }

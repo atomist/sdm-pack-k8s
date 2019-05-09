@@ -15,10 +15,11 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import * as k8s from "@kubernetes/client-node";
+import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
-    EssentialKubernetesObject,
     KubernetesDeleteResponse,
     KubernetesObjectApi,
     specUriPath,
@@ -30,9 +31,9 @@ import { loadKubeConfig } from "./config";
  * do nothing.
  *
  * @param spec Kuberenetes spec of resource to delete
- * @return DeleteResponse if object existed and was deleted, void if it did not exist
+ * @return DeleteResponse if object existed and was deleted, undefined if it did not exist
  */
-export async function deleteSpec(spec: EssentialKubernetesObject): Promise<KubernetesDeleteResponse | void> {
+export async function deleteSpec(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesDeleteResponse | undefined> {
     const slug = specUriPath(spec);
     let client: KubernetesObjectApi;
     try {
@@ -47,7 +48,7 @@ export async function deleteSpec(spec: EssentialKubernetesObject): Promise<Kuber
         await client.read(spec);
     } catch (e) {
         logger.debug(`Kubernetes resource ${slug} does not exist: ${errMsg(e)}`);
-        return;
+        return undefined;
     }
     return logRetry(() => client.delete(spec), `delete resource ${slug}`);
 }
