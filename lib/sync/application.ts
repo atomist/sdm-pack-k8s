@@ -21,7 +21,6 @@ import {
     logger,
     Project,
     ProjectFile,
-    ProjectOperationCredentials,
     projectUtils,
     RemoteRepoRef,
 } from "@atomist/automation-client";
@@ -33,6 +32,7 @@ import {
 import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as stringify from "json-stringify-safe";
+import { SyncOptions } from "../config";
 import { parseKubernetesSpecFile } from "../deploy/spec";
 import {
     appName,
@@ -54,16 +54,16 @@ export type SyncAction = "upsert" | "delete";
  */
 export async function syncApplication(app: KubernetesDelete, resources: k8s.KubernetesObject[], action: SyncAction = "upsert"): Promise<void> {
     const slug = appName(app);
-    const syncRepo: RemoteRepoRef = configurationValue("sdm.k8s.options.sync.repo", undefined);
-    if (!syncRepo) {
+    const syncOptions: SyncOptions = configurationValue("sdm.k8s.options.sync", undefined);
+    if (!syncOptions || !syncOptions.repo) {
         return;
     }
+    const syncRepo = syncOptions.repo as RemoteRepoRef;
     if (resources.length < 1) {
         return;
     }
-    const credentials: ProjectOperationCredentials = configurationValue("sdm.k8s.options.sync.credentials");
     const projectLoadingParameters: ProjectLoadingParameters = {
-        credentials,
+        credentials: syncOptions.credentials,
         cloneOptions,
         id: syncRepo,
         readOnly: false,

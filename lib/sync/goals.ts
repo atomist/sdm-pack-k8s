@@ -28,28 +28,19 @@ import {
     SoftwareDeliveryMachine,
     whenPushSatisfies,
 } from "@atomist/sdm";
-import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { SyncOptions } from "../config";
 import { changeResource } from "./change";
 import { diffPush } from "./diff";
-import { queryForScmProvider } from "./repo";
 import { commitTag } from "./tag";
 
 export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undefined {
     const syncOptions: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
     if (!syncOptions || !syncOptions.repo) {
-        logger.warn(`SDM configuration contains to sync repo`);
+        logger.warn(`SDM configuration contains no sync repo`);
         return undefined;
     }
     return pushTest("IsSyncRepoCommit", async p => {
-        if (!syncOptions.credentials) {
-            const repoCreds = await queryForScmProvider(sdm);
-            if (!repoCreds) {
-                logger.warn(`Failed to find sync repo: ${stringify(syncOptions.repo)}`);
-                return false;
-            }
-        }
         if (p.id.providerType === syncOptions.repo.providerType &&
             p.id.owner === syncOptions.repo.owner &&
             p.id.repo === syncOptions.repo.repo &&
@@ -67,7 +58,6 @@ export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undef
 export function syncGoals(sdm: SoftwareDeliveryMachine): SoftwareDeliveryMachine {
     const syncRepoPushTest = isSyncRepoCommit(sdm);
     if (!syncRepoPushTest) {
-        logger.warn(`No sync repo configured`);
         return sdm;
     }
     const sync = new GoalWithFulfillment({

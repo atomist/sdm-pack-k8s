@@ -34,18 +34,23 @@ import { k8sSpecGlob } from "./diff";
 import { queryForScmProvider } from "./repo";
 
 /**
- * If the SDM is the cluster master, not running in local mode, and
- * registered with one or more workspaces, ensure that this SDM is
- * available as a KubernetesClusterProvider in those workspaces.
+ * If the SDM is registered with one or more workspaces and not
+ * running in local mode, query cortex for the sync repo and replace
+ * the sdm.k8s.options.sync.repo property with a RemoteRepoRef for
+ * that repo.  If this is the master, run [[initialSync]].
  */
 export const syncRepoStartupListener: StartupListener = async context => {
-    if (isInLocalMode() || !cluster.isMaster) {
+    if (isInLocalMode()) {
         return;
     }
     const sdm = context.sdm;
     const repoCreds = await queryForScmProvider(sdm);
     if (!repoCreds) {
-        logger.warn(`Failed to find sync repo`);
+        logger.warn(`Failed to find sync repo, removing sync repo from config`);
+        delete sdm.configuration.sdm.k8s.options.sync;
+        return;
+    }
+    if (!cluster.isMaster) {
         return;
     }
     const projectLoadingParameters: ProjectLoadingParameters = {

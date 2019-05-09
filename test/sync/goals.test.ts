@@ -19,7 +19,6 @@ import {
     PushListenerInvocation,
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
-import { DefaultRepoRefResolver } from "@atomist/sdm-core";
 import * as _ from "lodash";
 import * as assert from "power-assert";
 import { isSyncRepoCommit } from "../../lib/sync/goals";
@@ -42,133 +41,7 @@ describe("sync/goals", () => {
             assert(t === undefined);
         });
 
-        it("should return false if sync repo not found", async () => {
-            const s: SoftwareDeliveryMachine = {
-                configuration: {
-                    graphql: {
-                        client: {
-                            factory: {
-                                create: () => ({
-                                    query: async (o: any) => {
-                                        return (o.name === "RepoScmProvider") ? { Repo: [] as any[] } : { SCMProvider: [] as any[] };
-                                    },
-                                }),
-                            },
-                        },
-                    },
-                    sdm: {
-                        k8s: {
-                            options: {
-                                sync: {
-                                    repo: {
-                                        branch: "a-rush-and-a-push",
-                                        owner: "TheSmiths",
-                                        repo: "strangeways",
-                                        url: "https://github.com/TheSmiths/strangeways",
-                                    },
-                                },
-                            },
-                        },
-                    },
-                    workspaceIds: ["AM0441SS3Y"],
-                },
-            } as any;
-            const p: PushListenerInvocation = {
-                id: {
-                    branch: "a-rush-and-a-push",
-                    owner: "TheSmiths",
-                    providerType: ScmProviderType.github_com,
-                    repo: "strangeways",
-                    sha: "bb94dbf2a40b3754f2e62797c80923b938f60fb3",
-                },
-                push: {
-                    commits: [
-                        { message: "Stop me if you think you've heard this one before" },
-                    ],
-                },
-            } as any;
-            const t = isSyncRepoCommit(s);
-            assert(t, "no push test was returned");
-            const r = await t.mapping(p);
-            assert(r === false, "push test result was true");
-        });
-
-        it("should query repo and return test", async () => {
-            const s: SoftwareDeliveryMachine = {
-                configuration: {
-                    graphql: {
-                        client: {
-                            factory: {
-                                create: () => ({
-                                    query: async (o: any) => {
-                                        assert(o.variables.owner === "TheSmiths");
-                                        assert(o.variables.repo === "strangeways");
-                                        if (o.name === "RepoScmProvider") {
-                                            return {
-                                                Repo: [
-                                                    {
-                                                        defaultBranch: "paint-a-vulgur-picture",
-                                                        name: "strangeways",
-                                                        org: {
-                                                            scmProvider: {
-                                                                apiUrl: "https://api.github.com",
-                                                                credential: {
-                                                                    secret: "j04nnym@44",
-                                                                },
-                                                                providerType: "github_com",
-                                                            },
-                                                        },
-                                                        owner: "TheSmiths",
-                                                    },
-                                                ],
-                                            };
-                                        }
-                                        return { SCMProvider: [] as any[] };
-                                    },
-                                }),
-                            },
-                        },
-                    },
-                    name: "@atomist/k8s-sdm_i-started-something",
-                    sdm: {
-                        k8s: {
-                            options: {
-                                sync: {
-                                    repo: {
-                                        branch: "a-rush-and-a-push",
-                                        owner: "TheSmiths",
-                                        repo: "strangeways",
-                                        url: "https://github.com/TheSmiths/strangeways",
-                                    },
-                                },
-                            },
-                        },
-                        repoRefResolver: new DefaultRepoRefResolver(),
-                    },
-                    workspaceIds: ["AM0441SS3Y"],
-                },
-            } as any;
-            const p: PushListenerInvocation = {
-                id: {
-                    branch: "a-rush-and-a-push",
-                    owner: "TheSmiths",
-                    providerType: ScmProviderType.github_com,
-                    repo: "strangeways",
-                    sha: "bb94dbf2a40b3754f2e62797c80923b938f60fb3",
-                },
-                push: {
-                    commits: [
-                        { message: "Stop me if you think you've heard this one before" },
-                    ],
-                },
-            } as any;
-            const t = isSyncRepoCommit(s);
-            assert(t, "no push test was returned");
-            const r = await t.mapping(p);
-            assert(r === true, "push test result was false");
-        });
-
-        it("should use credentials and return test", async () => {
+        it("should return test", async () => {
             const s: SoftwareDeliveryMachine = {
                 configuration: {
                     name: "@atomist/k8s-sdm_i-started-something",
