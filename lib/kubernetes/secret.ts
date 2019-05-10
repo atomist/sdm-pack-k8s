@@ -18,6 +18,10 @@ import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
+import {
+    decrypt,
+    encrypt,
+} from "../support/crypto";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
@@ -116,9 +120,9 @@ export async function secretTemplate(req: KubernetesApplication & KubernetesSdm,
 }
 
 /**
- * Create encoded opaque secret object from key-value pairs.
+ * Create encoded opaque secret object from key/value pairs.
  *
- * @param secrets key-value pairs of secrets, the values are base64 encoded
+ * @param secrets Key/value pairs of secrets, the values will be base64 encoded in the returned secret
  * @return Kubernetes secret object
  */
 export function encodeSecret(name: string, data: { [key: string]: string }): k8s.V1Secret {
@@ -132,5 +136,31 @@ export function encodeSecret(name: string, data: { [key: string]: string }): k8s
         data: {},
     };
     Object.keys(data).forEach(key => secret.data[key] = Buffer.from(data[key]).toString("base64"));
+    return secret as k8s.V1Secret;
+}
+
+/**
+ * Encrypt secret values, which should already be base64 encoded.
+ *
+ * @param secret Kubernetes secret with base64 encoded data values
+ * @return Kubernetes secret object with encrypted data values
+ */
+export async function encryptSecret(secret: DeepPartial<k8s.V1Secret>, key: string): Promise<k8s.V1Secret> {
+    for (const datum of Object.keys(secret.data)) {
+        secret.data[datum] = await encrypt(secret.data[datum], key);
+    }
+    return secret as k8s.V1Secret;
+}
+
+/**
+ * Dencrypt secret values.
+ *
+ * @param secret Kubernetes secret with encrypted data values
+ * @return Kubernetes secret object with base64 encoded data values
+ */
+export async function decryptSecret(secret: DeepPartial<k8s.V1Secret>, key: string): Promise<k8s.V1Secret> {
+    for (const datum of Object.keys(secret.data)) {
+        secret.data[datum] = await decrypt(secret.data[datum], key);
+    }
     return secret as k8s.V1Secret;
 }

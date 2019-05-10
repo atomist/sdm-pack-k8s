@@ -31,13 +31,17 @@ import {
 } from "@atomist/sdm";
 import * as yaml from "js-yaml";
 import * as stringify from "json-stringify-safe";
-import { SyncOptions } from "../config";
+import {
+    SyncOptions,
+    validSyncOptions,
+} from "../config";
 import { parseKubernetesSpecFile } from "../deploy/spec";
 import { K8sObject } from "../kubernetes/api";
 import {
     appName,
     KubernetesDelete,
 } from "../kubernetes/request";
+import { encryptSecret } from "../kubernetes/secret";
 import { cloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
 import { commitTag } from "./tag";
@@ -54,23 +58,23 @@ export type SyncAction = "upsert" | "delete";
  */
 export async function syncApplication(app: KubernetesDelete, resources: K8sObject[], action: SyncAction = "upsert"): Promise<void> {
     const slug = appName(app);
-    const syncOptions: SyncOptions = configurationValue("sdm.k8s.options.sync", undefined);
-    if (!syncOptions || !syncOptions.repo) {
+    const syncOpts = configurationValue<Partial<SyncOptions>>("sdm.k8s.options.sync", {});
+    if (!validSyncOptions(syncOpts)) {
         return;
     }
-    const syncRepo = syncOptions.repo as RemoteRepoRef;
+    const syncRepo = syncOpts.repo as RemoteRepoRef;
     if (resources.length < 1) {
         return;
     }
     const projectLoadingParameters: ProjectLoadingParameters = {
-        credentials: syncOptions.credentials,
+        credentials: syncOpts.credentials,
         cloneOptions,
         id: syncRepo,
         readOnly: false,
     };
     const projectLoader: ProjectLoader = configurationValue("sdm.projectLoader", new CachingProjectLoader());
     try {
-        await projectLoader.doWithProject(projectLoadingParameters, syncResources(app, resources, action));
+        await projectLoader.doWithProject(projectLoadingParameters, syncResources(app, resources, action, syncOpts));
     } catch (e) {
         e.message = `Failed to perform sync resources from ${slug} to sync repo ${syncRepo.owner}/${syncRepo.repo}: ${e.message}`;
         logger.error(e.message);
@@ -97,9 +101,16 @@ export interface ProjectFileSpec {
  * @param app Kubernetes application object
  * @param resources Resources that were upserted as part of this application
  * @param action Action performed, "upsert" or "delete"
+ * @param opts Repo sync options, passed to the sync action
  * @return Function that updates the sync repo with the resource specs
  */
-export function syncResources(app: KubernetesDelete, resources: K8sObject[], action: SyncAction): (p: GitProject) => Promise<void> {
+export function syncResources(
+    app: KubernetesDelete,
+    resources: K8sObject[],
+    action: SyncAction,
+    opts: SyncOptions,
+): (p: GitProject) => Promise<void> {
+
     return async syncProject => {
         const specs: ProjectFileSpec[] = [];
         await projectUtils.doWithFiles(syncProject, k8sSpecGlob, async file => {
@@ -113,7 +124,7 @@ export function syncResources(app: KubernetesDelete, resources: K8sObject[], act
         const [syncAction, syncVerb] = (action === "delete") ? [resourceDeleted, "Delete"] : [resourceUpserted, "Update"];
         for (const resource of resources) {
             const fileSpec = matchSpec(resource, specs);
-            await syncAction(resource, syncProject, fileSpec);
+            await syncAction(resource, syncProject, fileSpec, opts);
         }
         if (await syncProject.isClean()) {
             return;
@@ -136,7 +147,11 @@ export function syncResources(app: KubernetesDelete, resources: K8sObject[], act
  * @param p Sync repo project
  * @param fs File and spec object that matches resource, may be undefined
  */
-async function resourceUpserted(resource: K8sObject, p: Project, fs: ProjectFileSpec): Promise<void> {
+async function resourceUpserted(resrc: K8sObject, p: Project, fs: ProjectFileSpec, opts: SyncOptions): Promise<void> {
+    let resource = resrc;
+    if (resource.kind === "Secret" && opts.secretKey) {
+        resource = await encryptSecret(resource, opts.secretKey);
+    }
     if (fs) {
         const specString = (/\.ya?ml$/.test(fs.file.path)) ? yaml.safeDump(resource) : stringifySpec(resource);
         await fs.file.setContent(specString);

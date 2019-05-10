@@ -288,14 +288,6 @@ describe("sync/application", () => {
                     },
                 },
                 {
-                    apiVersion: "extensions/v1beta1",
-                    kind: "Ingress",
-                    metadata: {
-                        name: "tonina",
-                        namespace: "black-angel",
-                    },
-                },
-                {
                     apiVersion: "v1",
                     kind: "ServiceAccount",
                     metadata: {
@@ -303,8 +295,28 @@ describe("sync/application", () => {
                         namespace: "black-angel",
                     },
                 },
+                {
+                    apiVersion: "v1",
+                    kind: "Secret",
+                    type: "Opaque",
+                    metadata: {
+                        name: "tonina",
+                        namespace: "black-angel",
+                    },
+                    data: {
+                        Track01: "w4FyYm9sIERlIExhIFZpZGE=",
+                        Track02: "Q2FseXBzbyBCbHVlcw==",
+                    },
+                },
             ];
-            await syncResources(a, rs, "upsert")(p);
+            const o = {
+                repo: {
+                    owner: "tonina",
+                    repo: "black-angel",
+                    url: "https://github.com/tonina/black-angel",
+                },
+            };
+            await syncResources(a, rs, "upsert", o)(p);
             const eCommitMessage = `Update specs for black-angel/tonina
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
@@ -314,8 +326,14 @@ describe("sync/application", () => {
             assert(await p.totalFileCount() === 4);
             assert(p.fileExistsSync("black-angel-tonina-deployment.json"));
             assert(p.fileExistsSync("black-angel-tonina-service.json"));
-            assert(p.fileExistsSync("black-angel-tonina-ingress.json"));
             assert(p.fileExistsSync("black-angel-tonina-service-account.json"));
+            assert(p.fileExistsSync("black-angel-tonina-secret.json"));
+            const d = await (await p.getFile("black-angel-tonina-deployment.json")).getContent();
+            const de = JSON.stringify(rs[0], undefined, 2) + "\n";
+            assert(d === de);
+            const s = await (await p.getFile("black-angel-tonina-secret.json")).getContent();
+            const se = JSON.stringify(rs[3], undefined, 2) + "\n";
+            assert(s === se);
         });
 
         it("should update spec files and avoid conflicts", async () => {
@@ -386,15 +404,36 @@ metadata:
                         },
                     },
                 },
+                {
+                    apiVersion: "v1",
+                    kind: "Secret",
+                    type: "Opaque",
+                    metadata: {
+                        name: "tonina",
+                        namespace: "black-angel",
+                    },
+                    data: {
+                        Track01: "w4FyYm9sIERlIExhIFZpZGE=",
+                        Track02: "Q2FseXBzbyBCbHVlcw==",
+                    },
+                },
             ];
-            await syncResources(a, rs, "upsert")(p);
+            const o = {
+                repo: {
+                    owner: "tonina",
+                    repo: "black-angel",
+                    url: "https://github.com/tonina/black-angel",
+                },
+                secretKey: "10. Historia De Un Amor (feat. Javier Limón & Tali Rubinstein)",
+            };
+            await syncResources(a, rs, "upsert", o)(p);
             const eCommitMessage = `Update specs for black-angel/tonina
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
 `;
             assert(commitMessage === eCommitMessage);
             assert(pushed, "commit was not pushed");
-            assert(await p.totalFileCount() === 5);
+            assert(await p.totalFileCount() === 6);
             assert(p.fileExistsSync("black-angel-tonina-deployment.json"));
             assert(p.fileExistsSync("black-angel-tonina-service.json"));
             assert(p.fileExistsSync("black-angel-tonina-ingress.json"));
@@ -413,6 +452,21 @@ metadata:
                 }
             });
             assert(foundServiceSpec, "failed to find new service spec");
+            const sec = JSON.parse(await p.getFile("black-angel-tonina-secret.json").then(f => f.getContent()));
+            const sece = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "tonina",
+                    namespace: "black-angel",
+                },
+                data: {
+                    Track01: "kWyypfKtwRYMfLkykh5IGfUIj/RthECc+dDbk60tVQo=",
+                    Track02: "IhpgvWn5o1sKsxlP9HH/xUl8mdInBIWl4xmVPuBRmmw=",
+                },
+            };
+            assert.deepStrictEqual(sec, sece);
         });
 
         it("should delete spec files", async () => {
@@ -493,7 +547,14 @@ metadata:
                     },
                 },
             ];
-            await syncResources(a, rs, "delete")(p);
+            const o = {
+                repo: {
+                    owner: "tonina",
+                    repo: "black-angel",
+                    url: "https://github.com/tonina/black-angel",
+                },
+            };
+            await syncResources(a, rs, "delete", o)(p);
             const eCommitMessage = `Delete specs for black-angel/tonina
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
