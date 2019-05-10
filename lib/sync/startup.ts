@@ -26,8 +26,10 @@ import {
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as cluster from "cluster";
 import * as _ from "lodash";
+import { SyncOptions } from "../config";
 import { parseKubernetesSpecFile } from "../deploy/spec";
 import { applySpec } from "../kubernetes/apply";
+import { decryptSecret } from "../kubernetes/secret";
 import { cloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
 import { queryForScmProvider } from "./repo";
@@ -59,7 +61,8 @@ export const syncRepoStartupListener: StartupListener = async context => {
         readOnly: true,
     };
     try {
-        await sdm.configuration.sdm.projectLoader.doWithProject(projectLoadingParameters, initialSync);
+        const opts: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
+        await sdm.configuration.sdm.projectLoader.doWithProject(projectLoadingParameters, initialSync(opts));
     } catch (e) {
         e.message = `Failed to perform inital sync using repo ${repoCreds.repo.owner}/${repoCreds.repo.repo}: ${e.message}`;
         logger.error(e.message);
@@ -74,20 +77,25 @@ export const syncRepoStartupListener: StartupListener = async context => {
  *
  * @param syncRepo Repository of specs to sync
  */
-async function initialSync(syncRepo: GitProject): Promise<void> {
-    const specFiles = await sortSpecs(syncRepo);
-    for (const specFile of specFiles) {
-        logger.debug(`Processing spec ${specFile.path}`);
-        try {
-            const spec = await parseKubernetesSpecFile(specFile);
-            await applySpec(spec);
-        } catch (e) {
-            e.message = `Failed to apply '${specFile.path}': ${e.message}`;
-            logger.error(e.message);
-            throw e;
+function initialSync(opts: SyncOptions): (p: GitProject) => Promise<void> {
+    return async syncRepo => {
+        const specFiles = await sortSpecs(syncRepo);
+        for (const specFile of specFiles) {
+            logger.debug(`Processing spec ${specFile.path}`);
+            try {
+                let spec = await parseKubernetesSpecFile(specFile);
+                if (spec.kind === "Secret" && opts && opts.secretKey) {
+                    spec = await decryptSecret(spec, opts.secretKey);
+                }
+                await applySpec(spec);
+            } catch (e) {
+                e.message = `Failed to apply '${specFile.path}': ${e.message}`;
+                logger.error(e.message);
+                throw e;
+            }
         }
-    }
-    return;
+        return;
+    };
 }
 
 /**

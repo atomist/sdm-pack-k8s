@@ -25,7 +25,7 @@ describe("support/crypt", () => {
     describe("decrypt", () => {
 
         it("should decrypt", async () => {
-            const t = "5baec0da09a567b4598e72e474785dc2";
+            const t = "W67A2gmlZ7RZjnLkdHhdwg==";
             const k = "thereisalightthatnevergoesout";
             const m = await decrypt(t, k);
             assert(m === "Th3$m1t4$");
@@ -39,7 +39,7 @@ describe("support/crypt", () => {
             const t = "Th3$m1t4$";
             const k = "thereisalightthatnevergoesout";
             const m = await encrypt(t, k);
-            assert(m === "5baec0da09a567b4598e72e474785dc2");
+            assert(m === "W67A2gmlZ7RZjnLkdHhdwg==");
         });
 
     });

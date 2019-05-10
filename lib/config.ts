@@ -70,6 +70,17 @@ export interface SyncOptions {
      * SDM via a cortex query.
      */
     credentials?: ProjectOperationCredentials;
+    /**
+     * Key to use to encrypt Kubernetes Secret resource values before
+     * storing them in the sync repo and decrypt them when reading
+     * them from the sync repo.  If it is not provided, secrets are
+     * not encrypted in the sync repo, so hopefully they aren't too
+     * secret.
+     *
+     * You can use the bin/secret.js script bundled with this package
+     * to manually encrypt and decrypt values using the same strategy.
+     */
+    secretKey?: string;
 }
 
 /**
@@ -93,4 +104,9 @@ export interface SdmPackK8sOptions {
      * Synchronize resources in k8s cluster with a Git repo.
      */
     sync?: SyncOptions;
+}
+
+/** Validate the the partial SyncOptions contains a repo property. */
+export function validSyncOptions(o: Partial<SyncOptions>): o is SyncOptions {
+    return !!o && !!o.repo;
 }

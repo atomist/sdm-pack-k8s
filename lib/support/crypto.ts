@@ -17,8 +17,14 @@
 import * as crypto from "crypto";
 import { promisify } from "util";
 
+const algo = "aes-256-cbc";
+
 /**
- * Encrypt a text string.
+ * Encrypt a text string and return is base64 encoded.
+ *
+ * @param text String to be encrypted
+ * @param key Secrey key/passphrase to use to encrypt
+ * @return Base64 encoded string of encrypted text
  */
 export async function encrypt(text: string, key: string): Promise<string> {
     const derivedKey = await deriveKey(key);
@@ -26,23 +32,25 @@ export async function encrypt(text: string, key: string): Promise<string> {
     const cipher = crypto.createCipheriv(algo, derivedKey, iv);
     let encrypted = cipher.update(text);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
-    return encrypted.toString("hex");
+    return encrypted.toString("base64");
 }
 
 /**
- * Decrypt a text string.
+ * Decrypt a base64 encoded text string.
+ *
+ * @param text String to be decrypted
+ * @param key Secrey key/passphrase to use to decrypt, must be the same as the one used to encrypt
+ * @return UTF8 encoded string of decrypted text
  */
 export async function decrypt(text: string, key: string): Promise<string> {
     const derivedKey = await deriveKey(key);
     const iv = await deriveKey(derivedKey.toString("hex"), 16);
     const decipher = crypto.createDecipheriv(algo, derivedKey, iv);
-    const encryptedText = Buffer.from(text, "hex");
+    const encryptedText = Buffer.from(text, "base64");
     let decrypted = decipher.update(encryptedText);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
-    return decrypted.toString();
+    return decrypted.toString("utf8");
 }
-
-const algo = "aes-256-cbc";
 
 async function deriveKey(key: string, length: number = 32): Promise<Buffer> {
     const pScrypt: (k: string, s: string, l: number) => Promise<Buffer> = promisify(crypto.scrypt);

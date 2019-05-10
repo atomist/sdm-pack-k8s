@@ -15,15 +15,18 @@
  */
 
 import {
+    configurationValue,
     GitProject,
     logger,
 } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import * as _ from "lodash";
+import { SyncOptions } from "../config";
 import { parseKubernetesSpecString } from "../deploy/spec";
 import { K8sObject } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { deleteSpec } from "../kubernetes/delete";
+import { decryptSecret } from "../kubernetes/secret";
 import { PushDiff } from "./diff";
 
 /**
@@ -56,6 +59,13 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
         e.message = `Failed to parse spec '${specContents}': ${e.message}`;
         logger.error(e.message);
         throw e;
+    }
+
+    if (change.change !== "delete" && spec.kind === "Secret") {
+        const syncOpts = configurationValue<Partial<SyncOptions>>("sdm.configuration.sdm.k8s.options.sync", {});
+        if (syncOpts.secretKey) {
+            spec = await decryptSecret(spec, syncOpts.secretKey);
+        }
     }
 
     const changer = (change.change === "delete") ? deleteSpec : applySpec;
