@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import * as k8s from "@kubernetes/client-node";
-import { DeepPartial } from "ts-essentials";
+import { K8sObject } from "./api";
 import { appMetadata } from "./metadata";
 import { KubernetesDelete } from "./request";
 
@@ -30,8 +29,8 @@ import { KubernetesDelete } from "./request";
  * @param kind kind of object to return
  * @return proper Kubernetes resource object
  */
-export function appObject(app: KubernetesDelete, kind: string): k8s.KubernetesObject {
-    const ko: k8s.KubernetesObject = {
+export function appObject(app: KubernetesDelete, kind: string): K8sObject {
+    const ko: K8sObject = {
         apiVersion: "v1",
         kind,
         metadata: appMetadata(app),
@@ -70,9 +69,8 @@ export function appObject(app: KubernetesDelete, kind: string): k8s.KubernetesOb
  * @param spec Kubernetes spec to convert
  * @return Minimal Kubernetes object
  */
-export function k8sObject(spec: k8s.KubernetesObject): k8s.KubernetesObject {
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const ko: DeepPartial<k8s.KubernetesObject> = {
+export function k8sObject(spec: K8sObject): K8sObject {
+    const ko: K8sObject = {
         apiVersion: spec.apiVersion,
         kind: spec.kind,
         metadata: {
@@ -84,5 +82,5 @@ export function k8sObject(spec: k8s.KubernetesObject): k8s.KubernetesObject {
             },
         },
     };
-    return ko as k8s.KubernetesObject;
+    return ko;
 }

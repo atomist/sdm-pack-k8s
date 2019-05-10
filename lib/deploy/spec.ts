@@ -19,10 +19,9 @@ import {
     Project,
     ProjectFile,
 } from "@atomist/automation-client";
-import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as path from "path";
-import { DeepPartial } from "ts-essentials";
+import { K8sObject } from "../kubernetes/api";
 
 /**
  * Read and parse either JSON or YAML file with basename `base` under
@@ -33,7 +32,7 @@ import { DeepPartial } from "ts-essentials";
  * for, it does _not_ overlay/merge the parsed values.  It stops after
  * the first successfully parsed file.
  */
-export async function loadKubernetesSpec(p: Project, base: string): Promise<any | undefined> {
+export async function loadKubernetesSpec(p: Project, base: string): Promise<K8sObject | undefined> {
     for (const ext of ["json", "yaml", "yml"]) {
         const specFile = `${base}.${ext}`;
         const specPath = path.join(".atomist", "kubernetes", specFile);
@@ -56,7 +55,7 @@ export async function loadKubernetesSpec(p: Project, base: string): Promise<any 
  * @param specPath Path of spec file to load
  * @return Parsed object if the spec was successfully read and parsed, undefined otherwise
  */
-export async function parseKubernetesSpec(p: Project, specPath: string): Promise<any | undefined> {
+export async function parseKubernetesSpec(p: Project, specPath: string): Promise<K8sObject | undefined> {
     try {
         const specFile = await p.getFile(specPath);
         if (!specFile) {
@@ -79,9 +78,9 @@ export async function parseKubernetesSpec(p: Project, specPath: string): Promise
  * @param specFile File object of spec file to load
  * @return Parsed object of the spec
  */
-export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<DeepPartial<k8s.KubernetesObject>> {
+export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<K8sObject> {
     const specString = await specFile.getContent();
-    let spec: DeepPartial<k8s.KubernetesObject>;
+    let spec: K8sObject;
     if (/\.ya?ml$/.test(specFile.path)) {
         spec = yaml.safeLoad(specString);
     } else {

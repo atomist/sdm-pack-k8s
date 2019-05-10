@@ -19,8 +19,9 @@ import {
     logger,
 } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
-import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
+import { parseKubernetesSpecString } from "../deploy/spec";
+import { K8sObject } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { deleteSpec } from "../kubernetes/delete";
 import { PushDiff } from "./diff";
@@ -46,15 +47,17 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
         }
         specContents = await specFile.getContent();
     }
-    let spec: k8s.KubernetesObject;
+
+    let spec: K8sObject;
     try {
-        spec = JSON.parse(specContents);
+        spec = await parseKubernetesSpecString(specContents, change.path);
         _.set(spec, "metadata.annotations['atomist.com/sync-sha']", change.sha);
     } catch (e) {
-        e.message = `Failed to parse spec '${specContents}' as JSON: ${e.message}`;
+        e.message = `Failed to parse spec '${specContents}': ${e.message}`;
         logger.error(e.message);
         throw e;
     }
+
     const changer = (change.change === "delete") ? deleteSpec : applySpec;
     await changer(spec);
 }

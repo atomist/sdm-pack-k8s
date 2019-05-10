@@ -22,7 +22,6 @@ import {
     InMemoryProjectFile,
     projectUtils,
 } from "@atomist/automation-client";
-import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as assert from "power-assert";
 import { KubernetesApplication } from "../../lib/kubernetes/request";
@@ -51,7 +50,7 @@ describe("sync/application", () => {
                                 name: "lyle",
                                 namespace: "lovett",
                             },
-                        } as any,
+                        },
                     },
                     {
                         file: new InMemoryProjectFile("jondep.json", "{}"),
@@ -62,7 +61,7 @@ describe("sync/application", () => {
                                 name: "jon",
                                 namespace: "lovett",
                             },
-                        } as any,
+                        },
                     },
                     {
                         file: new InMemoryProjectFile("dep.json", "{}"),
@@ -73,7 +72,7 @@ describe("sync/application", () => {
                                 name: "lyle",
                                 namespace: "alzado",
                             },
-                        } as any,
+                        },
                     },
                     {
                         file: new InMemoryProjectFile("beta-dep.json", "{}"),
@@ -84,33 +83,33 @@ describe("sync/application", () => {
                                 name: "lyle",
                                 namespace: "lovett",
                             },
-                        } as any,
+                        },
                     },
                 ],
             ];
             sss.forEach(ss => {
-                const s: k8s.KubernetesObject = {
+                const s = {
                     apiVersion: "apps/v1",
                     kind: "Deployment",
                     metadata: {
                         name: "lyle",
                         namespace: "lovett",
                     },
-                } as any;
+                };
                 const m = matchSpec(s, ss);
                 assert(m === undefined);
             });
         });
 
         it("should find the file spec", () => {
-            const s: k8s.KubernetesObject = {
+            const s = {
                 apiVersion: "v1",
                 kind: "Deployment",
                 metadata: {
                     name: "lyle",
                     namespace: "lovett",
                 },
-            } as any;
+            };
             const ss: ProjectFileSpec[] = [
                 {
                     file: new InMemoryProjectFile("dep.json", "{}"),
@@ -121,22 +120,22 @@ describe("sync/application", () => {
                             name: "lyle",
                             namespace: "lovett",
                         },
-                    } as any,
+                    },
                 },
             ];
             const m = matchSpec(s, ss);
             assert.deepStrictEqual(m, ss[0]);
         });
 
-        it("should find the file spec among several", () => {
-            const s: k8s.KubernetesObject = {
+        it("should find the right file spec among several", () => {
+            const s = {
                 apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
                     name: "lyle",
                     namespace: "lovett",
                 },
-            } as any;
+            };
             const ss: ProjectFileSpec[] = [
                 {
                     file: new InMemoryProjectFile("svc.json", "{}"),
@@ -147,7 +146,7 @@ describe("sync/application", () => {
                             name: "lyle",
                             namespace: "lovett",
                         },
-                    } as any,
+                    },
                 },
                 {
                     file: new InMemoryProjectFile("jondep.json", "{}"),
@@ -158,7 +157,7 @@ describe("sync/application", () => {
                             name: "jon",
                             namespace: "lovett",
                         },
-                    } as any,
+                    },
                 },
                 {
                     file: new InMemoryProjectFile("dep.json", "{}"),
@@ -169,7 +168,7 @@ describe("sync/application", () => {
                             name: "lyle",
                             namespace: "lovett",
                         },
-                    } as any,
+                    },
                 },
                 {
                     file: new InMemoryProjectFile("beta-dep.json", "{}"),
@@ -180,7 +179,7 @@ describe("sync/application", () => {
                             name: "lyle",
                             namespace: "lovett",
                         },
-                    } as any,
+                    },
                 },
             ];
             const m = matchSpec(s, ss);
@@ -192,27 +191,27 @@ describe("sync/application", () => {
     describe("specFileBasename", () => {
 
         it("should create a namespace file name", () => {
-            const o: k8s.KubernetesObject = {
+            const o = {
                 apiVersion: "v1",
                 kind: "Namespace",
                 metadata: {
                     name: "lyle",
                 },
-            } as any;
+            };
             const s = specFileBasename(o);
             assert(s === "lyle-namespace");
         });
 
         it("should create a simple namespaced file name", () => {
             ["Deployment", "Ingress", "Role", "Secret", "Service"].forEach(k => {
-                const o: k8s.KubernetesObject = {
+                const o = {
                     apiVersion: "v1",
                     kind: k,
                     metadata: {
                         name: "lyle",
                         namespace: "lovett",
                     },
-                } as any;
+                };
                 const s = specFileBasename(o);
                 const e = "lovett-lyle-" + k.toLowerCase();
                 assert(s === e);
@@ -224,14 +223,14 @@ describe("sync/application", () => {
                 { k: "RoleBinding", l: "role-binding" },
                 { k: "ServiceAccount", l: "service-account" },
             ].forEach(kl => {
-                const o: k8s.KubernetesObject = {
+                const o = {
                     apiVersion: "v1",
                     kind: kl.k,
                     metadata: {
                         name: "lyle",
                         namespace: "lovett",
                     },
-                } as any;
+                };
                 const s = specFileBasename(o);
                 const e = "lovett-lyle-" + kl.l;
                 assert(s === e);
@@ -243,13 +242,13 @@ describe("sync/application", () => {
                 { k: "ClusterRole", l: "cluster-role" },
                 { k: "ClusterRoleBinding", l: "cluster-role-binding" },
             ].forEach(kl => {
-                const o: k8s.KubernetesObject = {
+                const o = {
                     apiVersion: "rbac.authorization.k8s.io/v1",
                     kind: kl.k,
                     metadata: {
                         name: "lyle",
                     },
-                } as any;
+                };
                 const s = specFileBasename(o);
                 const e = "lyle-" + kl.l;
                 assert(s === e);
@@ -271,7 +270,7 @@ describe("sync/application", () => {
                 name: "tonina",
                 ns: "black-angel",
             } as any;
-            const rs: k8s.KubernetesObject[] = [
+            const rs = [
                 {
                     apiVersion: "apps/v1",
                     kind: "Deployment",
@@ -304,7 +303,7 @@ describe("sync/application", () => {
                         namespace: "black-angel",
                     },
                 },
-            ] as any;
+            ];
             await syncResources(a, rs, "upsert")(p);
             const eCommitMessage = `Update specs for black-angel/tonina
 
@@ -348,7 +347,7 @@ metadata:
                 name: "tonina",
                 ns: "black-angel",
             } as any;
-            const rs: k8s.KubernetesObject[] = [
+            const rs = [
                 {
                     apiVersion: "apps/v1",
                     kind: "Deployment",
@@ -387,7 +386,7 @@ metadata:
                         },
                     },
                 },
-            ] as any;
+            ];
             await syncResources(a, rs, "upsert")(p);
             const eCommitMessage = `Update specs for black-angel/tonina
 
@@ -454,7 +453,7 @@ metadata:
                 name: "tonina",
                 ns: "black-angel",
             } as any;
-            const rs: k8s.KubernetesObject[] = [
+            const rs = [
                 {
                     apiVersion: "apps/v1",
                     kind: "Deployment",
@@ -493,7 +492,7 @@ metadata:
                         },
                     },
                 },
-            ] as any;
+            ];
             await syncResources(a, rs, "delete")(p);
             const eCommitMessage = `Delete specs for black-angel/tonina
 

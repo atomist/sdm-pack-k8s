@@ -20,87 +20,90 @@ import * as stringify from "json-stringify-safe";
 import * as request from "request";
 import { DeepPartial } from "ts-essentials";
 
-export interface KubernetesObjectResponse {
+export interface K8sObjectResponse {
     body: k8s.KubernetesObject;
     response: http.IncomingMessage;
 }
 
-export interface KubernetesListResponse {
+export interface K8sListResponse {
     body: k8s.KubernetesListObject;
     response: http.IncomingMessage;
 }
 
-export interface KubernetesDeleteResponse {
+export interface K8sDeleteResponse {
     body: k8s.V1Status;
     response: http.IncomingMessage;
 }
+
+// avoid https://github.com/kubernetes-client/javascript/issues/52
+export type K8sObject = DeepPartial<k8s.KubernetesObject>;
 
 /**
  * Dynamically construct Kubernetes API request URIs so client does
  * not have to know what type of object it is acting on, create the
  * appropriate client, and call the appropriate method.
  */
-export class KubernetesObjectApi extends k8s.ApisApi {
+export class K8sObjectApi extends k8s.ApisApi {
 
     private readonly defaultDeleteBody: any = { propagationPolicy: "Background" };
 
     /**
      * Read any Kubernetes resource.
      */
-    public async create(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
+    public async create(spec: K8sObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("POST");
         requestOptions.uri += specUriPath(spec, false);
         requestOptions.body = spec;
-        return this.requestPromise(requestOptions) as any as KubernetesObjectResponse;
+        return this.requestPromise(requestOptions) as any as K8sObjectResponse;
     }
 
     /**
      * Delete any Kubernetes resource.
      */
-    public async delete(spec: DeepPartial<k8s.KubernetesObject>, body: any = this.defaultDeleteBody): Promise<KubernetesDeleteResponse> {
+    public async delete(spec: K8sObject, body: any = this.defaultDeleteBody): Promise<K8sDeleteResponse> {
         const requestOptions = this.baseRequestOptions("DELETE");
         requestOptions.uri += specUriPath(spec);
         requestOptions.body = body;
-        return this.requestPromise(requestOptions) as any as KubernetesDeleteResponse;
+        return this.requestPromise(requestOptions) as any as K8sDeleteResponse;
     }
 
     /**
      * List any Kubernetes resource.
      */
-    public async list(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesListResponse> {
+    public async list(spec: K8sObject): Promise<K8sListResponse> {
         const requestOptions = this.baseRequestOptions();
         requestOptions.uri += specUriPath(spec, false);
-        return this.requestPromise(requestOptions) as any as KubernetesListResponse;
+        return this.requestPromise(requestOptions) as any as K8sListResponse;
     }
 
     /**
      * Patch any Kubernetes resource.
      */
-    public async patch(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
+    public async patch(spec: K8sObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("PATCH");
         requestOptions.uri += specUriPath(spec);
         requestOptions.body = spec;
         requestOptions.headers["Content-Type"] = "application/strategic-merge-patch+json";
-        return this.requestPromise(requestOptions) as any as KubernetesObjectResponse;
+        return this.requestPromise(requestOptions) as any as K8sObjectResponse;
     }
 
     /**
      * Read any Kubernetes resource.
      */
-    public async read(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
+    public async read(spec: K8sObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions();
         requestOptions.uri += specUriPath(spec);
-        return this.requestPromise(requestOptions) as any as KubernetesObjectResponse;
+        return this.requestPromise(requestOptions) as any as K8sObjectResponse;
     }
 
     /**
      * Replace any Kubernetes resource.
      */
-    public async replace(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
+    public async replace(spec: K8sObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("PUT");
         requestOptions.uri += specUriPath(spec);
         requestOptions.body = spec;
-        return this.requestPromise(requestOptions) as any as KubernetesObjectResponse;
+        return this.requestPromise(requestOptions) as any as K8sObjectResponse;
     }
 
     /**
@@ -126,7 +129,7 @@ export class KubernetesObjectApi extends k8s.ApisApi {
     /**
      * Wrap request in a Promise.  Largely copied from @kubernetes/client-node/dist/api.js.
      */
-    private requestPromise(requestOptions: request.UriOptions & request.CoreOptions): Promise<KubernetesObjectResponse | KubernetesDeleteResponse> {
+    private requestPromise(requestOptions: request.UriOptions & request.CoreOptions): Promise<K8sObjectResponse | K8sDeleteResponse> {
         return new Promise((resolve, reject) => {
             request(requestOptions, (error, response, body) => {
                 if (error) {
@@ -152,7 +155,7 @@ export class KubernetesObjectApi extends k8s.ApisApi {
  * @param appendName if `true`, append name to path
  * @return tail of resource-specific URI
  */
-export function specUriPath(spec: DeepPartial<k8s.KubernetesObject>, appendName: boolean = true): string {
+export function specUriPath(spec: K8sObject, appendName: boolean = true): string {
     if (!spec.kind) {
         throw new Error(`Spec does not contain kind: ${stringify(spec)}`);
     }

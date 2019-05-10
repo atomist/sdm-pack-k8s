@@ -15,13 +15,12 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import * as k8s from "@kubernetes/client-node";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
-    KubernetesDeleteResponse,
-    KubernetesObjectApi,
+    K8sDeleteResponse,
+    K8sObject,
+    K8sObjectApi,
     specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
@@ -33,12 +32,12 @@ import { loadKubeConfig } from "./config";
  * @param spec Kuberenetes spec of resource to delete
  * @return DeleteResponse if object existed and was deleted, undefined if it did not exist
  */
-export async function deleteSpec(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesDeleteResponse | undefined> {
+export async function deleteSpec(spec: K8sObject): Promise<K8sDeleteResponse | undefined> {
     const slug = specUriPath(spec);
-    let client: KubernetesObjectApi;
+    let client: K8sObjectApi;
     try {
         const kc = loadKubeConfig();
-        client = kc.makeApiClient(KubernetesObjectApi);
+        client = kc.makeApiClient(K8sObjectApi);
     } catch (e) {
         e.message = `Failed to create Kubernetes client: ${errMsg(e)}`;
         logger.error(e.message);

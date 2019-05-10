@@ -15,10 +15,11 @@
  */
 
 import { execPromise } from "@atomist/sdm";
-import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
-import { DeepPartial } from "ts-essentials";
-import { specUriPath } from "../../lib/kubernetes/api";
+import {
+    K8sObject,
+    specUriPath,
+} from "../../lib/kubernetes/api";
 import { applySpec } from "../../lib/kubernetes/apply";
 import { deleteSpec } from "../../lib/kubernetes/delete";
 
@@ -117,7 +118,7 @@ describe("kubernetes/api", () => {
             ];
             /* tslint:enable:max-line-length */
             a.forEach(k => {
-                const o: DeepPartial<k8s.KubernetesObject> = {
+                const o: K8sObject = {
                     apiVersion: k.apiVersion,
                     kind: k.kind,
                     metadata: {
@@ -149,7 +150,7 @@ describe("kubernetes/api", () => {
                 { apiVersion: "storage.k8s.io/v1", kind: "StorageClass", ns: false, e: "storage.k8s.io/v1/storageclasses" },
             ];
             a.forEach(k => {
-                const o: DeepPartial<k8s.KubernetesObject> = {
+                const o: K8sObject = {
                     apiVersion: k.apiVersion,
                     kind: k.kind,
                 };

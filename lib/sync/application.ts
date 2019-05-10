@@ -29,12 +29,11 @@ import {
     ProjectLoader,
     ProjectLoadingParameters,
 } from "@atomist/sdm";
-import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as stringify from "json-stringify-safe";
-import { DeepPartial } from "ts-essentials";
 import { SyncOptions } from "../config";
 import { parseKubernetesSpecFile } from "../deploy/spec";
+import { K8sObject } from "../kubernetes/api";
 import {
     appName,
     KubernetesDelete,
@@ -53,7 +52,7 @@ export type SyncAction = "upsert" | "delete";
  * @param resources Kubernetes resource objects to synchronize
  * @param action Action performed, "upsert" or "delete"
  */
-export async function syncApplication(app: KubernetesDelete, resources: k8s.KubernetesObject[], action: SyncAction = "upsert"): Promise<void> {
+export async function syncApplication(app: KubernetesDelete, resources: K8sObject[], action: SyncAction = "upsert"): Promise<void> {
     const slug = appName(app);
     const syncOptions: SyncOptions = configurationValue("sdm.k8s.options.sync", undefined);
     if (!syncOptions || !syncOptions.repo) {
@@ -82,7 +81,7 @@ export async function syncApplication(app: KubernetesDelete, resources: k8s.Kube
 
 export interface ProjectFileSpec {
     file: ProjectFile;
-    spec: DeepPartial<k8s.KubernetesObject>;
+    spec: K8sObject;
 }
 
 /**
@@ -100,7 +99,7 @@ export interface ProjectFileSpec {
  * @param action Action performed, "upsert" or "delete"
  * @return Function that updates the sync repo with the resource specs
  */
-export function syncResources(app: KubernetesDelete, resources: k8s.KubernetesObject[], action: SyncAction): (p: GitProject) => Promise<void> {
+export function syncResources(app: KubernetesDelete, resources: K8sObject[], action: SyncAction): (p: GitProject) => Promise<void> {
     return async syncProject => {
         const specs: ProjectFileSpec[] = [];
         await projectUtils.doWithFiles(syncProject, k8sSpecGlob, async file => {
@@ -137,7 +136,7 @@ export function syncResources(app: KubernetesDelete, resources: k8s.KubernetesOb
  * @param p Sync repo project
  * @param fs File and spec object that matches resource, may be undefined
  */
-async function resourceUpserted(resource: k8s.KubernetesObject, p: Project, fs: ProjectFileSpec): Promise<void> {
+async function resourceUpserted(resource: K8sObject, p: Project, fs: ProjectFileSpec): Promise<void> {
     if (fs) {
         const specString = (/\.ya?ml$/.test(fs.file.path)) ? yaml.safeDump(resource) : stringifySpec(resource);
         await fs.file.setContent(specString);
@@ -159,7 +158,7 @@ async function resourceUpserted(resource: k8s.KubernetesObject, p: Project, fs: 
  * @param p Sync repo project
  * @param fs File and spec object that matches resource, may be undefined
  */
-async function resourceDeleted(resource: k8s.KubernetesObject, p: Project, fs: ProjectFileSpec): Promise<void> {
+async function resourceDeleted(resource: K8sObject, p: Project, fs: ProjectFileSpec): Promise<void> {
     if (fs) {
         await p.deleteFile(fs.file.path);
     }
@@ -174,7 +173,7 @@ async function resourceDeleted(resource: k8s.KubernetesObject, p: Project, fs: P
  * @param fileSpecs Array of spec and file objects to search
  * @return First file and spec object to match spec
  */
-export function matchSpec(spec: k8s.KubernetesObject, fileSpecs: ProjectFileSpec[]): ProjectFileSpec | undefined {
+export function matchSpec(spec: K8sObject, fileSpecs: ProjectFileSpec[]): ProjectFileSpec | undefined {
     return fileSpecs.find(fs => spec.apiVersion === fs.spec.apiVersion &&
         spec.kind === fs.spec.kind &&
         spec.metadata.name === fs.spec.metadata.name &&
@@ -190,11 +189,11 @@ export function matchSpec(spec: k8s.KubernetesObject, fileSpecs: ProjectFileSpec
  * @param resource Kubernetes resource spec
  * @return Base file name for resource spec
  */
-export function specFileBasename(resource: k8s.KubernetesObject): string {
+export function specFileBasename(resource: K8sObject): string {
     const ns = (resource.metadata.namespace) ? `${resource.metadata.namespace}-` : "";
     return `${ns}${resource.metadata.name}-${resource.kind.replace(/([a-z])([A-Z])/g, "$1-$2")}`.toLowerCase();
 }
 
-function stringifySpec(resource: k8s.KubernetesObject): string {
+function stringifySpec(resource: K8sObject): string {
     return stringify(resource, undefined, 2) + "\n";
 }

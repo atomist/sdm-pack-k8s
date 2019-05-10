@@ -15,14 +15,13 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
-    KubernetesObjectApi,
-    KubernetesObjectResponse,
+    K8sObject,
+    K8sObjectApi,
+    K8sObjectResponse,
     specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
@@ -36,12 +35,12 @@ import { loadKubeConfig } from "./config";
  * @param spec Kuberenetes resource spec sufficient to identify and create the resource
  * @return response from the Kubernetes API.
  */
-export async function applySpec(spec: DeepPartial<k8s.KubernetesObject>): Promise<KubernetesObjectResponse> {
+export async function applySpec(spec: K8sObject): Promise<K8sObjectResponse> {
     const slug = specUriPath(spec);
-    let client: KubernetesObjectApi;
+    let client: K8sObjectApi;
     try {
         const kc = loadKubeConfig();
-        client = kc.makeApiClient(KubernetesObjectApi);
+        client = kc.makeApiClient(K8sObjectApi);
     } catch (e) {
         e.message = `Failed to create Kubernetes client: ${errMsg(e)}`;
         logger.error(e.message);

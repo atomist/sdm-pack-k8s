@@ -17,6 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
+import { K8sObject } from "./api";
 import { makeApiClients } from "./clients";
 import { loadKubeConfig } from "./config";
 import {
@@ -53,7 +54,7 @@ import {
  * @param sdmFulfiller Registered name of the SDM fulfilling the deployment goal.
  * @return Array of resource specs upserted
  */
-export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<k8s.KubernetesObject[]> {
+export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<K8sObject[]> {
     let config: k8s.KubeConfig;
     try {
         config = loadKubeConfig();
@@ -66,9 +67,9 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
     const req = { ...app, sdmFulfiller, clients };
 
     try {
-        const k8sResources: k8s.KubernetesObject[] = [];
+        const k8sResources: K8sObject[] = [];
         k8sResources.push(await upsertNamespace(req));
-        k8sResources.push(...Object.values<k8s.KubernetesObject>(await upsertRbac(req) as any));
+        k8sResources.push(...Object.values<K8sObject>(await upsertRbac(req) as any));
         k8sResources.push(await upsertService(req));
         k8sResources.push(...(await upsertSecrets(req)));
         k8sResources.push(await upsertDeployment(req));
@@ -89,7 +90,7 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
  * @param req Delete application request object
  * @return Array of deleted objects, may be empty
  */
-export async function deleteApplication(del: KubernetesDelete): Promise<k8s.KubernetesObject[]> {
+export async function deleteApplication(del: KubernetesDelete): Promise<K8sObject[]> {
     const slug = `${del.ns}/${del.name}`;
     let config: k8s.KubeConfig;
     try {
@@ -102,7 +103,7 @@ export async function deleteApplication(del: KubernetesDelete): Promise<k8s.Kube
     const clients = makeApiClients(config);
     const req = { ...del, clients };
 
-    const deleted: k8s.KubernetesObject[] = [];
+    const deleted: K8sObject[] = [];
     const errs: Error[] = [];
     try {
         deleted.push(await deleteIngress(req));
@@ -129,7 +130,7 @@ export async function deleteApplication(del: KubernetesDelete): Promise<k8s.Kube
         errs.push(e);
     }
     try {
-        deleted.push(...Object.values<k8s.KubernetesObject>(await deleteRbac(req) as any));
+        deleted.push(...Object.values<K8sObject>(await deleteRbac(req) as any));
     } catch (e) {
         e.message = `Failed to delete RBAC resources for ${slug}: ${e.message}`;
         errs.push(e);
