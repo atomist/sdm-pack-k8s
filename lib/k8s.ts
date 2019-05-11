@@ -72,13 +72,11 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
 
             sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));
 
-            if (sdm.configuration.sdm.k8s.options.registerCluster) {
-                sdm.addStartupListener(providerStartupListener);
-            }
-            if (sdm.configuration.sdm.k8s.options.sync && sdm.configuration.sdm.k8s.options.sync.repo) {
-                sdm.addStartupListener(syncRepoStartupListener);
-                syncGoals(sdm);
-            }
+            sdm.addStartupListener(providerStartupListener);
+
+            sdm.addStartupListener(syncRepoStartupListener);
+            syncGoals(sdm);
+
             sdm.addStartupListener(minikubeStartupListener);
 
         },
