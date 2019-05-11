@@ -21,7 +21,6 @@ import {
     GitCommandGitProject,
     GitHubRepoRef,
     GitlabRepoRef,
-    RepoRef,
     ScmProviderType,
     TokenCredentials,
 } from "@atomist/automation-client";
@@ -47,16 +46,22 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: ScmProviders.ScmProvider = {};
-            const rc = scmCredentials(m, r, s);
+            const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -65,20 +70,26 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: ScmProviders.ScmProvider = {
                 credential: {
                     secret: "m@n-0n-th3-m00n",
                 },
             };
-            const rc = scmCredentials(m, r, s);
+            const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -87,18 +98,24 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
             };
-            const rc = scmCredentials(m, r, s);
+            const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -107,27 +124,17 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
-                    },
-                },
-            } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
-            const s: ScmProviders.ScmProvider = {
-                apiUrl: "https://api.github.com",
-                credential: {},
-            };
-            const rc = scmCredentials(m, r, s);
-            assert.deepStrictEqual(rc, undefined);
-        });
-
-        it("should return undefined if no repo ref", () => {
-            const m: SoftwareDeliveryMachine = {
-                configuration: {
-                    sdm: {
-                        repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
@@ -135,7 +142,7 @@ describe("sync/repo", () => {
                 apiUrl: "https://api.github.com",
                 credential: {},
             };
-            const rc = scmCredentials(m, undefined, s);
+            const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -144,21 +151,27 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
                 credential: {
                     secret: "m@n-0n-th3-m00n",
                 },
             };
-            const rc = scmCredentials(m, r, s);
+            const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -167,21 +180,27 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
                 credential: {
                     secret: "m@n-0n-th3-m00n",
                 },
             };
-            const rc = scmCredentials(m, r, s);
+            const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -190,14 +209,20 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://ghe.sugar.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://ghe.sugar.com/bob-mould/sugar",
-            };
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://ghe.sugar.com/api/v3",
                 credential: {
@@ -206,7 +231,7 @@ describe("sync/repo", () => {
                 providerType: "ghe" as any,
                 url: "https://ghe.sugar.com/",
             };
-            const rc = scmCredentials(m, r, s);
+            const rc = scmCredentials(m, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
             assert((rc.repo as GitHubRepoRef).apiBase === "ghe.sugar.com/api/v3");
@@ -219,29 +244,36 @@ describe("sync/repo", () => {
             assert((rc.repo as GitHubRepoRef).scheme === "https://");
         });
 
-        it("should use branch", () => {
+        it("should use branch and provided credentials", () => {
             const m: SoftwareDeliveryMachine = {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    credentials: { token: "tilted" },
+                                    repo: {
+                                        branch: "beaster",
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                branch: "beaster",
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
                 credential: {
                     secret: "m@n-0n-th3-m00n",
                 },
             };
-            const rc = scmCredentials(m, r, s);
+            const rc = scmCredentials(m, s);
             assert(rc, "no RepoCredentials returned");
-            assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
+            assert((rc.credentials as TokenCredentials).token === "tilted");
             assert((rc.repo as GitHubRepoRef).apiBase === "api.github.com");
             assert(rc.repo.branch === "beaster");
             assert(rc.repo.owner === "bob-mould");
@@ -252,20 +284,27 @@ describe("sync/repo", () => {
             assert((rc.repo as GitHubRepoRef).scheme === "https://");
         });
 
-        it("should create a bitbucket ref", () => {
+        it("should create a bitbucket ref with path", () => {
             const m: SoftwareDeliveryMachine = {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        branch: "FunHouse",
+                                        owner: "TheStooges",
+                                        path: "Down/on/the/Street",
+                                        repo: "iggy",
+                                        url: "https://bitbucket.iggyandthestooges.com/TheStooges/iggy",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                branch: "FunHouse",
-                owner: "TheStooges",
-                repo: "iggy",
-                url: "https://bitbucket.iggyandthestooges.com/TheStooges/iggy",
-            };
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://bitbucket.iggyandthestooges.com/",
                 credential: {
@@ -273,13 +312,13 @@ describe("sync/repo", () => {
                 },
                 providerType: "bitbucket" as any,
             };
-            const rc = scmCredentials(m, r, s);
+            const rc = scmCredentials(m, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "1w@nn@b3y0u4d0g");
             assert((rc.repo as BitBucketServerRepoRef).apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
             assert(rc.repo.branch === "FunHouse");
             assert(rc.repo.owner === "TheStooges");
-            assert(rc.repo.path === undefined);
+            assert(rc.repo.path === "Down/on/the/Street");
             assert(rc.repo.providerType === ScmProviderType.bitbucket);
             assert(rc.repo.remoteBase === "bitbucket.iggyandthestooges.com");
             assert(rc.repo.repo === "iggy");
@@ -295,16 +334,22 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: RepoScmProvider.Repo = {};
-            const rc = repoCredentials(m, r, s);
+            const rc = repoCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -313,18 +358,24 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: RepoScmProvider.Repo = {
                 org: {},
             };
-            const rc = repoCredentials(m, r, s);
+            const rc = repoCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -333,20 +384,26 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: RepoScmProvider.Repo = {
                 org: {
                     scmProvider: {},
                 },
             };
-            const rc = repoCredentials(m, r, s);
+            const rc = repoCredentials(m, s);
             assert(rc === undefined);
         });
 
@@ -355,14 +412,20 @@ describe("sync/repo", () => {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        url: "https://github.com/bob-mould/sugar",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                owner: "bob-mould",
-                repo: "sugar",
-                url: "https://github.com/bob-mould/sugar",
-            };
             const s: RepoScmProvider.Repo = {
                 org: {
                     scmProvider: {
@@ -373,7 +436,7 @@ describe("sync/repo", () => {
                     },
                 },
             };
-            const rc = repoCredentials(m, r, s);
+            const rc = repoCredentials(m, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
             assert((rc.repo as GitHubRepoRef).apiBase === "api.github.com");
@@ -386,20 +449,27 @@ describe("sync/repo", () => {
             assert((rc.repo as GitHubRepoRef).scheme === "https://");
         });
 
-        it("should create a gitlab ref", () => {
+        it("should create a gitlab ref with provided credentials", () => {
             const m: SoftwareDeliveryMachine = {
                 configuration: {
                     sdm: {
                         repoRefResolver: new DefaultRepoRefResolver(),
+                        k8s: {
+                            options: {
+                                sync: {
+                                    credentials: { token: "Frankenstein" },
+                                    repo: {
+                                        branch: "too-much-too-soon",
+                                        owner: "NewYorkDolls",
+                                        repo: "trash",
+                                        url: "http://gitlab.nydolls.com/NewYorkDolls/trash",
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             } as any;
-            const r: RepoRef = {
-                branch: "too-much-too-soon",
-                owner: "NewYorkDolls",
-                repo: "trash",
-                url: "http://gitlab.nydolls.com/NewYorkDolls/trash",
-            };
             const s: RepoScmProvider.Repo = {
                 org: {
                     scmProvider: {
@@ -412,9 +482,9 @@ describe("sync/repo", () => {
                     },
                 },
             };
-            const rc = repoCredentials(m, r, s);
+            const rc = repoCredentials(m, s);
             assert(rc, "no RepoCredentials returned");
-            assert((rc.credentials as TokenCredentials).token === "P34$0n@l1tyC41$1$");
+            assert((rc.credentials as TokenCredentials).token === "Frankenstein");
             // GitlabReporef overrides apiBase to include the scheme and not strip any trailing slash
             assert((rc.repo as GitlabRepoRef).apiBase === "http://gitlab.nydolls.com/api/v4/");
             assert(rc.repo.branch === "too-much-too-soon");
@@ -485,18 +555,8 @@ describe("sync/repo", () => {
                     workspaceIds: ["A4USK34DU"],
                 },
             } as any;
-            const rc = await queryForScmProvider(s);
-            assert(rc, "no RepoCredentials returned");
+            assert(await queryForScmProvider(s));
             assert(queried, "query method never called");
-            assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
-            assert((rc.repo as GitHubRepoRef).apiBase === "api.github.com");
-            assert(rc.repo.branch === "beaster");
-            assert(rc.repo.owner === "bob-mould");
-            assert(rc.repo.path === undefined);
-            assert(rc.repo.providerType === ScmProviderType.github_com);
-            assert(rc.repo.remoteBase === "github.com");
-            assert(rc.repo.repo === "sugar");
-            assert((rc.repo as GitHubRepoRef).scheme === "https://");
             const ss = s.configuration.sdm.k8s.options.sync;
             assert(ss.credentials.token === "m@n-0n-th3-m00n");
             assert(ss.repo.apiBase === "api.github.com");
@@ -509,7 +569,7 @@ describe("sync/repo", () => {
             assert(ss.repo.scheme === "https://");
         });
 
-        it("should use the default branch", async () => {
+        it("should use the default branch and configured credentials", async () => {
             let queried = false;
             const s: SoftwareDeliveryMachine = {
                 configuration: {
@@ -550,6 +610,7 @@ describe("sync/repo", () => {
                         k8s: {
                             options: {
                                 sync: {
+                                    credentials: { token: "H00v34D@m" },
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
@@ -563,20 +624,10 @@ describe("sync/repo", () => {
                     workspaceIds: ["A4USK34DU"],
                 },
             } as any;
-            const rc = await queryForScmProvider(s);
-            assert(rc, "no RepoCredentials returned");
+            assert(await queryForScmProvider(s));
             assert(queried, "query method never called");
-            assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
-            assert((rc.repo as GitHubRepoRef).apiBase === "api.github.com");
-            assert(rc.repo.branch === "copper-blue");
-            assert(rc.repo.owner === "bob-mould");
-            assert(rc.repo.path === undefined);
-            assert(rc.repo.providerType === ScmProviderType.github_com);
-            assert(rc.repo.remoteBase === "github.com");
-            assert(rc.repo.repo === "sugar");
-            assert((rc.repo as GitHubRepoRef).scheme === "https://");
             const ss = s.configuration.sdm.k8s.options.sync;
-            assert(ss.credentials.token === "m@n-0n-th3-m00n");
+            assert(ss.credentials.token === "H00v34D@m");
             assert(ss.repo.apiBase === "api.github.com");
             assert(ss.repo.branch === "copper-blue");
             assert(ss.repo.owner === "bob-mould");
@@ -587,7 +638,7 @@ describe("sync/repo", () => {
             assert(ss.repo.scheme === "https://");
         });
 
-        it("should find nothing", async () => {
+        it("should find nothing and delete sync options", async () => {
             let queried = false;
             const s: SoftwareDeliveryMachine = {
                 configuration: {
@@ -621,9 +672,9 @@ describe("sync/repo", () => {
                     workspaceIds: ["A4USK34DU"],
                 },
             } as any;
-            const rc = await queryForScmProvider(s);
+            assert(!await queryForScmProvider(s));
             assert(queried, "query method never called");
-            assert(rc === undefined);
+            assert(s.configuration.sdm.k8s.options.sync === undefined);
         });
 
         it("should find the repo via the provider", async () => {
@@ -676,19 +727,9 @@ describe("sync/repo", () => {
                     workspaceIds: ["A4USK34DU"],
                 },
             } as any;
-            const rc = await queryForScmProvider(s);
+            assert(await queryForScmProvider(s));
             GitCommandGitProject.cloned = clonedOrig;
-            assert(rc, "no RepoCredentials returned");
             assert(queried, "query method never called");
-            assert((rc.credentials as TokenCredentials).token === "1w@nn@b3y0u4d0g");
-            assert((rc.repo as BitBucketServerRepoRef).apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
-            assert(rc.repo.branch === "FunHouse");
-            assert(rc.repo.owner === "TheStooges");
-            assert(rc.repo.path === "cluster/specs");
-            assert(rc.repo.providerType === ScmProviderType.bitbucket);
-            assert(rc.repo.remoteBase === "bitbucket.iggyandthestooges.com");
-            assert(rc.repo.repo === "iggy");
-            assert((rc.repo as BitBucketServerRepoRef).scheme === "https://");
             const ss = s.configuration.sdm.k8s.options.sync;
             assert(ss.credentials.token === "1w@nn@b3y0u4d0g");
             assert(ss.repo.apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
@@ -699,6 +740,39 @@ describe("sync/repo", () => {
             assert(ss.repo.remoteBase === "bitbucket.iggyandthestooges.com");
             assert(ss.repo.repo === "iggy");
             assert(ss.repo.scheme === "https://");
+        });
+
+        it("should return what was provided", async () => {
+            const s: SoftwareDeliveryMachine = {
+                configuration: {
+                    sdm: {
+                        k8s: {
+                            options: {
+                                sync: {
+                                    credentials: { token: "3.T.V.3y3" },
+                                    repo: GitHubRepoRef.from({
+                                        branch: "FunHouse",
+                                        owner: "TheStooges",
+                                        path: "cluster/specs",
+                                        repo: "iggy",
+                                    }),
+                                },
+                            },
+                        },
+                    },
+                },
+            } as any;
+            assert(await queryForScmProvider(s));
+            const e = {
+                credentials: { token: "3.T.V.3y3" },
+                repo: GitHubRepoRef.from({
+                    branch: "FunHouse",
+                    owner: "TheStooges",
+                    path: "cluster/specs",
+                    repo: "iggy",
+                }),
+            };
+            assert.deepStrictEqual(s.configuration.sdm.k8s.options.sync, e);
         });
 
     });

@@ -16,6 +16,7 @@
 
 import {
     ProjectOperationCredentials,
+    RemoteRepoRef,
     RepoRef,
     ScmProviderType,
 } from "@atomist/automation-client";
@@ -57,17 +58,27 @@ export interface SyncRepoRef extends RepoRef {
 export interface SyncOptions {
     /**
      * To synchronize resources in k8s cluster with a Git repo,
-     * provide a repo ref as the value of this property.  On startup,
-     * the contents of this repo ref will be synchronized with the
-     * cluster and subsequent resource deployments will update the
-     * contents of the repo.
+     * provide a repo ref as the value of this property.  The value
+     * can be either a SyncRepoRef or RemoteRepoRef.  On startup, the
+     * contents of this repo ref will be synchronized with the
+     * cluster, subsequent changes to this repo will be syncronized to
+     * the cluster, and subsequent resource deployments will update
+     * the contents of this repo.
+     *
+     * If a SyncRepoRef is provided, on startup cortex is queried to
+     * find the details of the repo needed to create a RemoteRepoRef.
+     * This RemoteRepoRef is created and then used as the value of
+     * this property for the lifetime of the SDM.
+     *
+     * If a RemoteRepoRef is provided, it is used as is.
      */
-    repo: SyncRepoRef;
+    repo: SyncRepoRef | RemoteRepoRef;
     /**
      * Credentials to use when cloning the sync.repo.  These are
-     * typically not provided in the SDM configuration and, if
-     * they are not provided, are obtained during startup by the
-     * SDM via a cortex query.
+     * typically not provided in the SDM configuration, rather they
+     * are are obtained during startup by the SDM via a cortex query.
+     * If they are provided, the provided credentials are used rather
+     * than any returned from cortex.
      */
     credentials?: ProjectOperationCredentials;
     /**
