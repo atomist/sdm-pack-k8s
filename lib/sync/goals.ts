@@ -30,6 +30,7 @@ import {
 } from "@atomist/sdm";
 import * as _ from "lodash";
 import { SyncOptions } from "../config";
+import { errMsg } from "../support/error";
 import { changeResource } from "./change";
 import { diffPush } from "./diff";
 import { commitTag } from "./tag";
@@ -101,7 +102,7 @@ export const K8sSync: ExecuteGoal = async gi => {
             try {
                 await changeResource(p, change);
             } catch (e) {
-                e.message = `Failed to ${change.change} '${change.path}' resource for commit ${change.sha}: ${e.message}`;
+                e.message = `Failed to ${change.change} '${change.path}' resource for commit ${change.sha}: ${errMsg(e)}`;
                 logger.error(e.message);
                 log.write(e.message);
                 errs.push(e);

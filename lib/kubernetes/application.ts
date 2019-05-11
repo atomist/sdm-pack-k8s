@@ -17,6 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
+import { errMsg } from "../support/error";
 import { K8sObject } from "./api";
 import { makeApiClients } from "./clients";
 import { loadKubeConfig } from "./config";
@@ -76,7 +77,7 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
         k8sResources.push(await upsertIngress(req));
         return k8sResources.filter(r => !!r);
     } catch (e) {
-        e.message = `Failed to upsert '${reqString(req)}': ${e.message}`;
+        e.message = `Failed to upsert '${reqString(req)}': ${errMsg(e)}`;
         logger.error(e.message);
         throw e;
     }
@@ -108,31 +109,31 @@ export async function deleteApplication(del: KubernetesDelete): Promise<K8sObjec
     try {
         deleted.push(await deleteIngress(req));
     } catch (e) {
-        e.message = `Failed to delete ingress ${slug}: ${e.message}`;
+        e.message = `Failed to delete ingress ${slug}: ${errMsg(e)}`;
         errs.push(e);
     }
     try {
         deleted.push(await deleteDeployment(req));
     } catch (e) {
-        e.message = `Failed to delete deployment ${slug}: ${e.message}`;
+        e.message = `Failed to delete deployment ${slug}: ${errMsg(e)}`;
         errs.push(e);
     }
     try {
         deleted.push(...(await deleteSecrets(req)));
     } catch (e) {
-        e.message = `Failed to delete secrets of ${slug}: ${e.message}`;
+        e.message = `Failed to delete secrets of ${slug}: ${errMsg(e)}`;
         errs.push(e);
     }
     try {
         deleted.push(await deleteService(req));
     } catch (e) {
-        e.message = `Failed to delete service ${slug}: ${e.message}`;
+        e.message = `Failed to delete service ${slug}: ${errMsg(e)}`;
         errs.push(e);
     }
     try {
         deleted.push(...Object.values<K8sObject>(await deleteRbac(req) as any));
     } catch (e) {
-        e.message = `Failed to delete RBAC resources for ${slug}: ${e.message}`;
+        e.message = `Failed to delete RBAC resources for ${slug}: ${errMsg(e)}`;
         errs.push(e);
     }
     if (errs.length > 0) {

@@ -30,6 +30,7 @@ import { SyncOptions } from "../config";
 import { parseKubernetesSpecFile } from "../deploy/spec";
 import { applySpec } from "../kubernetes/apply";
 import { decryptSecret } from "../kubernetes/secret";
+import { errMsg } from "../support/error";
 import { cloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
 import { queryForScmProvider } from "./repo";
@@ -45,26 +46,23 @@ export const syncRepoStartupListener: StartupListener = async context => {
         return;
     }
     const sdm = context.sdm;
-    const repoCreds = await queryForScmProvider(sdm);
-    if (!repoCreds) {
-        logger.warn(`Failed to find sync repo, removing sync repo from config`);
-        delete sdm.configuration.sdm.k8s.options.sync;
+    if (!await queryForScmProvider(sdm)) {
         return;
     }
     if (!cluster.isMaster) {
         return;
     }
     const projectLoadingParameters: ProjectLoadingParameters = {
-        credentials: repoCreds.credentials,
+        credentials: sdm.configuration.sdm.k8s.options.sync.credentials,
         cloneOptions,
-        id: repoCreds.repo,
+        id: sdm.configuration.sdm.k8s.options.sync.repo,
         readOnly: true,
     };
+    const opts: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
     try {
-        const opts: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
         await sdm.configuration.sdm.projectLoader.doWithProject(projectLoadingParameters, initialSync(opts));
     } catch (e) {
-        e.message = `Failed to perform inital sync using repo ${repoCreds.repo.owner}/${repoCreds.repo.repo}: ${e.message}`;
+        e.message = `Failed to perform inital sync using repo ${opts.repo.owner}/${opts.repo.repo}: ${e.message}`;
         logger.error(e.message);
     }
     return;
@@ -89,7 +87,7 @@ function initialSync(opts: SyncOptions): (p: GitProject) => Promise<void> {
                 }
                 await applySpec(spec);
             } catch (e) {
-                e.message = `Failed to apply '${specFile.path}': ${e.message}`;
+                e.message = `Failed to apply '${specFile.path}': ${errMsg(e)}`;
                 logger.error(e.message);
                 throw e;
             }

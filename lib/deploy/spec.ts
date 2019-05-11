@@ -84,21 +84,14 @@ export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<K8
 }
 
 /**
- * Parses content string as Kubernetes JSON or YAML spec.
- *
- * If the `specPath` file ends with `.yaml` or `.yml`, the file
- * contents are parsed as YAML.  Otherwise it is parsed as JSON.
+ * Parses content string as Kubernetes JSON or YAML spec.  It parses
+ * the file as YAML, since JSON is valid YAML.
  *
  * @param specString String representation of Kubernetes spec
  * @param specPath File path of Kubernetes spec file
  * @return Parsed object of the spec
  */
 export async function parseKubernetesSpecString(specString: string, specPath: string): Promise<K8sObject> {
-    let spec: K8sObject;
-    if (/\.ya?ml$/.test(specPath)) {
-        spec = yaml.safeLoad(specString);
-    } else {
-        spec = JSON.parse(specString);
-    }
+    const spec: K8sObject = yaml.safeLoad(specString);
     return spec;
 }
