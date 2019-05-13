@@ -36,7 +36,7 @@ import { loadKubeConfig } from "./config";
  * @return response from the Kubernetes API.
  */
 export async function applySpec(spec: K8sObject): Promise<K8sObjectResponse> {
-    const slug = specUriPath(spec);
+    const slug = specUriPath(spec, "read");
     let client: K8sObjectApi;
     try {
         const kc = loadKubeConfig();

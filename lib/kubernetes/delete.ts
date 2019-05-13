@@ -33,7 +33,7 @@ import { loadKubeConfig } from "./config";
  * @return DeleteResponse if object existed and was deleted, undefined if it did not exist
  */
 export async function deleteSpec(spec: K8sObject): Promise<K8sDeleteResponse | undefined> {
-    const slug = specUriPath(spec);
+    const slug = specUriPath(spec, "read");
     let client: K8sObjectApi;
     try {
         const kc = loadKubeConfig();

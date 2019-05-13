@@ -16,6 +16,7 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
+import { errMsg } from "../support/error";
 import {
     appName,
     KubernetesDeleteResourceRequest,
@@ -94,6 +95,7 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
         try {
             deleted[deleter.key as keyof RbacResources] = await deleter.del(req);
         } catch (e) {
+            e.message = `Failed to delete ${deleter.key}: ${errMsg(e)}`;
             errs.push(e);
         }
     }

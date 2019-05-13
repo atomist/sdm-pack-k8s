@@ -94,6 +94,7 @@ export const K8sSync: ExecuteGoal = async gi => {
         log,
         readOnly: true,
     };
+    logger.debug(`ExecuteGoal clone options: ${JSON.stringify(params.cloneOptions)}`);
     const tag = commitTag(gi.configuration);
     return gi.configuration.sdm.projectLoader.doWithProject<ExecuteGoalResult>(params, async p => {
         const changes = await diffPush(p, push, tag, log);

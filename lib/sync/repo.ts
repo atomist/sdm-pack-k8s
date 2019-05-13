@@ -182,7 +182,7 @@ async function queryRepo(sdm: SoftwareDeliveryMachine): Promise<RepoCredentials 
             const rc = repoCredentials(sdm, repo);
             if (rc) {
                 rc.repo.branch = rc.repo.branch || repo.defaultBranch || defaultDefaultBranch;
-                logger.warn(`Returning first ${slug} repo with valid SCM provider`);
+                logger.info(`Returning first ${slug} repo with valid SCM provider`);
                 return rc;
             }
         }
