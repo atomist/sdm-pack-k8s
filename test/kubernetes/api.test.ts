@@ -17,13 +17,137 @@
 import { execPromise } from "@atomist/sdm";
 import * as assert from "power-assert";
 import {
+    isClusterResource,
     K8sObject,
     specUriPath,
+    uriOpts,
 } from "../../lib/kubernetes/api";
 import { applySpec } from "../../lib/kubernetes/apply";
 import { deleteSpec } from "../../lib/kubernetes/delete";
 
 describe("kubernetes/api", () => {
+
+    const apiActions = ["create", "delete", "list", "patch", "read", "replace"];
+    const clusterResources = [
+        "APIService",
+        "AuditSink",
+        "CertificateSigningRequest",
+        "ClusterCustomObject",
+        "ClusterRole",
+        "ClusterRoleBinding",
+        "CustomResourceDefinition",
+        "InitializerConfiguration",
+        "MutatingWebhookConfiguration",
+        "Namespace",
+        "Node",
+        "PersistentVolume",
+        "PodSecurityPolicy",
+        "PriorityClass",
+        "SelfSubjectAccessReview",
+        "SelfSubjectRulesReview",
+        "StorageClass",
+        "SubjectAccessReview",
+        "TokenReview",
+        "ValidatingWebhookConfiguration",
+        "VolumeAttachment",
+    ];
+    const clusterStatuses = [
+        "APIServiceStatus",
+        "CertificateSigningRequestStatus",
+        "CustomResourceDefinitionStatus",
+        "NamespaceStatus",
+        "NodeStatus",
+        "PersistentVolumeStatus",
+        "VolumeAttachmentStatus",
+    ];
+
+    describe("isClusterResource", () => {
+
+        it("should return true for a cluster resource", () => {
+            apiActions.forEach((a: any) => {
+                clusterResources.forEach(r => {
+                    assert(isClusterResource(a, r));
+                });
+            });
+        });
+
+        it("should return true for a cluster status resource with appropriate action", () => {
+            ["patch", "read", "replace"].forEach((a: any) => {
+                clusterStatuses.forEach(r => {
+                    assert(isClusterResource(a, r));
+                });
+            });
+        });
+
+        it("should return false for a cluster status resource with other action", () => {
+            ["create", "delete", "list"].forEach((a: any) => {
+                clusterStatuses.forEach(r => {
+                    assert(!isClusterResource(a, r));
+                });
+            });
+        });
+
+        it("should handle ComponentStatus properly", () => {
+            ["list", "read"].forEach((a: any) => {
+                assert(isClusterResource(a, "ComponentStatus"));
+            });
+            ["create", "delete", "patch", "replace"].forEach((a: any) => {
+                assert(!isClusterResource(a, "ComponentStatus"));
+            });
+        });
+
+        it("should return false for namespaced resource", () => {
+            apiActions.forEach((a: any) => {
+                ["ConfigMap", "CronJob", "DaemonSet", "Deployment", "Pod", "Role", "Service", "ServiceAccount", "StatefulSet"].forEach(r => {
+                    assert(!isClusterResource(a, r));
+                });
+            });
+        });
+
+    });
+
+    describe("uriOpts", () => {
+
+        it("should return append name", () => {
+            ["delete", "patch", "read", "replace"].forEach((a: any) => {
+                const o = uriOpts(a, "Deployment");
+                assert(o.appendName);
+            });
+        });
+
+        it("should return not append name", () => {
+            ["create", "list"].forEach((a: any) => {
+                const o = uriOpts(a, "Deployment");
+                assert(!o.appendName);
+            });
+        });
+
+        it("should return namespace required", () => {
+            ["create", "delete", "patch", "read", "replace"].forEach((a: any) => {
+                ["ConfigMap", "CronJob", "DaemonSet", "Deployment", "Pod", "Role", "Service", "ServiceAccount", "StatefulSet"].forEach(r => {
+                    const o = uriOpts(a, r);
+                    assert(o.namespaceRequired);
+                });
+            });
+        });
+
+        it("should return namespace not required", () => {
+            ["ConfigMap", "CronJob", "DaemonSet", "Deployment", "Pod", "Role", "Service", "ServiceAccount", "StatefulSet"].forEach(r => {
+                const o = uriOpts("list", r);
+                assert(!o.namespaceRequired);
+            });
+        });
+
+        it("should return namespace not required", () => {
+            apiActions.forEach((a: any) => {
+                clusterResources.forEach(r => {
+                    const o = uriOpts(a, r);
+                    assert(!o.namespaceRequired);
+                });
+            });
+        });
+
+    });
 
     describe("specUriPath", () => {
 
@@ -36,7 +160,7 @@ describe("kubernetes/api", () => {
                     namespace: "fugazi",
                 },
             };
-            const r = specUriPath(o);
+            const r = specUriPath(o, "patch");
             assert(r === "v1/namespaces/fugazi/services/repeater");
         });
 
@@ -48,7 +172,7 @@ describe("kubernetes/api", () => {
                     name: "repeater",
                 },
             };
-            const r = specUriPath(o);
+            const r = specUriPath(o, "delete");
             assert(r === "v1/namespaces/repeater");
         });
 
@@ -60,7 +184,7 @@ describe("kubernetes/api", () => {
                     namespace: "fugazi",
                 },
             };
-            const r = specUriPath(o, false);
+            const r = specUriPath(o, "list");
             assert(r === "v1/namespaces/fugazi/services");
         });
 
@@ -68,8 +192,11 @@ describe("kubernetes/api", () => {
             const o = {
                 apiVersion: "v1",
                 kind: "Namespace",
+                metadata: {
+                    name: "repeater",
+                },
             };
-            const r = specUriPath(o, false);
+            const r = specUriPath(o, "create");
             assert(r === "v1/namespaces");
         });
 
@@ -82,7 +209,7 @@ describe("kubernetes/api", () => {
                     namespace: "fugazi",
                 },
             };
-            const r = specUriPath(o);
+            const r = specUriPath(o, "read");
             assert(r === "apps/v1/namespaces/fugazi/deployments/repeater");
         });
 
@@ -95,7 +222,7 @@ describe("kubernetes/api", () => {
                     namespace: "fugazi",
                 },
             };
-            const r = specUriPath(o);
+            const r = specUriPath(o, "delete");
             assert(r === "extensions/v1beta1/namespaces/fugazi/ingresses/repeater");
         });
 
@@ -128,7 +255,7 @@ describe("kubernetes/api", () => {
                 if (k.ns) {
                     o.metadata.namespace = "fugazi";
                 }
-                const r = specUriPath(o);
+                const r = specUriPath(o, "patch");
                 assert(r === k.e);
             });
         });
@@ -157,7 +284,7 @@ describe("kubernetes/api", () => {
                 if (k.ns) {
                     o.metadata = { namespace: "fugazi" };
                 }
-                const r = specUriPath(o, false);
+                const r = specUriPath(o, "list");
                 assert(r === k.e);
             });
         });
@@ -170,18 +297,7 @@ describe("kubernetes/api", () => {
                     namespace: "fugazi",
                 },
             };
-            assert.throws(() => specUriPath(o), /Spec does not contain kind:/);
-        });
-
-        it("should throw an error if apiVersion missing", () => {
-            const o = {
-                kind: "Service",
-                metadata: {
-                    name: "repeater",
-                    namespace: "fugazi",
-                },
-            };
-            assert.throws(() => specUriPath(o), /Spec does not contain apiVersion:/);
+            assert.throws(() => specUriPath(o, "create"), /Spec does not contain kind:/);
         });
 
         it("should throw an error if name required and missing", () => {
@@ -192,7 +308,7 @@ describe("kubernetes/api", () => {
                     namespace: "fugazi",
                 },
             };
-            assert.throws(() => specUriPath(o), /Spec does not contain name:/);
+            assert.throws(() => specUriPath(o, "read"), /Spec does not contain name:/);
         });
 
     });
