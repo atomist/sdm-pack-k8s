@@ -16,6 +16,7 @@
 
 import { logger } from "@atomist/automation-client";
 import {
+    execPromise,
     ExecuteGoal,
     ExecuteGoalResult,
     goals,
@@ -94,9 +95,14 @@ export const K8sSync: ExecuteGoal = async gi => {
         log,
         readOnly: true,
     };
-    logger.debug(`ExecuteGoal clone options: ${JSON.stringify(params.cloneOptions)}`);
     const tag = commitTag(gi.configuration);
     return gi.configuration.sdm.projectLoader.doWithProject<ExecuteGoalResult>(params, async p => {
+        // work around https://github.com/atomist/sdm/issues/729
+        try {
+            await execPromise("git", ["fetch", `--depth=${params.cloneOptions.depth}`], { cwd: p.baseDir });
+        } catch (e) {
+            logger.warn(`Failed to undo shallow clone, proceeding anyway: ${e.message}`);
+        }
         const changes = await diffPush(p, push, tag, log);
         const errs: Error[] = [];
         for (const change of changes) {
