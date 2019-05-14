@@ -112,7 +112,7 @@ export class K8sObjectApi extends k8s.ApisApi {
      * Generate request options.  Largely copied from @kubernetes/client-node/dist/api.js.
      */
     private baseRequestOptions(method: string = "GET"): request.UriOptions & request.CoreOptions {
-        const localVarPath = this.basePath + "/apis/";
+        const localVarPath = this.basePath + "/";
         const queryParameters = {};
         const localHeaders = (method === "PATCH") ? { "Content-Type": "application/strategic-merge-patch+json" } : {};
         const headerParams = Object.assign({}, this.defaultHeaders, localHeaders);
@@ -244,9 +244,12 @@ export function specUriPath(spec: K8sObject, action: K8sApiAction): string {
         spec.metadata.namespace = defaultNamespace;
     }
     const plural = spec.kind.toLowerCase().replace(/s$/, "se").replace(/y$/, "ie") + "s";
-    const parts = (spec.metadata.namespace) ?
-        [spec.apiVersion, "namespaces", spec.metadata.namespace, plural] :
-        [spec.apiVersion, plural];
+    const prefix = (spec.apiVersion === "v1") ? "api" : "apis";
+    const parts = [prefix, spec.apiVersion];
+    if (spec.metadata.namespace) {
+        parts.push("namespaces", spec.metadata.namespace);
+    }
+    parts.push(plural);
     if (opts.appendName) {
         if (!spec.metadata.name) {
             throw new Error(`Spec does not contain name: ${stringify(spec)}`);
