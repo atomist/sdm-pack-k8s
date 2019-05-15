@@ -15,7 +15,11 @@
  */
 
 import * as assert from "power-assert";
-import { ingressTemplate } from "../../lib/kubernetes/ingress";
+import {
+    ingressTemplate,
+    upsertIngress,
+} from "../../lib/kubernetes/ingress";
+import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
 
 describe("kubernetes/ingress", () => {
 
@@ -196,6 +200,30 @@ describe("kubernetes/ingress", () => {
                 },
             };
             assert.deepStrictEqual(s, e);
+        });
+
+    });
+
+    describe("upsertIngress", () => {
+
+        it("should not do anything if port is not defined", async () => {
+            const a: KubernetesResourceRequest = {
+                name: "brotherhood",
+                ns: "new-order",
+                path: "blue-monday",
+            } as any;
+            const i = await upsertIngress(a);
+            assert(i === undefined);
+        });
+
+        it("should not do anything if path is not defined", async () => {
+            const a: KubernetesResourceRequest = {
+                name: "brotherhood",
+                ns: "new-order",
+                port: 1986,
+            } as any;
+            const i = await upsertIngress(a);
+            assert(i === undefined);
         });
 
     });
