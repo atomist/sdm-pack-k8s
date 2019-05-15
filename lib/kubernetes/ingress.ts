@@ -41,6 +41,10 @@ import {
  */
 export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s.V1beta1Ingress | undefined> {
     const slug = appName(req);
+    if (!req.port) {
+        logger.debug(`Port not provided, will not create ingress ${slug}`);
+        return undefined;
+    }
     if (!req.path) {
         logger.debug(`Path not provided, will not upsert ingress ${slug}`);
         return undefined;
