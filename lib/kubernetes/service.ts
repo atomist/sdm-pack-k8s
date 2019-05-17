@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
@@ -33,6 +32,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
+import { stringifyObject } from "./resource";
 
 /**
  * If `req.port` is truthy, create a service if it does not exist and
@@ -53,11 +53,11 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<k8s
         await req.clients.core.readNamespacedService(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
-        logger.debug(`Creating service ${slug} using '${stringify(spec)}'`);
+        logger.info(`Creating service ${slug} using '${stringifyObject(spec)}'`);
         await logRetry(() => req.clients.core.createNamespacedService(req.ns, spec), `create service ${slug}`);
         return spec;
     }
-    logger.debug(`Service ${slug} exists, patching using '${stringify(spec)}'`);
+    logger.info(`Service ${slug} exists, patching using '${stringifyObject(spec)}'`);
     await logRetry(() => req.clients.core.patchNamespacedService(req.name, req.ns, spec),
         `patch service ${slug}`);
     return spec;
@@ -80,6 +80,7 @@ export async function deleteService(req: KubernetesDeleteResourceRequest): Promi
         logger.debug(`Service ${slug} does not exist: ${errMsg(e)}`);
         return undefined;
     }
+    logger.info(`Deleting service ${slug}`);
     await logRetry(() => req.clients.core.deleteNamespacedService(req.name, req.ns), `delete service ${slug}`);
     return svc;
 }

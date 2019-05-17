@@ -36,6 +36,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
+import { stringifyObject } from "./resource";
 
 /**
  * Create or update a deployment for a Kubernetes application.  Any
@@ -52,12 +53,12 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
         await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read deployment ${slug}, creating: ${errMsg(e)}`);
-        logger.debug(`Creating deployment ${slug} using '${stringify(spec)}'`);
+        logger.info(`Creating deployment ${slug} using '${stringifyObject(spec)}'`);
         await logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, spec),
             `create deployment ${slug}`);
         return spec;
     }
-    logger.debug(`Updating deployment ${slug} using '${stringify(spec)}'`);
+    logger.info(`Updating deployment ${slug} using '${stringifyObject(spec)}'`);
     await logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec), `patch deployment ${slug}`);
     return spec;
 }
@@ -79,6 +80,7 @@ export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Pr
         logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
         return undefined;
     }
+    logger.info(`Deleting deployment ${slug}`);
     const opts: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
     await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, undefined, opts),
         `delete deployment ${slug}`);

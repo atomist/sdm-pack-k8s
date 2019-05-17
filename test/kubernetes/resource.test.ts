@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
+import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
+import { DeepPartial } from "ts-essentials";
 import { KubernetesDelete } from "../../lib/kubernetes/request";
-import { appObject } from "../../lib/kubernetes/resource";
+import {
+    appObject,
+    k8sObject,
+    stringifyObject,
+} from "../../lib/kubernetes/resource";
 
 describe("kubernetes/resource", () => {
 
-    describe("k8sObject", () => {
+    describe("appObject", () => {
 
         it("should throw an exception if kind invalid", () => {
             [undefined, "", "Nothing"].forEach(k => {
@@ -167,6 +173,125 @@ describe("kubernetes/resource", () => {
                 };
                 assert.deepStrictEqual(o, e);
             });
+        });
+
+    });
+
+    describe("k8sObject", () => {
+
+        it("should return a minimal object from a service account", () => {
+            const d: DeepPartial<k8s.V1ServiceAccount> = {
+                apiVersion: "v1",
+                kind: "ServiceAccount",
+                metadata: {
+                    labels: {
+                        "app.kubernetes.io/name": "good-girl-gone-bad",
+                        "atomist.com/workspaceId": "AR14NN4",
+                    },
+                    name: "good-girl-gone-bad",
+                    namespace: "rihanna",
+                },
+            };
+            const o = k8sObject(d);
+            assert.deepStrictEqual(o, d);
+        });
+
+        it("should return a minimal object from a deployment", () => {
+            const d: DeepPartial<k8s.V1Deployment> = {
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    labels: {
+                        "app.kubernetes.io/name": "good-girl-gone-bad",
+                        "atomist.com/workspaceId": "AR14NN4",
+                    },
+                    name: "good-girl-gone-bad",
+                    namespace: "rihanna",
+                },
+                spec: {
+                    template: {
+                        spec: {
+                            containers: [
+                                {
+                                    image: "umbrella:4.36",
+                                },
+                            ],
+                        },
+                    },
+                },
+            };
+            const o = k8sObject(d);
+            const e = {
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    labels: {
+                        "app.kubernetes.io/name": "good-girl-gone-bad",
+                        "atomist.com/workspaceId": "AR14NN4",
+                    },
+                    name: "good-girl-gone-bad",
+                    namespace: "rihanna",
+                },
+            };
+            assert.deepStrictEqual(o, e);
+        });
+
+    });
+
+    describe("stringifyObject", () => {
+
+        it("should stringify a deployment", () => {
+            const d: DeepPartial<k8s.V1Deployment> = {
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    labels: {
+                        "app.kubernetes.io/name": "good-girl-gone-bad",
+                        "atomist.com/workspaceId": "AR14NN4",
+                    },
+                    name: "good-girl-gone-bad",
+                    namespace: "rihanna",
+                },
+                spec: {
+                    template: {
+                        spec: {
+                            containers: [
+                                {
+                                    image: "umbrella:4.36",
+                                },
+                            ],
+                        },
+                    },
+                },
+            };
+            const s = stringifyObject(d);
+            // tslint:disable-next-line:max-line-length
+            const e = `{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"labels":{"app.kubernetes.io/name":"good-girl-gone-bad","atomist.com/workspaceId":"AR14NN4"},"name":"good-girl-gone-bad","namespace":"rihanna"},"spec":{"template":{"spec":{"containers":[{"image":"umbrella:4.36"}]}}}}`;
+            assert(s === e);
+        });
+
+        it("should remove data values from a secret", () => {
+            const d: DeepPartial<k8s.V1Secret> = {
+                apiVersion: "v1",
+                data: {
+                    One: "VW1icmVsbGEgKGZlYXQuIEpheS1aKQ==",
+                    Two: "UHVzaCBVcCBvbiBNZQ==",
+                    Seven: "U2F5IEl0",
+                },
+                kind: "Secret",
+                metadata: {
+                    labels: {
+                        "app.kubernetes.io/name": "good-girl-gone-bad",
+                        "atomist.com/workspaceId": "AR14NN4",
+                    },
+                    name: "good-girl-gone-bad",
+                    namespace: "rihanna",
+                },
+            };
+            const s = stringifyObject(d);
+            // tslint:disable-next-line:max-line-length
+            const e = `{"apiVersion":"v1","data":{"One":"V******************************=","Two":"U******************=","Seven":"********"},"kind":"Secret","metadata":{"labels":{"app.kubernetes.io/name":"good-girl-gone-bad","atomist.com/workspaceId":"AR14NN4"},"name":"good-girl-gone-bad","namespace":"rihanna"}}`;
+            assert(s === e);
         });
 
     });

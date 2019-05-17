@@ -15,7 +15,6 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import * as stringify from "json-stringify-safe";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
@@ -25,6 +24,7 @@ import {
     specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
+import { stringifyObject } from "./resource";
 
 /**
  * Create or update a Kubernetes resource.  This implmentation uses
@@ -50,9 +50,9 @@ export async function applySpec(spec: K8sObject): Promise<K8sObjectResponse> {
         await client.read(spec);
     } catch (e) {
         logger.debug(`Failed to read resource ${slug}: ${errMsg(e)}`);
-        logger.debug(`Creating resource ${slug} using '${stringify(spec)}'`);
+        logger.info(`Creating resource ${slug} using '${stringifyObject(spec)}'`);
         return logRetry(() => client.create(spec), `create resource ${slug}`);
     }
-    logger.debug(`Patching resource ${slug} using '${stringify(spec)}'`);
+    logger.info(`Patching resource ${slug} using '${stringifyObject(spec)}'`);
     return logRetry(() => client.patch(spec), `patch resource ${slug}`);
 }

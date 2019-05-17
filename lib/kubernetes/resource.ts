@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+import * as k8s from "@kubernetes/client-node";
+import * as stringify from "json-stringify-safe";
+import * as _ from "lodash";
+import { DeepPartial } from "ts-essentials";
+import { maskString } from "../support/error";
 import { K8sObject } from "./api";
 import { appMetadata } from "./metadata";
 import { KubernetesDelete } from "./request";
@@ -74,13 +79,35 @@ export function k8sObject(spec: K8sObject): K8sObject {
         apiVersion: spec.apiVersion,
         kind: spec.kind,
         metadata: {
-            name: spec.metadata.name,
-            namespace: spec.metadata.namespace,
             labels: {
                 "app.kubernetes.io/name": spec.metadata.labels["app.kubernetes.io/name"],
                 "atomist.com/workspaceId": spec.metadata.labels["atomist.com/workspaceId"],
             },
+            name: spec.metadata.name,
+            namespace: spec.metadata.namespace,
         },
     };
     return ko;
+}
+
+/**
+ * Safely stringify a Kubernetes resource spec, removing any sensitive
+ * data.  The string returned is a compact representation, not pretty
+ * printed.
+ *
+ * @param spec Kubernetes spec to stringify
+ * @return String representation of spec with sensitive information removed
+ */
+export function stringifyObject(spec: K8sObject): string {
+    if (spec.kind === "Secret") {
+        const safeSpec: DeepPartial<k8s.V1Secret> = _.merge({}, spec);
+        if (safeSpec.data) {
+            for (const k of Object.keys(safeSpec.data)) {
+                safeSpec.data[k] = maskString(safeSpec.data[k]);
+            }
+        }
+        return stringify(safeSpec);
+    } else {
+        return stringify(spec);
+    }
 }

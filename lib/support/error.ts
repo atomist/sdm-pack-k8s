@@ -45,11 +45,21 @@ export function errMsg(e: any): string {
 function keyFilter<T>(key: string, value: T): T | string | undefined {
     if (/secret|token|password|jwt|url|secret|auth|key|cert|pass|user/i.test(key)) {
         if (typeof value === "string") {
-            const masked = (value.length < 16) ? "*".repeat(value.length) :
-                value.charAt(0) + "*".repeat(value.length - 2) + value.charAt(value.length - 1);
-            return masked;
+            return maskString(value);
         }
         return undefined;
     }
     return value;
+}
+
+/**
+ * Mask a string containing potentially sensitive information.
+ *
+ * @param raw String to mask
+ * @return Masked string
+ */
+export function maskString(raw: string): string {
+    const masked = (raw.length < 16) ? "*".repeat(raw.length) :
+        raw.charAt(0) + "*".repeat(raw.length - 2) + raw.charAt(raw.length - 1);
+    return masked;
 }

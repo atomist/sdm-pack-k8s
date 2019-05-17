@@ -24,6 +24,7 @@ import {
     specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
+import { stringifyObject } from "./resource";
 
 /**
  * Delete a resource if it exists.  If the resource does not exist,
@@ -49,5 +50,6 @@ export async function deleteSpec(spec: K8sObject): Promise<K8sDeleteResponse | u
         logger.debug(`Kubernetes resource ${slug} does not exist: ${errMsg(e)}`);
         return undefined;
     }
+    logger.info(`Deleting resource ${slug} using '${stringifyObject(spec)}'`);
     return logRetry(() => client.delete(spec), `delete resource ${slug}`);
 }

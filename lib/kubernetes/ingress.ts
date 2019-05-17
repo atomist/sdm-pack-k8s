@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
@@ -30,6 +29,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
+import { stringifyObject } from "./resource";
 
 /**
  * If `req.port` and `req.path` are truthy, create or patch an ingress
@@ -54,11 +54,11 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s
         await req.clients.ext.readNamespacedIngress(req.name, req.ns);
     } catch (e) {
         logger.debug(`Failed to read ingress ${slug}, creating: ${errMsg(e)}`);
-        logger.debug(`Creating ingress ${slug} using '${stringify(spec)}'`);
+        logger.info(`Creating ingress ${slug} using '${stringifyObject(spec)}'`);
         await logRetry(() => req.clients.ext.createNamespacedIngress(req.ns, spec), `create ingress ${slug}`);
         return spec;
     }
-    logger.debug(`Ingress ${slug} exists, patching using '${stringify(spec)}'`);
+    logger.info(`Ingress ${slug} exists, patching using '${stringifyObject(spec)}'`);
     await logRetry(() => req.clients.ext.patchNamespacedIngress(req.name, req.ns, spec), `patch ingress ${slug}`);
     return spec;
 }
@@ -80,6 +80,7 @@ export async function deleteIngress(req: KubernetesDeleteResourceRequest): Promi
         logger.debug(`Ingress ${slug} does not exist: ${errMsg(e)}`);
         return undefined;
     }
+    logger.info(`Deleting ingress ${slug}`);
     await logRetry(() => req.clients.ext.deleteNamespacedIngress(req.name, req.ns), `delete ingress ${slug}`);
     return ing;
 }

@@ -36,6 +36,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
+import { stringifyObject } from "./resource";
 
 /**
  * Create application secrets if they do not exist.  If a secret in
@@ -59,11 +60,12 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<k8s
             await req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
+            logger.info(`Creating secret ${slug} using '${stringifyObject(spec)}'`);
             await logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),
                 `create secret ${secretName} for ${slug}`);
             return spec;
         }
-        logger.debug(`Secret ${secretName} exists, patching`);
+        logger.info(`Secret ${secretName} exists, patching using '${stringifyObject(spec)}'`);
         await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, spec),
             `patch secret ${secretName} for ${slug}`);
         return spec;
@@ -93,6 +95,7 @@ export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promi
     }
     return Promise.all(secrets.items.map(async secret => {
         const secretName = `${req.ns}/${secret.metadata.name}`;
+        logger.info(`Deleting secret ${secretName}`);
         await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns),
             `delete secret ${secretName}`);
         return secret;

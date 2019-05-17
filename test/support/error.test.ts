@@ -15,7 +15,10 @@
  */
 
 import * as assert from "power-assert";
-import { errMsg } from "../../lib/support/error";
+import {
+    errMsg,
+    maskString,
+} from "../../lib/support/error";
 
 describe("support/error", () => {
 
@@ -144,6 +147,24 @@ describe("support/error", () => {
             assert(m === r);
         });
 
+        it("should safely stringify something without a message", () => {
+            const r = {
+                authentication: {
+                    header: "Saturday Nite",
+                },
+                blitzenTrapper: "Furr",
+                token: "Gold for Bread",
+                Key: "Love U",
+                passWords: ["War on Machines", "Lady on the Water"],
+                song: {
+                    JWT: "Echo/Always On/Easy Con",
+                },
+            };
+            const m = errMsg(r);
+            const e = `{"blitzenTrapper":"Furr","token":"**************","Key":"******","song":{"JWT":"E*********************n"}}`;
+            assert(m === e);
+        });
+
         it("should return the response.body.message", () => {
             const r = {
                 response: {
@@ -154,6 +175,29 @@ describe("support/error", () => {
             };
             const m = errMsg(r);
             assert(m === "Blitzen Trapper");
+        });
+
+    });
+
+    describe("maskString", () => {
+
+        it("should mask entire string", () => {
+            ["a", "abc", "abcde", "abcdef0", "abcdef012", "abcdef0123456", "abcdef012345678"].forEach(t => {
+                const m = maskString(t);
+                const e = "*".repeat(t.length);
+                assert(m === e);
+            });
+        });
+
+        it("should mask middle of string", () => {
+            [
+                { t: "abcdef0123456789", e: "a**************9" },
+                { t: "abcdef0123456789xyz", e: "a*****************z" },
+                { t: "Spaces should not be a problem.", e: "S*****************************." },
+            ].forEach(t => {
+                const m = maskString(t.t);
+                assert(m === t.e);
+            });
         });
 
     });

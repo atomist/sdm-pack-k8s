@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as stringify from "json-stringify-safe";
 import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
@@ -27,6 +26,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
+import { stringifyObject } from "./resource";
 
 export const defaultNamespace = "default";
 
@@ -44,11 +44,11 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<k
         logger.debug(`Namespace ${slug} exists`);
     } catch (e) {
         logger.debug(`Failed to get namespace ${slug}, creating: ${errMsg(e)}`);
-        logger.debug(`Creating namespace ${slug} using '${stringify(spec)}'`);
+        logger.info(`Creating namespace ${slug} using '${stringifyObject(spec)}'`);
         await logRetry(() => req.clients.core.createNamespace(spec), `create namespace ${slug}`);
         return spec;
     }
-    logger.debug(`Namespace ${slug} exists, patching using '${stringify(spec)}'`);
+    logger.info(`Namespace ${slug} exists, patching using '${stringifyObject(spec)}'`);
     await logRetry(() => req.clients.core.patchNamespace(req.ns, spec), `patch namespace ${slug}`);
     return spec;
 }

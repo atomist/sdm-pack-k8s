@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
@@ -30,6 +29,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
+import { stringifyObject } from "./resource";
 
 /**
  * Create or patch role or cluster rolebinding.
@@ -45,11 +45,12 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
             await req.clients.rbac.readClusterRoleBinding(req.name);
         } catch (e) {
             logger.debug(`Failed to read cluster role binding ${slug}, creating: ${errMsg(e)}`);
+            logger.info(`Creating cluster role binding ${slug} using '${stringifyObject(spec)}'`);
             await logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
                 `create cluster role binding ${slug}`);
             return spec;
         }
-        logger.debug(`Cluster role binding ${slug} exists, patching using '${stringify(spec)}'`);
+        logger.info(`Cluster role binding ${slug} exists, patching using '${stringifyObject(spec)}'`);
         await logRetry(() => req.clients.rbac.patchClusterRoleBinding(req.name, spec),
             `patch cluster role binding ${slug}`);
         return spec;
@@ -59,11 +60,12 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
             await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
         } catch (e) {
             logger.debug(`Failed to read role binding ${slug}, creating: ${errMsg(e)}`);
+            logger.info(`Creating role binding ${slug} using '${stringifyObject(spec)}'`);
             await logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),
                 `create role binding ${slug}`);
             return spec;
         }
-        logger.debug(`Role binding ${slug} exists, patching using '${stringify(spec)}'`);
+        logger.info(`Role binding ${slug} exists, patching using '${stringifyObject(spec)}'`);
         await logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, spec),
             `patch role binding ${slug}`);
         return spec;
@@ -87,6 +89,7 @@ export async function deleteRoleBinding(req: KubernetesDeleteResourceRequest): P
         logger.debug(`Role binding ${slug} does not exist: ${errMsg(e)}`);
     }
     if (roleBinding) {
+        logger.info(`Deleting role binding ${slug}`);
         await logRetry(() => req.clients.rbac.deleteNamespacedRoleBinding(req.name, req.ns), `delete role binding ${slug}`);
         return roleBinding;
     }
@@ -98,6 +101,7 @@ export async function deleteRoleBinding(req: KubernetesDeleteResourceRequest): P
         logger.debug(`Cluster role binding ${slug} does not exist: ${errMsg(e)}`);
     }
     if (roleBinding) {
+        logger.info(`Deleting cluster role binding ${slug}`);
         await logRetry(() => req.clients.rbac.deleteClusterRoleBinding(req.name, req.ns), `delete cluster role binding ${slug}`);
         return roleBinding;
     }
