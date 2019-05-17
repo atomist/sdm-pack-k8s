@@ -20,6 +20,7 @@ import {
     ProjectFile,
 } from "@atomist/automation-client";
 import {
+    fakeContext,
     ProjectLoadingParameters,
     StartupListener,
 } from "@atomist/sdm";
@@ -41,20 +42,28 @@ import { queryForScmProvider } from "./repo";
  * the sdm.k8s.options.sync.repo property with a RemoteRepoRef for
  * that repo.  If this is the master, run [[initialSync]].
  */
-export const syncRepoStartupListener: StartupListener = async context => {
+export const syncRepoStartupListener: StartupListener = async ctx => {
     if (isInLocalMode()) {
         return;
     }
-    const sdm = context.sdm;
+    const sdm = ctx.sdm;
     if (!await queryForScmProvider(sdm)) {
         return;
     }
     if (!cluster.isMaster) {
         return;
     }
+    const disposers: Array<() => Promise<void>> = [];
+    const workspaceId: string = _.get(sdm, "configuration.workspaceIds[0]");
+    const context = fakeContext(workspaceId);
+    context.lifecycle = {
+        dispose: async () => { await Promise.all(disposers.map(d => d())); },
+        registerDisposable: (d: () => Promise<void>) => { disposers.push(d); },
+    };
     const projectLoadingParameters: ProjectLoadingParameters = {
         credentials: sdm.configuration.sdm.k8s.options.sync.credentials,
         cloneOptions,
+        context,
         id: sdm.configuration.sdm.k8s.options.sync.repo,
         readOnly: true,
     };
@@ -64,6 +73,12 @@ export const syncRepoStartupListener: StartupListener = async context => {
     } catch (e) {
         e.message = `Failed to perform inital sync using repo ${opts.repo.owner}/${opts.repo.repo}: ${e.message}`;
         logger.error(e.message);
+    } finally {
+        try {
+            await context.lifecycle.dispose();
+        } catch (e) {
+            logger.warn(`Failed to clean up startup sync repo: ${e.message}`);
+        }
     }
     return;
 };
