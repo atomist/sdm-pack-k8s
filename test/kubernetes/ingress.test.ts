@@ -15,7 +15,11 @@
  */
 
 import * as assert from "power-assert";
-import { ingressTemplate } from "../../lib/kubernetes/ingress";
+import {
+    ingressTemplate,
+    upsertIngress,
+} from "../../lib/kubernetes/ingress";
+import { KubernetesResourceRequest } from "../../lib/kubernetes/request";
 
 describe("kubernetes/ingress", () => {
 
@@ -37,6 +41,7 @@ describe("kubernetes/ingress", () => {
                 kind: "Ingress",
                 metadata: {
                     name: "cloudbusting",
+                    namespace: "hounds-of-love",
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -90,6 +95,7 @@ describe("kubernetes/ingress", () => {
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                     name: "cloudbusting",
+                    namespace: "hounds-of-love",
                 },
                 spec: {
                     rules: [
@@ -164,6 +170,7 @@ describe("kubernetes/ingress", () => {
                         "atomist.com/workspaceId": r.workspaceId,
                     },
                     name: "cloudbusting",
+                    namespace: "hounds-of-love",
                 },
                 spec: {
                     rules: [
@@ -193,6 +200,91 @@ describe("kubernetes/ingress", () => {
                 },
             };
             assert.deepStrictEqual(s, e);
+        });
+
+        it("should correct API version and kind in provided spec", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                path: "/bush/kate/hounds-of-love/cloudbusting",
+                host: "emi.com",
+                protocol: "https" as "https",
+                sdmFulfiller: "EMI",
+                tlsSecret: "emi-com",
+                ingressSpec: {
+                    apiVersion: "v1",
+                    kind: "Egress",
+                } as any,
+            };
+            const s = await ingressTemplate(r);
+            const e = {
+                apiVersion: "extensions/v1beta1",
+                kind: "Ingress",
+                metadata: {
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                    name: "cloudbusting",
+                    namespace: "hounds-of-love",
+                },
+                spec: {
+                    rules: [
+                        {
+                            host: r.host,
+                            http: {
+                                paths: [
+                                    {
+                                        backend: {
+                                            serviceName: r.name,
+                                            servicePort: "http",
+                                        },
+                                        path: r.path,
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                    tls: [
+                        {
+                            hosts: [
+                                "emi.com",
+                            ],
+                            secretName: "emi-com",
+                        },
+                    ],
+                },
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+    });
+
+    describe("upsertIngress", () => {
+
+        it("should not do anything if port is not defined", async () => {
+            const a: KubernetesResourceRequest = {
+                name: "brotherhood",
+                ns: "new-order",
+                path: "blue-monday",
+            } as any;
+            const i = await upsertIngress(a);
+            assert(i === undefined);
+        });
+
+        it("should not do anything if path is not defined", async () => {
+            const a: KubernetesResourceRequest = {
+                name: "brotherhood",
+                ns: "new-order",
+                port: 1986,
+            } as any;
+            const i = await upsertIngress(a);
+            assert(i === undefined);
         });
 
     });

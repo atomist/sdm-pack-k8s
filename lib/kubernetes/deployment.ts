@@ -19,7 +19,6 @@ import {
     webhookBaseUrl,
 } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
@@ -38,20 +37,15 @@ import {
     KubernetesSdm,
 } from "./request";
 
-export interface UpsertDeploymentResponse {
-    response: http.IncomingMessage;
-    body: k8s.V1Deployment;
-}
-
 /**
  * Create or update a deployment for a Kubernetes application.  Any
  * provided `req.deploymentSpec` is merged using
  * [[deploymentTemplate]] before creating/patching.
  *
  * @param req Kuberenetes application request
- * @return response from the Kubernetes API.
+ * @return Kubernetes spec used to create/update resource
  */
-export async function upsertDeployment(req: KubernetesResourceRequest): Promise<UpsertDeploymentResponse> {
+export async function upsertDeployment(req: KubernetesResourceRequest): Promise<k8s.V1Deployment> {
     const slug = appName(req);
     const spec = await deploymentTemplate(req);
     try {
@@ -59,32 +53,36 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
     } catch (e) {
         logger.debug(`Failed to read deployment ${slug}, creating: ${errMsg(e)}`);
         logger.debug(`Creating deployment ${slug} using '${stringify(spec)}'`);
-        return logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, spec),
+        await logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, spec),
             `create deployment ${slug}`);
+        return spec;
     }
     logger.debug(`Updating deployment ${slug} using '${stringify(spec)}'`);
-    return logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec),
-        `patch deployment ${slug}`);
+    await logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec), `patch deployment ${slug}`);
+    return spec;
 }
 
 /**
  * Delete a deployment if it exists.  If the resource does not exist,
  * do nothing.
  *
- * @param req Kuberenetes delete request
+ * @param req Kuberenetes application delete request
+ * @return deleted object or undefined if resource does not exist
  */
-export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Promise<void> {
+export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Deployment | undefined> {
     const slug = appName(req);
+    let dep: k8s.V1Deployment;
     try {
-        await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
+        const resp = await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
+        dep = resp.body;
     } catch (e) {
         logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
-        return;
+        return undefined;
     }
-    const body: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
-    await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, "", body),
+    const opts: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
+    await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, undefined, opts),
         `delete deployment ${slug}`);
-    return;
+    return dep;
 }
 
 /**
@@ -103,6 +101,7 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
     const matchers = matchLabels(req);
     const metadata = metadataTemplate({
         name: req.name,
+        namespace: req.ns,
         labels,
     });
     const podMetadata = metadataTemplate({
@@ -115,10 +114,12 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
     const selector: k8s.V1LabelSelector = {
         matchLabels: matchers,
     } as any;
+    const apiVersion = "apps/v1";
+    const kind = "Deployment";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
     const d: DeepPartial<k8s.V1Deployment> = {
-        apiVersion: "apps/v1",
-        kind: "Deployment",
+        apiVersion,
+        kind,
         metadata,
         spec: {
             replicas: (req.replicas || req.replicas === 0) ? req.replicas : 1,
@@ -183,7 +184,7 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
         d.spec.template.spec.serviceAccountName = _.get(req, "serviceAccountSpec.metadata.name", req.name);
     }
     if (req.deploymentSpec) {
-        _.merge(d, req.deploymentSpec);
+        _.merge(d, req.deploymentSpec, { apiVersion, kind });
     }
     return d as k8s.V1Deployment;
 }

@@ -17,7 +17,9 @@
 import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
 import {
+    decryptSecret,
     encodeSecret,
+    encryptSecret,
     secretTemplate,
 } from "../../lib/kubernetes/secret";
 
@@ -52,7 +54,58 @@ describe("kubernetes/secret", () => {
                 kind: "Secret",
                 type: "Opaque",
                 metadata: {
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "app.kubernetes.io/component": "secret",
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
                     name: p.metadata.name,
+                    namespace: "hounds-of-love",
+                },
+                data: {
+                    piano: "S2F0ZSBCdXNo",
+                    guitar: "QWxhbiBNdXJwaHk=",
+                    bass: "RGVsIFBhbG1lciwgTWFydGluIEdsb3ZlciwgRWJlcmhhcmQgV2ViZXI=",
+                    drums: "U3R1YXJ0IEVsbGlvdHQgJiBDaGFybGllIE1vcmdhbg==",
+                    strings: "VGhlIE1lZGljaSBTZXh0ZXQ=",
+                },
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should fix incorrect API version and kind", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                port: 5510,
+                sdmFulfiller: "EMI",
+            };
+            const p: k8s.V1Secret = {
+                apiVersion: "apps/v1",
+                kind: "Secrit",
+                metadata: {
+                    name: "musicians",
+                },
+                data: {
+                    piano: "S2F0ZSBCdXNo",
+                    guitar: "QWxhbiBNdXJwaHk=",
+                    bass: "RGVsIFBhbG1lciwgTWFydGluIEdsb3ZlciwgRWJlcmhhcmQgV2ViZXI=",
+                    drums: "U3R1YXJ0IEVsbGlvdHQgJiBDaGFybGllIE1vcmdhbg==",
+                    strings: "VGhlIE1lZGljaSBTZXh0ZXQ=",
+                },
+            } as any;
+            const s = await secretTemplate(r, p);
+            const e = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: p.metadata.name,
+                    namespace: "hounds-of-love",
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -111,7 +164,6 @@ describe("kubernetes/secret", () => {
                         "studio-album": "5",
                         "studios": `["Wickham Farm Home Studio", "Windmill Lane Studios", "Abbey Road Studios"]`,
                     },
-                    name: p.metadata.name,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -120,6 +172,8 @@ describe("kubernetes/secret", () => {
                         "app.kubernetes.io/version": "1.2.3",
                         "atomist.com/workspaceId": r.workspaceId,
                     },
+                    name: p.metadata.name,
+                    namespace: "hounds-of-love",
                 },
                 data: {
                     piano: "S2F0ZSBCdXNo",
@@ -189,6 +243,82 @@ describe("kubernetes/secret", () => {
                 data: {},
             };
             assert.deepStrictEqual(k, e);
+        });
+
+    });
+
+    describe("encryptSecret", () => {
+
+        it("should encrypt secret data values", async () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "TmV2ZXJtaW5k",
+                    beck: "TWVsbG93IEdvbGQ=",
+                    nin: "UHJldHR5IEhhdGUgTWFjaGluZQ==",
+                },
+            };
+            const k = "Th1$W@yC0m3$";
+            const v = await encryptSecret(s, k);
+            const e = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "X4A0XdndoNRpP35GefUBeg==",
+                    beck: "regxucYRQO/1tGXOqlZVi+C78DhYlA7l20vFwWLluFE=",
+                    nin: "ap4QA+G47q6tr2JNrvxV2CW6rtHhMNzI8+a78BZ5cT0=",
+                },
+            };
+            assert.deepStrictEqual(v, e);
+        });
+
+    });
+
+    describe("decryptSecret", () => {
+
+        it("should decrypt secret data values", async () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "X4A0XdndoNRpP35GefUBeg==",
+                    beck: "regxucYRQO/1tGXOqlZVi+C78DhYlA7l20vFwWLluFE=",
+                    nin: "ap4QA+G47q6tr2JNrvxV2CW6rtHhMNzI8+a78BZ5cT0=",
+                },
+            };
+            const k = "Th1$W@yC0m3$";
+            const v = await decryptSecret(s, k);
+            const e = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "TmV2ZXJtaW5k",
+                    beck: "TWVsbG93IEdvbGQ=",
+                    nin: "UHJldHR5IEhhdGUgTWFjaGluZQ==",
+                },
+            };
+            assert.deepStrictEqual(v, e);
         });
 
     });

@@ -36,6 +36,7 @@ describe("kubernetes/deployment", () => {
             const d = await deploymentTemplate(r);
             assert(d.kind === "Deployment");
             assert(d.metadata.name === r.name);
+            assert(d.metadata.namespace === r.ns);
             assert(d.metadata.labels["app.kubernetes.io/managed-by"] === r.sdmFulfiller);
             assert(d.metadata.labels["app.kubernetes.io/name"] === r.name);
             assert(d.metadata.labels["app.kubernetes.io/part-of"] === r.name);
@@ -108,6 +109,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -207,6 +209,123 @@ describe("kubernetes/deployment", () => {
             assert.deepStrictEqual(d, e);
         });
 
+        it("should fix API version and kind in provided spec", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                imagePullSecret: "comfort",
+                port: 5510,
+                sdmFulfiller: "EMI",
+                deploymentSpec: {
+                    apiVersion: "extensions/v1beta1",
+                    kind: "Deploy",
+                },
+                replicas: 12,
+            };
+            const d = await deploymentTemplate(r);
+            const e = {
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    name: r.name,
+                    namespace: r.ns,
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                spec: {
+                    replicas: 12,
+                    selector: {
+                        matchLabels: {
+                            "app.kubernetes.io/name": r.name,
+                            "atomist.com/workspaceId": r.workspaceId,
+                        },
+                    },
+                    template: {
+                        metadata: {
+                            name: r.name,
+                            labels: {
+                                "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                                "app.kubernetes.io/name": r.name,
+                                "app.kubernetes.io/part-of": r.name,
+                                "atomist.com/workspaceId": r.workspaceId,
+                            },
+                            annotations: {
+                                "atomist.com/k8vent": `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                            },
+                        },
+                        spec: {
+                            containers: [
+                                {
+                                    name: r.name,
+                                    image: r.image,
+                                    resources: {
+                                        limits: {
+                                            cpu: "1000m",
+                                            memory: "384Mi",
+                                        },
+                                        requests: {
+                                            cpu: "100m",
+                                            memory: "320Mi",
+                                        },
+                                    },
+                                    readinessProbe: {
+                                        httpGet: {
+                                            path: "/",
+                                            port: "http",
+                                            scheme: "HTTP",
+                                        },
+                                        initialDelaySeconds: 30,
+                                        timeoutSeconds: 3,
+                                        periodSeconds: 10,
+                                        successThreshold: 1,
+                                        failureThreshold: 3,
+                                    },
+                                    livenessProbe: {
+                                        httpGet: {
+                                            path: "/",
+                                            port: "http",
+                                            scheme: "HTTP",
+                                        },
+                                        initialDelaySeconds: 30,
+                                        timeoutSeconds: 3,
+                                        periodSeconds: 10,
+                                        successThreshold: 1,
+                                        failureThreshold: 3,
+                                    },
+                                    ports: [
+                                        {
+                                            name: "http",
+                                            containerPort: r.port,
+                                            protocol: "TCP",
+                                        },
+                                    ],
+                                },
+                            ],
+                            imagePullSecrets: [
+                                {
+                                    name: r.imagePullSecret,
+                                },
+                            ],
+                        },
+                    },
+                    strategy: {
+                        type: "RollingUpdate",
+                        rollingUpdate: {
+                            maxUnavailable: 0,
+                            maxSurge: 1,
+                        },
+                    },
+                },
+            };
+            assert.deepStrictEqual(d, e);
+        });
+
         it("should create a deployment spec with zero replicas", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
@@ -224,6 +343,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -334,6 +454,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -408,6 +529,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
@@ -496,6 +618,7 @@ describe("kubernetes/deployment", () => {
                 kind: "Deployment",
                 metadata: {
                     name: r.name,
+                    namespace: r.ns,
                     labels: {
                         "app.kubernetes.io/managed-by": r.sdmFulfiller,
                         "app.kubernetes.io/name": r.name,
