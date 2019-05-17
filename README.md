@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://images.atomist.com/sdm/SDM-Logo-Dark.png">
-</p>
-
 # @atomist/sdm-pack-k8s
 
 [![atomist sdm goals](http://badge.atomist.com/T29E48P34/atomist/sdm-pack-k8/36919e92-7d10-4e4c-87b7-a0fd58bca349)](https://app.atomist.com/workspace/T29E48P34)
