@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 -   Add sync-changes-to-repo mode. [#50](https://github.com/atomist/sdm-pack-k8s/issues/50)
 
+### Fixed
+
+-   Ensure resource spec has right API group and version. [#36](https://github.com/atomist/sdm-pack-k8s/issues/36)
+
 ## [1.4.2](https://github.com/atomist/sdm-pack-k8s/compare/1.4.1...1.4.2) - 2019-04-17
 
 ### Added
