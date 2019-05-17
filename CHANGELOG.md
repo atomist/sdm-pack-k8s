@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 -   Ensure resource spec has right API group and version. [#36](https://github.com/atomist/sdm-pack-k8s/issues/36)
+-   Do not create ingress if service is not created. [#46](https://github.com/atomist/sdm-pack-k8s/issues/46)
 
 ## [1.4.2](https://github.com/atomist/sdm-pack-k8s/compare/1.4.1...1.4.2) - 2019-04-17
 
