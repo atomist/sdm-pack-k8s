@@ -205,7 +205,7 @@ export async function specFile(resource: K8sObject, p: Project): Promise<string>
     const specExt = ".json";
     let specPath = specRoot + specExt;
     while (await p.getFile(specPath)) {
-        specPath = specRoot + "-" + guid().split("-")[0] + specExt;
+        specPath = specRoot + "_" + guid().split("-")[0] + specExt;
     }
     return specPath;
 }
@@ -255,9 +255,9 @@ export function specFileBasename(resource: K8sObject): string {
             prefix = "90";
             break;
     }
-    const ns = (resource.metadata.namespace) ? `${resource.metadata.namespace}-` : "";
+    const ns = (resource.metadata.namespace) ? `${resource.metadata.namespace}_` : "";
     const kebabKind = resource.kind.replace(/([a-z])([A-Z])/g, "$1-$2");
-    return `${prefix}-${ns}${resource.metadata.name}-${kebabKind}`.toLowerCase();
+    return `${prefix}_${ns}${resource.metadata.name}_${kebabKind}`.toLowerCase();
 }
 
 /**

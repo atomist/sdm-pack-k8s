@@ -199,7 +199,7 @@ describe("sync/application", () => {
                 },
             };
             const s = specFileBasename(o);
-            assert(s === "10-lyle-namespace");
+            assert(s === "10_lyle_namespace");
         });
 
         it("should create a simple namespaced file name", () => {
@@ -219,7 +219,7 @@ describe("sync/application", () => {
                     },
                 };
                 const s = specFileBasename(o);
-                const e = r.p + "-lovett-lyle-" + r.k.toLowerCase();
+                const e = r.p + "_lovett_lyle_" + r.k.toLowerCase();
                 assert(s === e);
             });
         });
@@ -238,7 +238,7 @@ describe("sync/application", () => {
                     },
                 };
                 const s = specFileBasename(o);
-                const e = r.p + "-lovett-lyle-" + r.l;
+                const e = r.p + "_lovett_lyle_" + r.l;
                 assert(s === e);
             });
         });
@@ -256,7 +256,7 @@ describe("sync/application", () => {
                     },
                 };
                 const s = specFileBasename(o);
-                const e = r.p + "-lyle-" + r.l;
+                const e = r.p + "_lyle_" + r.l;
                 assert(s === e);
             });
         });
@@ -330,11 +330,11 @@ describe("sync/application", () => {
             assert(commitMessage === eCommitMessage);
             assert(pushed, "commit was not pushed");
             assert(await p.totalFileCount() === 4);
-            assert(p.fileExistsSync("70-black-angel-tonina-deployment.json"));
-            assert(p.fileExistsSync("50-black-angel-tonina-service.json"));
-            assert(p.fileExistsSync("20-black-angel-tonina-service-account.json"));
-            assert(p.fileExistsSync("60-black-angel-tonina-secret.json"));
-            const d = await (await p.getFile("70-black-angel-tonina-deployment.json")).getContent();
+            assert(p.fileExistsSync("70_black-angel_tonina_deployment.json"));
+            assert(p.fileExistsSync("50_black-angel_tonina_service.json"));
+            assert(p.fileExistsSync("20_black-angel_tonina_service-account.json"));
+            assert(p.fileExistsSync("60_black-angel_tonina_secret.json"));
+            const d = await (await p.getFile("70_black-angel_tonina_deployment.json")).getContent();
             const de = `{
   "apiVersion": "apps/v1",
   "kind": "Deployment",
@@ -345,7 +345,7 @@ describe("sync/application", () => {
 }
 `;
             assert(d === de);
-            const s = await (await p.getFile("60-black-angel-tonina-secret.json")).getContent();
+            const s = await (await p.getFile("60_black-angel_tonina_secret.json")).getContent();
             const se = `{
   "apiVersion": "v1",
   "data": {
@@ -379,9 +379,9 @@ metadata:
   namespace: black-angel
 `;
             const p: GitProject = InMemoryProject.of(
-                { path: "70-black-angel-tonina-deployment.json", content: depJson },
-                { path: "50-black-angel-tonina-service.json", content: "{}\n" },
-                { path: "19-black-angel-tonina-service-acct.yaml", content: saYaml },
+                { path: "70_black-angel_tonina_deployment.json", content: depJson },
+                { path: "50_black-angel_tonina_service.json", content: "{}\n" },
+                { path: "19+black-angel+tonina+service-acct.yaml", content: saYaml },
             ) as any;
             p.isClean = async () => false;
             let commitMessage: string;
@@ -461,25 +461,27 @@ metadata:
             assert(commitMessage === eCommitMessage);
             assert(pushed, "commit was not pushed");
             assert(await p.totalFileCount() === 6);
-            assert(p.fileExistsSync("70-black-angel-tonina-deployment.json"));
-            assert(p.fileExistsSync("50-black-angel-tonina-service.json"));
-            assert(p.fileExistsSync("80-black-angel-tonina-ingress.json"));
-            assert(p.fileExistsSync("19-black-angel-tonina-service-acct.yaml"));
-            const dep = JSON.parse(await p.getFile("70-black-angel-tonina-deployment.json").then(f => f.getContent()));
+            assert(p.fileExistsSync("70_black-angel_tonina_deployment.json"));
+            assert(p.fileExistsSync("50_black-angel_tonina_service.json"));
+            assert(p.fileExistsSync("80_black-angel_tonina_ingress.json"));
+            assert(p.fileExistsSync("19+black-angel+tonina+service-acct.yaml"));
+            const dep = JSON.parse(await p.getFile("70_black-angel_tonina_deployment.json").then(f => f.getContent()));
             assert.deepStrictEqual(dep, rs[0]);
-            const sa = await p.getFile("19-black-angel-tonina-service-acct.yaml").then(f => f.getContent());
+            const s = await p.getFile("50_black-angel_tonina_service.json").then(f => f.getContent());
+            assert(s === "{}\n");
+            const sa = await p.getFile("19+black-angel+tonina+service-acct.yaml").then(f => f.getContent());
             assert(sa === yaml.safeDump(rs[3], { sortKeys: true }));
             let foundServiceSpec = false;
             await projectUtils.doWithFiles(p, k8sSpecGlob, async f => {
-                if (/^50-black-angel-tonina-service-[a-f0-9]+\.json$/.test(f.path)) {
+                if (/^50_black-angel_tonina_service_[a-f0-9]+\.json$/.test(f.path)) {
                     const c = await f.getContent();
-                    const s = JSON.parse(c);
-                    assert.deepStrictEqual(s, rs[1]);
+                    const sv = JSON.parse(c);
+                    assert.deepStrictEqual(sv, rs[1]);
                     foundServiceSpec = true;
                 }
             });
             assert(foundServiceSpec, "failed to find new service spec");
-            const sec = JSON.parse(await p.getFile("60-black-angel-tonina-secret.json").then(f => f.getContent()));
+            const sec = JSON.parse(await p.getFile("60_black-angel_tonina_secret.json").then(f => f.getContent()));
             const sece = {
                 apiVersion: "v1",
                 kind: "Secret",
@@ -520,7 +522,7 @@ metadata:
                 },
             });
             const p: GitProject = InMemoryProject.of(
-                { path: "black-angel-tonina-deployment.json", content: depJson },
+                { path: "black-angel~tonina~deployment.json", content: depJson },
                 { path: "black-angel-tonina-service.json", content: "{}\n" },
                 { path: "black-angel-tonina-service-acct.yaml", content: saYaml },
                 { path: "black-angel-tonina-svc.json", content: svcJson },
@@ -589,7 +591,7 @@ metadata:
             assert(commitMessage === eCommitMessage);
             assert(pushed, "commit was not pushed");
             assert(await p.totalFileCount() === 1);
-            assert(!p.fileExistsSync("black-angel-tonina-deployment.json"));
+            assert(!p.fileExistsSync("black-angel~tonina~deployment.json"));
             assert(p.fileExistsSync("black-angel-tonina-service.json"));
             assert(!p.fileExistsSync("black-angel-tonina-ingress.json"));
             assert(!p.fileExistsSync("black-angel-tonina-service-acct.yaml"));
