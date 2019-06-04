@@ -86,18 +86,23 @@ export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<
     const slug = appName(req);
     const deleted: RbacResources = {};
     const errs: Error[] = [];
-    const rbacDeleters = [
-        { key: "roleBinding", del: deleteRoleBinding },
-        { key: "role", del: deleteRole },
-        { key: "serviceAccount", del: deleteServiceAccount },
-    ];
-    for (const deleter of rbacDeleters) {
-        try {
-            deleted[deleter.key as keyof RbacResources] = await deleter.del(req);
-        } catch (e) {
-            e.message = `Failed to delete ${deleter.key}: ${errMsg(e)}`;
-            errs.push(e);
-        }
+    try {
+        deleted.roleBinding = await deleteRoleBinding(req);
+    } catch (e) {
+        e.message = `Failed to delete role binding: ${errMsg(e)}`;
+        errs.push(e);
+    }
+    try {
+        deleted.role = await deleteRole(req);
+    } catch (e) {
+        e.message = `Failed to delete role: ${errMsg(e)}`;
+        errs.push(e);
+    }
+    try {
+        deleted.serviceAccount = await deleteServiceAccount(req);
+    } catch (e) {
+        e.message = `Failed to delete service account: ${errMsg(e)}`;
+        errs.push(e);
     }
     if (errs.length > 0) {
         const msg = `Failed to delete RBAC resource(s) for ${slug}': ${errs.map(e => e.message).join("; ")}`;
