@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.5.0...HEAD)
 
+### Changed
+
+-   Update dependencies and fix compilation.  [839d110](https://github.com/atomist/sdm-pack-k8s/commit/839d110140ff0eba24814a8300453b17b8df9c10)
+
 ## [1.5.0](https://github.com/atomist/sdm-pack-k8s/compare/1.4.2...1.5.0) - 2019-05-21
 
 ### Added
