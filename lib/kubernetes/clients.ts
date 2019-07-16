@@ -40,7 +40,7 @@ async function patchWithHeaders(api: any, patcher: any, args: any[]) {
     return returnValue;
 }
 
-class Core_v1Api_Patch extends k8s.Core_v1Api {
+class CoreV1ApiPatch extends k8s.CoreV1Api {
     patchNamespace(...args: any[]) {
         return patchWithHeaders(this, super.patchNamespace, args);
     }
@@ -55,19 +55,19 @@ class Core_v1Api_Patch extends k8s.Core_v1Api {
     }
 }
 
-class Apps_v1Api_Patch extends k8s.Apps_v1Api {
+class AppsV1ApiPatch extends k8s.AppsV1Api {
     patchNamespacedDeployment(...args: any[]) {
         return patchWithHeaders(this, super.patchNamespacedDeployment, args);
     }
 }
 
-class Extensions_v1beta1Api_Patch extends k8s.Extensions_v1beta1Api {
+class ExtensionsV1beta1ApiPatch extends k8s.ExtensionsV1beta1Api {
     patchNamespacedIngress(...args: any[]) {
         return patchWithHeaders(this, super.patchNamespacedIngress, args);
     }
 }
 
-class RbacAuthorization_v1Api_Patch extends k8s.RbacAuthorization_v1Api {
+class RbacAuthorizationV1ApiPatch extends k8s.RbacAuthorizationV1Api {
     patchClusterRole(...args: any[]) {
         return patchWithHeaders(this, super.patchClusterRole, args);
     }
@@ -89,26 +89,26 @@ class RbacAuthorization_v1Api_Patch extends k8s.RbacAuthorization_v1Api {
  */
 export interface KubernetesClients {
     /** Kubernetes Core client */
-    core: k8s.Core_v1Api;
+    core: k8s.CoreV1Api;
     /** Kubernetes Apps client, GA in Kubernetes 1.9 */
-    apps: k8s.Apps_v1Api;
+    apps: k8s.AppsV1Api;
     /** Kubernetes Extension client */
-    ext: k8s.Extensions_v1beta1Api;
+    ext: k8s.ExtensionsV1beta1Api;
     /** Kubernetes RBAC client, GA in Kubernetes 1.8 */
-    rbac: k8s.RbacAuthorization_v1Api;
+    rbac: k8s.RbacAuthorizationV1Api;
 }
 
 /**
  * Create the KubernetesClients structure.
  */
 export function makeApiClients(kc: k8s.KubeConfig): KubernetesClients {
-    // const core = kc.makeApiClient(k8s.Core_v1Api);
-    // const apps = kc.makeApiClient(k8s.Apps_v1Api);
-    // const rbac = kc.makeApiClient(k8s.RbacAuthorization_v1Api);
-    // const ext = kc.makeApiClient(k8s.Extensions_v1beta1Api);
-    const core = kc.makeApiClient(Core_v1Api_Patch);
-    const apps = kc.makeApiClient(Apps_v1Api_Patch);
-    const rbac = kc.makeApiClient(RbacAuthorization_v1Api_Patch);
-    const ext = kc.makeApiClient(Extensions_v1beta1Api_Patch);
+    // const core = kc.makeApiClient(k8s.CoreV1Api);
+    // const apps = kc.makeApiClient(k8s.AppsV1Api);
+    // const rbac = kc.makeApiClient(k8s.RbacAuthorizationV1Api);
+    // const ext = kc.makeApiClient(k8s.ExtensionsV1beta1Api);
+    const core = kc.makeApiClient(CoreV1ApiPatch);
+    const apps = kc.makeApiClient(AppsV1ApiPatch);
+    const rbac = kc.makeApiClient(RbacAuthorizationV1ApiPatch);
+    const ext = kc.makeApiClient(ExtensionsV1beta1ApiPatch);
     return { core, apps, rbac, ext };
 }

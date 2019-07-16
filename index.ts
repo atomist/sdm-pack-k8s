@@ -25,6 +25,12 @@ export {
     k8sSupport,
 } from "./lib/k8s";
 export {
+    kubernetesFetch,
+    KubernetesFetchOptions,
+    KubernetesResourceKind,
+    KubernetesResourceSelector,
+} from "./lib/kubernetes/fetch";
+export {
     KubernetesApplication,
     KubernetesDelete,
 } from "./lib/kubernetes/request";

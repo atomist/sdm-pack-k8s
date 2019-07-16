@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import * as k8s from "@kubernetes/client-node";
+import { DeepPartial } from "ts-essentials";
+import { K8sObject } from "./api";
 import { KubernetesResourceRequest } from "./request";
 
 /**
@@ -84,4 +87,60 @@ export function applicationLabels(req: ApplicationLabelInput): { [key: string]: 
         labels["app.kubernetes.io/version"] = req.version;
     }
     return labels;
+}
+
+/**
+ * Determine if labels match selector.  If the selector contains no
+ * label selector, it is considered a match.  If the the matchLabels
+ * contain no properties, it is considered matching.  If the
+ * matchExpressions array is empty, it is considered matching.
+ *
+ * @param spec Kubernetes object spec
+ * @param selector Kubernetes label selector
+ * @return Return `true` if it is a match, `false` otherwise
+ */
+export function labelMatch(spec: K8sObject, selector?: DeepPartial<k8s.V1LabelSelector>): boolean {
+    if (!selector) {
+        return true;
+    }
+    if (!spec.metadata || !spec.metadata.labels) {
+        return false;
+    }
+    if (selector.matchLabels) {
+        for (const label of Object.keys(selector.matchLabels)) {
+            if (!spec.metadata.labels.hasOwnProperty(label) || spec.metadata.labels[label] !== selector.matchLabels[label]) {
+                return false;
+            }
+        }
+    }
+    if (selector.matchExpressions) {
+        for (const expr of selector.matchExpressions) {
+            switch (expr.operator) {
+                case "Exists":
+                    if (!spec.metadata.labels.hasOwnProperty(expr.key)) {
+                        return false;
+                    }
+                    break;
+                case "DoesNotExist":
+                    if (spec.metadata.labels.hasOwnProperty(expr.key)) {
+                        return false;
+                    }
+                    break;
+                case "In":
+                    if (!spec.metadata.labels.hasOwnProperty(expr.key) || !expr.values.includes(spec.metadata.labels[expr.key])) {
+                        return false;
+                    }
+                    break;
+                case "NotIn":
+                    if (spec.metadata.labels.hasOwnProperty(expr.key) && expr.values.includes(spec.metadata.labels[expr.key])) {
+                        return false;
+                    }
+                    break;
+                default:
+                    throw new Error(`Unsupported match expression operator: ${expr.operator}`);
+                    break;
+            }
+        }
+    }
+    return true;
 }

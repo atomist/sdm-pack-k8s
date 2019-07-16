@@ -17,6 +17,7 @@
 import * as assert from "power-assert";
 import {
     defaultValidName,
+    nameMatch,
     validName,
 } from "../../lib/kubernetes/name";
 
@@ -63,6 +64,52 @@ describe("kubernetes/name", () => {
             assert(validation.test(v));
             const e = "a23456789112345678921234567893-234567894123456789512345678961";
             assert(v === e);
+        });
+
+    });
+
+    describe("nameMatch", () => {
+
+        it("should match a string", () => {
+            const v = "sicilian-crest";
+            const m = "sicilian-crest";
+            assert(nameMatch(v, m));
+        });
+
+        it("should match a regular expression", () => {
+            const v = "sicilian-crest";
+            const m = /cilian-cr/;
+            assert(nameMatch(v, m));
+        });
+
+        it("should not match a string", () => {
+            const v = "sicilian-crest";
+            const m = "sicilian-crust";
+            assert(!nameMatch(v, m));
+        });
+
+        it("should not match a regular expression", () => {
+            const v = "sicilian-crest";
+            const m = /cilain-cr/;
+            assert(!nameMatch(v, m));
+        });
+
+        it("should throw an error if matcher is neither a string nor regular expression", () => {
+            const v = "sicilian-crest";
+            const m: any = 2019;
+            assert.throws(() => nameMatch(v, m), /Provided matcher is neither a string or RegExp: /);
+        });
+
+        it("should match an empty string", () => {
+            const v = "";
+            const m = "";
+            assert(nameMatch(v, m));
+        });
+
+        it("should match when no matcher", () => {
+            const v = "sicilian-crest";
+            assert(nameMatch(v));
+            assert(nameMatch(v, undefined));
         });
 
     });
