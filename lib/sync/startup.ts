@@ -27,7 +27,7 @@ import {
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as cluster from "cluster";
 import * as _ from "lodash";
-import { SyncOptions } from "../config";
+import { KubernetesSyncOptions } from "../config";
 import { parseKubernetesSpecFile } from "../deploy/spec";
 import { applySpec } from "../kubernetes/apply";
 import { decryptSecret } from "../kubernetes/secret";
@@ -67,7 +67,7 @@ export const syncRepoStartupListener: StartupListener = async ctx => {
         id: sdm.configuration.sdm.k8s.options.sync.repo,
         readOnly: true,
     };
-    const opts: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
+    const opts: KubernetesSyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
     try {
         await sdm.configuration.sdm.projectLoader.doWithProject(projectLoadingParameters, initialSync(opts));
     } catch (e) {
@@ -92,7 +92,7 @@ export const syncRepoStartupListener: StartupListener = async ctx => {
  *
  * @param syncRepo Repository of specs to sync
  */
-function initialSync(opts: SyncOptions): (p: GitProject) => Promise<void> {
+function initialSync(opts: KubernetesSyncOptions): (p: GitProject) => Promise<void> {
     return async syncRepo => {
         const specFiles = await sortSpecs(syncRepo);
         const errors: Error[] = [];
