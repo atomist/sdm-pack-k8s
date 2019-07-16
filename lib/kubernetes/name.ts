@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import * as stringify from "json-stringify-safe";
+
 /**
  * If removing invalid characters from the name results in an empty
  * string, this value is used as the name.  You do not want more than
@@ -36,4 +38,28 @@ export function validName(name: string): string {
         .replace(/[^a-z0-9]+$/, "")
         .replace(/[^-a-z0-9]+/g, "-");
     return (valid) ? valid : defaultValidName;
+}
+
+/**
+ * Determine if the `value` matches the `matcher`.
+ * The matching rules are as follows:
+ *
+ * -   If the `matcher` is a string, `value` and `matcher` must be equal (===).
+ * -   If `matcher` is a regular expression, `value` must match the regular expression according to RegExp.test().
+ * -   If no `matcher` is provided, any `value` matches.
+ *
+ * @param value String to match
+ * @param matcher String or RegExp to match against
+ * @return `true` if it is a match, `false` otherwise
+ */
+export function nameMatch(value: string, matcher?: string | RegExp): boolean {
+    if (typeof matcher === "string") {
+        return matcher === value;
+    } else if (matcher instanceof RegExp) {
+        return matcher.test(value);
+    } else if (!matcher) {
+        return true;
+    } else {
+        throw new Error(`Provided matcher is neither a string or RegExp: ${stringify(matcher)}: ${typeof matcher}`);
+    }
 }

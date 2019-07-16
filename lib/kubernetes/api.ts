@@ -28,7 +28,7 @@ export interface K8sObjectResponse {
 }
 
 export interface K8sListResponse {
-    body: k8s.KubernetesListObject;
+    body: k8s.KubernetesListObject<k8s.KubernetesObject>;
     response: http.IncomingMessage;
 }
 

@@ -204,14 +204,14 @@ describe("sync/application", () => {
 
         it("should create a simple namespaced file name", () => {
             [
-                { k: "Deployment", p: "70" },
-                { k: "Ingress", p: "80" },
-                { k: "Role", p: "25" },
-                { k: "Secret", p: "60" },
-                { k: "Service", p: "50" },
+                { a: "apps/v1", k: "Deployment", p: "70" },
+                { a: "extensions/v1beta1", k: "Ingress", p: "80" },
+                { a: "rbac.authorization.k8s.io/v1", k: "Role", p: "25" },
+                { a: "v1", k: "Secret", p: "60" },
+                { a: "v1", k: "Service", p: "50" },
             ].forEach(r => {
                 const o = {
-                    apiVersion: "v1",
+                    apiVersion: r.a,
                     kind: r.k,
                     metadata: {
                         name: "lyle",
@@ -226,11 +226,17 @@ describe("sync/application", () => {
 
         it("should create a kebab-case namespaced file name", () => {
             [
-                { k: "RoleBinding", l: "role-binding", p: "30" },
-                { k: "ServiceAccount", l: "service-account", p: "20" },
+                { a: "v1", k: "ServiceAccount", l: "service-account", p: "20" },
+                { a: "rbac.authorization.k8s.io/v1", k: "RoleBinding", l: "role-binding", p: "30" },
+                { a: "apps/v1", k: "DaemonSet", l: "daemon-set", p: "70" },
+                { a: "networking.k8s.io/v1", k: "NetworkPolicy", l: "network-policy", p: "40" },
+                { a: "v1", k: "PersistentVolumeClaim", l: "persistent-volume-claim", p: "40" },
+                { a: "extensions/v1beta1", k: "PodSecurityPolicy", l: "pod-security-policy", p: "40" },
+                { a: "policy/v1beta1", k: "HorizontalPodAutoscaler", l: "horizontal-pod-autoscaler", p: "80" },
+                { a: "policy/v1beta1", k: "PodDisruptionBudget", l: "pod-disruption-budget", p: "80" },
             ].forEach(r => {
                 const o = {
-                    apiVersion: "v1",
+                    apiVersion: r.a,
                     kind: r.k,
                     metadata: {
                         name: "lyle",
@@ -245,11 +251,13 @@ describe("sync/application", () => {
 
         it("should create a kebab-case cluster file name", () => {
             [
-                { k: "ClusterRole", l: "cluster-role", p: "25" },
-                { k: "ClusterRoleBinding", l: "cluster-role-binding", p: "30" },
+                { a: "v1", k: "PersistentVolume", l: "persistent-volume", p: "15" },
+                { a: "storage.k8s.io/v1", k: "StorageClass", l: "storage-class", p: "15" },
+                { a: "rbac.authorization.k8s.io/v1", k: "ClusterRole", l: "cluster-role", p: "25" },
+                { a: "rbac.authorization.k8s.io/v1", k: "ClusterRoleBinding", l: "cluster-role-binding", p: "30" },
             ].forEach(r => {
                 const o = {
-                    apiVersion: "rbac.authorization.k8s.io/v1",
+                    apiVersion: r.a,
                     kind: r.k,
                     metadata: {
                         name: "lyle",

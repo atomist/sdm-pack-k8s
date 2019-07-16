@@ -227,6 +227,10 @@ export function specFileBasename(resource: K8sObject): string {
         case "Namespace":
             prefix = "10";
             break;
+        case "PersistentVolume":
+        case "StorageClass":
+            prefix = "15";
+            break;
         case "ServiceAccount":
             prefix = "20";
             break;
@@ -238,6 +242,11 @@ export function specFileBasename(resource: K8sObject): string {
         case "RoleBinding":
             prefix = "30";
             break;
+        case "NetworkPolicy":
+        case "PersistentVolumeClaim":
+        case "PodSecurityPolicy":
+            prefix = "40";
+            break;
         case "Service":
             prefix = "50";
             break;
@@ -245,10 +254,15 @@ export function specFileBasename(resource: K8sObject): string {
         case "Secret":
             prefix = "60";
             break;
+        case "CronJob":
+        case "DaemonSet":
         case "Deployment":
+        case "StatefulSet":
             prefix = "70";
             break;
+        case "HorizontalPodAutoscaler":
         case "Ingress":
+        case "PodDisruptionBudget":
             prefix = "80";
             break;
         default:
