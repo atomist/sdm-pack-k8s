@@ -29,10 +29,8 @@ import {
     ProjectLoader,
     ProjectLoadingParameters,
 } from "@atomist/sdm";
-import * as yaml from "js-yaml";
-import * as stableStringify from "json-stable-stringify";
 import {
-    SyncOptions,
+    KubernetesSyncOptions,
     validSyncOptions,
 } from "../config";
 import { parseKubernetesSpecFile } from "../deploy/spec";
@@ -41,7 +39,11 @@ import {
     appName,
     KubernetesDelete,
 } from "../kubernetes/request";
-import { encryptSecret } from "../kubernetes/secret";
+import {
+    kubernetesSpecFileBasename,
+    kubernetesSpecStringify,
+    KubernetesSpecStringifyOptions,
+} from "../kubernetes/spec";
 import { cloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
 import { commitTag } from "./tag";
@@ -58,7 +60,7 @@ export type SyncAction = "upsert" | "delete";
  */
 export async function syncApplication(app: KubernetesDelete, resources: K8sObject[], action: SyncAction = "upsert"): Promise<void> {
     const slug = appName(app);
-    const syncOpts = configurationValue<Partial<SyncOptions>>("sdm.k8s.options.sync", {});
+    const syncOpts = configurationValue<Partial<KubernetesSyncOptions>>("sdm.k8s.options.sync", {});
     if (!validSyncOptions(syncOpts)) {
         return;
     }
@@ -108,7 +110,7 @@ export function syncResources(
     app: KubernetesDelete,
     resources: K8sObject[],
     action: SyncAction,
-    opts: SyncOptions,
+    opts: KubernetesSyncOptions,
 ): (p: GitProject) => Promise<void> {
 
     return async syncProject => {
@@ -148,17 +150,17 @@ export function syncResources(
  * @param p Sync repo project
  * @param fs File and spec object that matches resource, may be undefined
  */
-async function resourceUpserted(resrc: K8sObject, p: Project, fs: ProjectFileSpec, opts: SyncOptions): Promise<void> {
-    let resource = resrc;
-    if (resource.kind === "Secret" && opts.secretKey) {
-        resource = await encryptSecret(resource, opts.secretKey);
-    }
+async function resourceUpserted(resource: K8sObject, p: Project, fs: ProjectFileSpec, opts: KubernetesSyncOptions): Promise<void> {
+    const stringifyOptions: KubernetesSpecStringifyOptions = {
+        format: (fs && fs.file && /\.ya?ml$/.test(fs.file.path)) ? "yaml" : "json",
+        secretKey: opts.secretKey,
+    };
+    const resourceString = await kubernetesSpecStringify(resource, stringifyOptions);
     if (fs) {
-        const specString = (/\.ya?ml$/.test(fs.file.path)) ? yaml.safeDump(resource, { sortKeys: true }) : stringifySpec(resource);
-        await fs.file.setContent(specString);
+        await fs.file.setContent(resourceString);
     } else {
-        const specPath = await specFile(resource, p);
-        await p.addFile(specPath, stringifySpec(resource));
+        const specPath = await uniqueSpecFile(resource, p);
+        await p.addFile(specPath, resourceString);
     }
 }
 
@@ -185,8 +187,7 @@ async function resourceDeleted(resource: K8sObject, p: Project, fs: ProjectFileS
  * @return First file and spec object to match spec or `undefined` if no match is found
  */
 export function matchSpec(spec: K8sObject, fileSpecs: ProjectFileSpec[]): ProjectFileSpec | undefined {
-    return fileSpecs.find(fs => spec.apiVersion === fs.spec.apiVersion &&
-        spec.kind === fs.spec.kind &&
+    return fileSpecs.find(fs => spec.kind === fs.spec.kind &&
         spec.metadata.name === fs.spec.metadata.name &&
         spec.metadata.namespace === fs.spec.metadata.namespace);
 }
@@ -200,73 +201,12 @@ export function matchSpec(spec: K8sObject, fileSpecs: ProjectFileSpec[]): Projec
  * @param p Kubernetes spec project
  * @return Unique spec file name that sorts properly
  */
-export async function specFile(resource: K8sObject, p: Project): Promise<string> {
-    const specRoot = specFileBasename(resource);
+export async function uniqueSpecFile(resource: K8sObject, p: Project): Promise<string> {
+    const specRoot = kubernetesSpecFileBasename(resource);
     const specExt = ".json";
     let specPath = specRoot + specExt;
     while (await p.getFile(specPath)) {
         specPath = specRoot + "_" + guid().split("-")[0] + specExt;
     }
     return specPath;
-}
-
-/**
- * Create a suitable basename for the spec file for `resource`.  The
- * form of the file name is "NN-NAMESPACE-NAME-KIND", where "NN" is a
- * numeric prefix so the resources are created in the proper order,
- * "NAMESPACE-" is omitted if resource is not namespaced, the kind is
- * converted from PascalCase to kebab-case, and the whole name is
- * lowercased.
- *
- * @param resource Kubernetes resource spec
- * @return Base file name for resource spec
- */
-export function specFileBasename(resource: K8sObject): string {
-    let prefix: string;
-    switch (resource.kind) {
-        case "Namespace":
-            prefix = "10";
-            break;
-        case "ServiceAccount":
-            prefix = "20";
-            break;
-        case "ClusterRole":
-        case "Role":
-            prefix = "25";
-            break;
-        case "ClusterRoleBinding":
-        case "RoleBinding":
-            prefix = "30";
-            break;
-        case "Service":
-            prefix = "50";
-            break;
-        case "ConfigMap":
-        case "Secret":
-            prefix = "60";
-            break;
-        case "Deployment":
-            prefix = "70";
-            break;
-        case "Ingress":
-            prefix = "80";
-            break;
-        default:
-            prefix = "90";
-            break;
-    }
-    const ns = (resource.metadata.namespace) ? `${resource.metadata.namespace}_` : "";
-    const kebabKind = resource.kind.replace(/([a-z])([A-Z])/g, "$1-$2");
-    return `${prefix}_${ns}${resource.metadata.name}_${kebabKind}`.toLowerCase();
-}
-
-/**
- * Convert a Kubernetes resource spec into a stable string suitable
- * for writing to a file.
- *
- * @param resource Kubernetes resource to stringify
- * @return Stable string representation of the resource spec
- */
-function stringifySpec(resource: K8sObject): string {
-    return stableStringify(resource, { space: 2 }) + "\n";
 }

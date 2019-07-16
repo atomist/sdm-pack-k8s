@@ -30,14 +30,14 @@ import {
     whenPushSatisfies,
 } from "@atomist/sdm";
 import * as _ from "lodash";
-import { SyncOptions } from "../config";
+import { KubernetesSyncOptions } from "../config";
 import { errMsg } from "../support/error";
 import { changeResource } from "./change";
 import { diffPush } from "./diff";
 import { commitTag } from "./tag";
 
 export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undefined {
-    const syncOptions: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
+    const syncOptions: KubernetesSyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
     if (!syncOptions || !syncOptions.repo) {
         logger.debug(`SDM configuration contains no sync repo, will not create sync repo push test`);
         return undefined;

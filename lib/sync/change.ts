@@ -21,7 +21,7 @@ import {
 } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import * as _ from "lodash";
-import { SyncOptions } from "../config";
+import { KubernetesSyncOptions } from "../config";
 import { parseKubernetesSpecString } from "../deploy/spec";
 import { K8sObject } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
@@ -62,7 +62,7 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
     }
 
     if (change.change !== "delete" && spec.kind === "Secret") {
-        const syncOpts = configurationValue<Partial<SyncOptions>>("sdm.k8s.options.sync", {});
+        const syncOpts = configurationValue<Partial<KubernetesSyncOptions>>("sdm.k8s.options.sync", {});
         if (syncOpts.secretKey) {
             spec = await decryptSecret(spec, syncOpts.secretKey);
         }

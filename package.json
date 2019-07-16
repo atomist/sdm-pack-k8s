@@ -1,6 +1,6 @@
 {
   "name": "@atomist/sdm-pack-k8s",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Extension Pack for an Atomist SDM to integrate Kubernetes deployments",
   "author": {
     "name": "Atomist",
@@ -27,7 +27,7 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "dependencies": {
-    "@kubernetes/client-node": "^0.8.2",
+    "@kubernetes/client-node": "^0.10.2",
     "@types/js-yaml": "^3.11.4",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/json-stringify-safe": "^5.0.0",

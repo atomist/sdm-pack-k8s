@@ -28,7 +28,6 @@ import { KubernetesApplication } from "../../lib/kubernetes/request";
 import {
     matchSpec,
     ProjectFileSpec,
-    specFileBasename,
     syncResources,
 } from "../../lib/sync/application";
 import { k8sSpecGlob } from "../../lib/sync/diff";
@@ -74,17 +73,6 @@ describe("sync/application", () => {
                             },
                         },
                     },
-                    {
-                        file: new InMemoryProjectFile("beta-dep.json", "{}"),
-                        spec: {
-                            apiVersion: "extensions/v1beta1",
-                            kind: "Deployment",
-                            metadata: {
-                                name: "lyle",
-                                namespace: "lovett",
-                            },
-                        },
-                    },
                 ],
             ];
             sss.forEach(ss => {
@@ -103,7 +91,7 @@ describe("sync/application", () => {
 
         it("should find the file spec", () => {
             const s = {
-                apiVersion: "v1",
+                apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
                     name: "lyle",
@@ -114,7 +102,33 @@ describe("sync/application", () => {
                 {
                     file: new InMemoryProjectFile("dep.json", "{}"),
                     spec: {
-                        apiVersion: "v1",
+                        apiVersion: "apps/v1",
+                        kind: "Deployment",
+                        metadata: {
+                            name: "lyle",
+                            namespace: "lovett",
+                        },
+                    },
+                },
+            ];
+            const m = matchSpec(s, ss);
+            assert.deepStrictEqual(m, ss[0]);
+        });
+
+        it("should find the file spec with different apiVersion", () => {
+            const s = {
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    name: "lyle",
+                    namespace: "lovett",
+                },
+            };
+            const ss: ProjectFileSpec[] = [
+                {
+                    file: new InMemoryProjectFile("dep.json", "{}"),
+                    spec: {
+                        apiVersion: "extensions/v1beta1",
                         kind: "Deployment",
                         metadata: {
                             name: "lyle",
@@ -171,94 +185,19 @@ describe("sync/application", () => {
                     },
                 },
                 {
-                    file: new InMemoryProjectFile("beta-dep.json", "{}"),
+                    file: new InMemoryProjectFile("dep.json", "{}"),
                     spec: {
-                        apiVersion: "extensions/v1beta1",
+                        apiVersion: "apps/v1",
                         kind: "Deployment",
                         metadata: {
                             name: "lyle",
-                            namespace: "lovett",
+                            namespace: "alzado",
                         },
                     },
                 },
             ];
             const m = matchSpec(s, ss);
             assert.deepStrictEqual(m, ss[2]);
-        });
-
-    });
-
-    describe("specFileBasename", () => {
-
-        it("should create a namespace file name", () => {
-            const o = {
-                apiVersion: "v1",
-                kind: "Namespace",
-                metadata: {
-                    name: "lyle",
-                },
-            };
-            const s = specFileBasename(o);
-            assert(s === "10_lyle_namespace");
-        });
-
-        it("should create a simple namespaced file name", () => {
-            [
-                { k: "Deployment", p: "70" },
-                { k: "Ingress", p: "80" },
-                { k: "Role", p: "25" },
-                { k: "Secret", p: "60" },
-                { k: "Service", p: "50" },
-            ].forEach(r => {
-                const o = {
-                    apiVersion: "v1",
-                    kind: r.k,
-                    metadata: {
-                        name: "lyle",
-                        namespace: "lovett",
-                    },
-                };
-                const s = specFileBasename(o);
-                const e = r.p + "_lovett_lyle_" + r.k.toLowerCase();
-                assert(s === e);
-            });
-        });
-
-        it("should create a kebab-case namespaced file name", () => {
-            [
-                { k: "RoleBinding", l: "role-binding", p: "30" },
-                { k: "ServiceAccount", l: "service-account", p: "20" },
-            ].forEach(r => {
-                const o = {
-                    apiVersion: "v1",
-                    kind: r.k,
-                    metadata: {
-                        name: "lyle",
-                        namespace: "lovett",
-                    },
-                };
-                const s = specFileBasename(o);
-                const e = r.p + "_lovett_lyle_" + r.l;
-                assert(s === e);
-            });
-        });
-
-        it("should create a kebab-case cluster file name", () => {
-            [
-                { k: "ClusterRole", l: "cluster-role", p: "25" },
-                { k: "ClusterRoleBinding", l: "cluster-role-binding", p: "30" },
-            ].forEach(r => {
-                const o = {
-                    apiVersion: "rbac.authorization.k8s.io/v1",
-                    kind: r.k,
-                    metadata: {
-                        name: "lyle",
-                    },
-                };
-                const s = specFileBasename(o);
-                const e = r.p + "_lyle_" + r.l;
-                assert(s === e);
-            });
         });
 
     });
