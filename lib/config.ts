@@ -55,7 +55,7 @@ export interface SyncRepoRef extends RepoRef {
 /**
  * Configuration options for sync mode operation.
  */
-export interface SyncOptions {
+export interface KubernetesSyncOptions {
     /**
      * To synchronize resources in k8s cluster with a Git repo,
      * provide a repo ref as the value of this property.  The value
@@ -114,10 +114,10 @@ export interface SdmPackK8sOptions {
     /**
      * Synchronize resources in k8s cluster with a Git repo.
      */
-    sync?: SyncOptions;
+    sync?: KubernetesSyncOptions;
 }
 
 /** Validate the the partial SyncOptions contains a repo property. */
-export function validSyncOptions(o: Partial<SyncOptions>): o is SyncOptions {
+export function validSyncOptions(o: Partial<KubernetesSyncOptions>): o is KubernetesSyncOptions {
     return !!o && !!o.repo;
 }

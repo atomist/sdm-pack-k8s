@@ -27,7 +27,7 @@ import { SoftwareDeliveryMachine } from "@atomist/sdm";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import {
-    SyncOptions,
+    KubernetesSyncOptions,
     SyncRepoRef,
 } from "../config";
 import {
@@ -70,7 +70,7 @@ const defaultDefaultBranch = "master";
  * @return true if sync options set and repo found or false and sync options deleted
  */
 export async function queryForScmProvider(sdm: SoftwareDeliveryMachine): Promise<boolean> {
-    const syncOptions: SyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
+    const syncOptions: KubernetesSyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
     if (!syncOptions) {
         logger.info(`SDM configuration contains no sync repo`);
         return false;
