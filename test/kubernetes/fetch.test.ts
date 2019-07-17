@@ -20,13 +20,13 @@ import { K8sObject } from "../../lib/kubernetes/api";
 import {
     cleanKubernetesSpec,
     defaultKubernetesFetchOptions,
-    defaultKubernetesResourceSelectorKinds,
-    extractClusterResources,
-    filterKubernetesResources,
+    includedResourceKinds,
+    includeMatch,
+    K8sSelector,
     kubernetesResourceIdentity,
     KubernetesResourceSelector,
     populateResourceSelectorDefaults,
-    selectedResourceKinds,
+    selectKubernetesResources,
 } from "../../lib/kubernetes/fetch";
 
 /* tslint:disable:max-file-line-count */
@@ -227,20 +227,17 @@ describe("kubernetes/fetch", () => {
 
     });
 
-    describe("selectedResourceKinds", () => {
+    describe("includedResourceKinds", () => {
 
         it("should find nothing successfully", () => {
-            const s = selectedResourceKinds([]);
+            const s = includedResourceKinds([]);
             assert.deepStrictEqual(s, []);
         });
 
-    });
-
-    describe("extractClusterResources", () => {
-
-        it("should return empty array if no cluster resources", () => {
-            const s = [
+        it("should return included resource kinds", () => {
+            const s: K8sSelector[] = [
                 {
+                    action: "include",
                     kinds: [
                         { apiVersion: "v1", kind: "ConfigMap" },
                         { apiVersion: "v1", kind: "Secret" },
@@ -249,6 +246,7 @@ describe("kubernetes/fetch", () => {
                     ],
                 },
                 {
+                    action: "include",
                     kinds: [
                         { apiVersion: "v1", kind: "PersistentVolumeClaim" },
                         { apiVersion: "extensions/v1beta1", kind: "Ingress" },
@@ -258,6 +256,59 @@ describe("kubernetes/fetch", () => {
                     ],
                 },
                 {
+                    action: "include",
+                    kinds: [
+                        { apiVersion: "autoscaling/v1", kind: "HorizontalPodAutoscaler" },
+                        { apiVersion: "batch/v1beta1", kind: "CronJob" },
+                        { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding" },
+                    ],
+                },
+            ];
+            const c = includedResourceKinds(s);
+            const e = [
+                { apiVersion: "v1", kind: "ConfigMap" },
+                { apiVersion: "v1", kind: "Secret" },
+                { apiVersion: "v1", kind: "Service" },
+                { apiVersion: "v1", kind: "ServiceAccount" },
+                { apiVersion: "v1", kind: "PersistentVolumeClaim" },
+                { apiVersion: "extensions/v1beta1", kind: "Ingress" },
+                { apiVersion: "apps/v1", kind: "DaemonSet" },
+                { apiVersion: "apps/v1", kind: "Deployment" },
+                { apiVersion: "apps/v1", kind: "StatefulSet" },
+                { apiVersion: "autoscaling/v1", kind: "HorizontalPodAutoscaler" },
+                { apiVersion: "batch/v1beta1", kind: "CronJob" },
+                { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy" },
+                { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role" },
+                { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding" },
+            ];
+            assert.deepStrictEqual(c, e);
+        });
+
+        it("should return included resource kinds and dedupe", () => {
+            const s: K8sSelector[] = [
+                {
+                    action: "include",
+                    kinds: [
+                        { apiVersion: "v1", kind: "ConfigMap" },
+                        { apiVersion: "v1", kind: "Secret" },
+                        { apiVersion: "v1", kind: "Service" },
+                        { apiVersion: "v1", kind: "ServiceAccount" },
+                    ],
+                },
+                {
+                    action: "include",
+                    kinds: [
+                        { apiVersion: "v1", kind: "PersistentVolumeClaim" },
+                        { apiVersion: "extensions/v1beta1", kind: "Ingress" },
+                        { apiVersion: "apps/v1", kind: "DaemonSet" },
+                        { apiVersion: "apps/v1", kind: "Deployment" },
+                        { apiVersion: "apps/v1", kind: "StatefulSet" },
+                    ],
+                },
+                {
+                    action: "include",
                     kinds: [
                         { apiVersion: "autoscaling/v1", kind: "HorizontalPodAutoscaler" },
                         { apiVersion: "batch/v1beta1", kind: "CronJob" },
@@ -267,42 +318,150 @@ describe("kubernetes/fetch", () => {
                     ],
                 },
                 {
+                    action: "include",
                     kinds: [
                         { apiVersion: "v1", kind: "Service" },
                         { apiVersion: "v1", kind: "ServiceAccount" },
                     ],
                 },
             ];
-            const c = extractClusterResources(s);
-            assert.deepStrictEqual(c, []);
-        });
-
-        it("should return cluster resources from default", () => {
-            const s = [{ kinds: defaultKubernetesResourceSelectorKinds }];
-            const c = extractClusterResources(s);
+            const c = includedResourceKinds(s);
             const e = [
-                { apiVersion: "v1", kind: "PersistentVolume" },
-                { apiVersion: "extensions/v1beta1", kind: "PodSecurityPolicy" },
-                { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRole" },
-                { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRoleBinding" },
-                { apiVersion: "storage.k8s.io/v1", kind: "StorageClass" },
+                { apiVersion: "v1", kind: "ConfigMap" },
+                { apiVersion: "v1", kind: "Secret" },
+                { apiVersion: "v1", kind: "Service" },
+                { apiVersion: "v1", kind: "ServiceAccount" },
+                { apiVersion: "v1", kind: "PersistentVolumeClaim" },
+                { apiVersion: "extensions/v1beta1", kind: "Ingress" },
+                { apiVersion: "apps/v1", kind: "DaemonSet" },
+                { apiVersion: "apps/v1", kind: "Deployment" },
+                { apiVersion: "apps/v1", kind: "StatefulSet" },
+                { apiVersion: "autoscaling/v1", kind: "HorizontalPodAutoscaler" },
+                { apiVersion: "batch/v1beta1", kind: "CronJob" },
+                { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy" },
+                { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role" },
+                { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding" },
             ];
             assert.deepStrictEqual(c, e);
         });
 
-        it("should deduplicate cluster resources", () => {
-            const s = [
-                { kinds: defaultKubernetesResourceSelectorKinds },
-                { kinds: defaultKubernetesResourceSelectorKinds },
-                { kinds: defaultKubernetesResourceSelectorKinds },
+        it("should not include excluded resource kinds", () => {
+            const s: K8sSelector[] = [
+                {
+                    action: "exclude",
+                    kinds: [
+                        { apiVersion: "v1", kind: "ConfigMap" },
+                        { apiVersion: "v1", kind: "Secret" },
+                        { apiVersion: "v1", kind: "Service" },
+                        { apiVersion: "v1", kind: "ServiceAccount" },
+                    ],
+                },
+                {
+                    action: "exclude",
+                    kinds: [
+                        { apiVersion: "v1", kind: "PersistentVolumeClaim" },
+                        { apiVersion: "extensions/v1beta1", kind: "Ingress" },
+                        { apiVersion: "apps/v1", kind: "DaemonSet" },
+                        { apiVersion: "apps/v1", kind: "Deployment" },
+                        { apiVersion: "apps/v1", kind: "StatefulSet" },
+                    ],
+                },
+                {
+                    action: "exclude",
+                    kinds: [
+                        { apiVersion: "autoscaling/v1", kind: "HorizontalPodAutoscaler" },
+                        { apiVersion: "batch/v1beta1", kind: "CronJob" },
+                        { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding" },
+                    ],
+                },
             ];
-            const c = extractClusterResources(s);
+            const c = includedResourceKinds(s);
+            assert.deepStrictEqual(c, []);
+        });
+
+        it("should return only included resource kinds and dedupe", () => {
+            const s: K8sSelector[] = [
+                {
+                    action: "include",
+                    kinds: [
+                        { apiVersion: "v1", kind: "ConfigMap" },
+                        { apiVersion: "v1", kind: "Secret" },
+                        { apiVersion: "v1", kind: "Service" },
+                        { apiVersion: "v1", kind: "ServiceAccount" },
+                    ],
+                },
+                {
+                    action: "exclude",
+                    kinds: [
+                        { apiVersion: "v1", kind: "PersistentVolumeClaim" },
+                        { apiVersion: "extensions/v1beta1", kind: "Ingress" },
+                        { apiVersion: "apps/v1", kind: "DaemonSet" },
+                        { apiVersion: "apps/v1", kind: "Deployment" },
+                        { apiVersion: "apps/v1", kind: "StatefulSet" },
+                    ],
+                },
+                {
+                    action: "include",
+                    kinds: [
+                        { apiVersion: "v1", kind: "PersistentVolume" },
+                        { apiVersion: "extensions/v1beta1", kind: "PodSecurityPolicy" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRole" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRoleBinding" },
+                        { apiVersion: "storage.k8s.io/v1", kind: "StorageClass" },
+                    ],
+                },
+                {
+                    action: "include",
+                    kinds: [
+                        { apiVersion: "autoscaling/v1", kind: "HorizontalPodAutoscaler" },
+                        { apiVersion: "batch/v1beta1", kind: "CronJob" },
+                        { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding" },
+                    ],
+                },
+                {
+                    action: "exclude",
+                    kinds: [
+                        { apiVersion: "v1", kind: "PersistentVolume" },
+                        { apiVersion: "extensions/v1beta1", kind: "PodSecurityPolicy" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRole" },
+                    ],
+                },
+                {
+                    action: "include",
+                    kinds: [
+                        { apiVersion: "v1", kind: "Service" },
+                        { apiVersion: "v1", kind: "ServiceAccount" },
+                    ],
+                },
+                {
+                    action: "include",
+                    kinds: [
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRole" },
+                        { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRoleBinding" },
+                        { apiVersion: "storage.k8s.io/v1", kind: "StorageClass" },
+                    ],
+                },
+            ];
+            const c = includedResourceKinds(s);
             const e = [
+                { apiVersion: "v1", kind: "ConfigMap" },
+                { apiVersion: "v1", kind: "Secret" },
+                { apiVersion: "v1", kind: "Service" },
+                { apiVersion: "v1", kind: "ServiceAccount" },
                 { apiVersion: "v1", kind: "PersistentVolume" },
                 { apiVersion: "extensions/v1beta1", kind: "PodSecurityPolicy" },
                 { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRole" },
                 { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRoleBinding" },
                 { apiVersion: "storage.k8s.io/v1", kind: "StorageClass" },
+                { apiVersion: "autoscaling/v1", kind: "HorizontalPodAutoscaler" },
+                { apiVersion: "batch/v1beta1", kind: "CronJob" },
+                { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy" },
+                { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role" },
+                { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding" },
             ];
             assert.deepStrictEqual(c, e);
         });
@@ -525,12 +684,12 @@ describe("kubernetes/fetch", () => {
 
     });
 
-    describe("filterKubernetesResources", () => {
+    describe("selectKubernetesResources", () => {
 
         it("should do nothing successfully", () => {
             const r: K8sObject[] = [];
-            const s: KubernetesResourceSelector[] = [];
-            const o = filterKubernetesResources(r, s);
+            const s: K8sSelector[] = [];
+            const o = selectKubernetesResources(r, s);
             assert.deepStrictEqual(o, []);
         });
 
@@ -547,7 +706,8 @@ describe("kubernetes/fetch", () => {
                 { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
                 { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
             ];
-            const o = filterKubernetesResources(r, defaultKubernetesFetchOptions.selectors);
+            const s = populateResourceSelectorDefaults(defaultKubernetesFetchOptions.selectors);
+            const o = selectKubernetesResources(r, s);
             const e = [
                 { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
                 { kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
@@ -559,6 +719,85 @@ describe("kubernetes/fetch", () => {
                 { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
             ];
             assert.deepStrictEqual(o, e);
+        });
+
+    });
+
+    describe("includeMatch", () => {
+
+        it("should include a string", () => {
+            const a = "include";
+            const v = "sicilian-crest";
+            const m = "sicilian-crest";
+            assert(includeMatch(a, v, m));
+        });
+
+        it("should include a regular expression", () => {
+            const a = "include";
+            const v = "sicilian-crest";
+            const m = /cilian-cr/;
+            assert(includeMatch(a, v, m));
+        });
+
+        it("should not include a string", () => {
+            const a = "include";
+            const v = "sicilian-crest";
+            const m = "sicilian-crust";
+            assert(!includeMatch(a, v, m));
+        });
+
+        it("should not include a regular expression", () => {
+            const a = "include";
+            const v = "sicilian-crest";
+            const m = /cilain-cr/;
+            assert(!includeMatch(a, v, m));
+        });
+
+        it("should include when no matcher", () => {
+            const a = "include";
+            const v = "sicilian-crest";
+            assert(includeMatch(a, v));
+        });
+
+        it("should exclude a string", () => {
+            const a = "exclude";
+            const v = "sicilian-crest";
+            const m = "sicilian-crest";
+            assert(!includeMatch(a, v, m));
+        });
+
+        it("should exclude a regular expression", () => {
+            const a = "exclude";
+            const v = "sicilian-crest";
+            const m = /cilian-cr/;
+            assert(!includeMatch(a, v, m));
+        });
+
+        it("should not exclude a string", () => {
+            const a = "exclude";
+            const v = "sicilian-crest";
+            const m = "sicilian-crust";
+            assert(includeMatch(a, v, m));
+        });
+
+        it("should not exclude a regular expression", () => {
+            const a = "exclude";
+            const v = "sicilian-crest";
+            const m = /cilain-cr/;
+            assert(includeMatch(a, v, m));
+        });
+
+        it("should include when no matcher (exclude)", () => {
+            const a = "exclude";
+            const v = "sicilian-crest";
+            assert(includeMatch(a, v));
+        });
+
+        it("should throw an error if matcher is neither a string nor regular expression", () => {
+            const a = "include";
+            const v = "sicilian-crest";
+            const m: any = 2019;
+            assert.throws(() => includeMatch(a, v, m), /Provided matcher is neither a string or RegExp: /);
         });
 
     });
