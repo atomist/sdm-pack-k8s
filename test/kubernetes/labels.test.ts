@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
+import { DeepPartial } from "ts-essentials";
 import {
     applicationLabels,
+    labelMatch,
     matchLabels,
     safeLabelValue,
 } from "../../lib/kubernetes/labels";
@@ -149,6 +152,293 @@ describe("kubernetes/labels", () => {
                 "app.kubernetes.io/managed-by": "emi_Wickham-Farm_Welling_England",
             };
             assert.deepStrictEqual(l, e);
+        });
+
+    });
+
+    describe("labelMatch", () => {
+
+        const r = {
+            apiVersion: "v1",
+            kind: "Service",
+            metadata: {
+                labels: {
+                    album: "Younger Than Yesterday",
+                    year: "1967",
+                    recordLabel: "Columbia",
+                },
+                name: "so-you-want-to-be-a-rock-n-roll-star",
+                namespace: "byrds",
+            },
+        };
+
+        it("should match when no label selectors", () => {
+            assert(labelMatch(r));
+            assert(labelMatch(r, undefined));
+        });
+
+        it("should not match when no labels", () => {
+            const n = {
+                apiVersion: "v1",
+                kind: "Service",
+                metadata: {
+                    name: "so-you-want-to-be-a-rock-n-roll-star",
+                    namespace: "byrds",
+                },
+            };
+            const s = {
+                matchLabels: {
+                    album: "Younger Than Yesterday",
+                    year: "1967",
+                    recordLabel: "Columbia",
+                },
+            };
+            assert(!labelMatch(n, s));
+        });
+
+        it("should match empty string", () => {
+            const n = {
+                apiVersion: "v1",
+                kind: "Service",
+                metadata: {
+                    labels: {
+                        why: "",
+                    },
+                    name: "so-you-want-to-be-a-rock-n-roll-star",
+                    namespace: "byrds",
+                },
+            };
+            const s = {
+                matchLabels: {
+                    why: "",
+                },
+            };
+            assert(labelMatch(n, s));
+        });
+
+        it("should match when matchLabels match", () => {
+            const ss = [
+                {
+                    matchLabels: {
+                        album: "Younger Than Yesterday",
+                        year: "1967",
+                        recordLabel: "Columbia",
+                    },
+                },
+                {
+                    matchLabels: {
+                        album: "Younger Than Yesterday",
+                        year: "1967",
+                    },
+                },
+                {
+                    matchLabels: {
+                        recordLabel: "Columbia",
+                    },
+                },
+                {
+                    matchLabels: {},
+                },
+                {
+                    matchLabels: undefined,
+                },
+            ];
+            ss.forEach(s => {
+                assert(labelMatch(r, s));
+            });
+        });
+
+        it("should not match when matchLabels do not match", () => {
+            const ss = [
+                {
+                    matchLabels: {
+                        album: "Younger Than Yesterday",
+                        year: "1968",
+                        recordLabel: "Columbia",
+                    },
+                },
+                {
+                    matchLabels: {
+                        album: "Older Than Yesterday",
+                        year: "1968",
+                    },
+                },
+                {
+                    matchLabels: {
+                        recordLabel: "RCA",
+                    },
+                },
+                {
+                    matchLabels: {
+                        album: "Younger Than Yesterday",
+                        year: "1967",
+                        recordLabel: "Columbia",
+                        release: "Deluxe Edition",
+                    },
+                },
+            ];
+            ss.forEach(s => {
+                assert(!labelMatch(r, s));
+            });
+        });
+
+        it("should match when matchExpressions match", () => {
+            const ss = [
+                {
+                    matchExpressions: [
+                        { key: "album", operator: "Exists" },
+                        { key: "year", operator: "In", values: ["1966", "1967", "1970"] },
+                        { key: "recordLabel", operator: "Exists" },
+                    ],
+                },
+                {
+                    matchExpressions: [
+                        { key: "album", operator: "In", values: ["Younger Than Yesterday", "Sweetheart of the Rodeo"] },
+                        { key: "year", operator: "Exists" },
+                    ],
+                },
+                {
+                    matchExpressions: [
+                        { key: "recordLabel", operator: "NotIn", values: ["Geffen", "RCA"] },
+                    ],
+                },
+                {
+                    matchExpressions: [
+                        { key: "recordLabel", operator: "NotIn", values: ["Geffen", "RCA"] },
+                        { key: "manager", operator: "DoesNotExist" },
+                    ],
+                },
+                {
+                    matchExpressions: [],
+                },
+                {
+                    matchExpressions: undefined,
+                },
+            ];
+            ss.forEach(s => {
+                assert(labelMatch(r, s));
+            });
+        });
+
+        it("should not match when matchExpressions does not match", () => {
+            const ss = [
+                {
+                    matchExpressions: [
+                        { key: "album", operator: "Exists" },
+                        { key: "year", operator: "In", values: ["1966", "1967", "1970"] },
+                        { key: "recordLabel", operator: "DoesNotExist" },
+                    ],
+                },
+                {
+                    matchExpressions: [
+                        { key: "album", operator: "In", values: ["Mr. Tambourine Man", "Sweetheart of the Rodeo"] },
+                        { key: "year", operator: "Exists" },
+                    ],
+                },
+                {
+                    matchExpressions: [
+                        { key: "recordLabel", operator: "In", values: ["Geffen", "RCA"] },
+                    ],
+                },
+                {
+                    matchExpressions: [
+                        { key: "recordLabel", operator: "NotIn", values: ["Geffen", "RCA"] },
+                        { key: "manager", operator: "Exists" },
+                    ],
+                },
+            ];
+            ss.forEach(s => {
+                assert(!labelMatch(r, s));
+            });
+        });
+
+        it("should match when matchLabels and matchExpressions match", () => {
+            const ss: Array<DeepPartial<k8s.V1LabelSelector>> = [
+                {
+                    matchLabels: {
+                        album: "Younger Than Yesterday",
+                        year: "1967",
+                        recordLabel: "Columbia",
+                    },
+                    matchExpressions: [
+                        { key: "album", operator: "Exists" },
+                        { key: "year", operator: "In", values: ["1966", "1967", "1970"] },
+                        { key: "recordLabel", operator: "Exists" },
+                    ],
+                },
+                {
+                    matchLabels: {
+                        album: "Younger Than Yesterday",
+                        year: "1967",
+                    },
+                    matchExpressions: [
+                        { key: "album", operator: "In", values: ["Younger Than Yesterday", "Sweetheart of the Rodeo"] },
+                        { key: "year", operator: "Exists" },
+                    ],
+                },
+                {
+                    matchLabels: {
+                        recordLabel: "Columbia",
+                    },
+                    matchExpressions: [
+                        { key: "manager", operator: "DoesNotExist" },
+                    ],
+                },
+                {
+                    matchLabels: {},
+                    matchExpressions: [],
+                },
+                {
+                    matchLabels: undefined,
+                    matchExpressions: undefined,
+                },
+            ];
+            ss.forEach(s => {
+                assert(labelMatch(r, s));
+            });
+        });
+
+        it("should not match when matchLabels and/or matchExpressions do not match", () => {
+            const ss: Array<DeepPartial<k8s.V1LabelSelector>> = [
+                {
+                    matchLabels: {
+                        album: "Younger Than Yesterday",
+                        year: "1967",
+                        recordLabel: "Columbia",
+                    },
+                    matchExpressions: [
+                        { key: "album", operator: "Exists" },
+                        { key: "year", operator: "In", values: ["1966", "1967", "1970"] },
+                        { key: "recordLabel", operator: "DoesNotExist" },
+                    ],
+                },
+                {
+                    matchLabels: {
+                        album: "Younger Than Yesterday",
+                        year: "1968",
+                    },
+                    matchExpressions: [
+                        { key: "album", operator: "In", values: ["Younger Than Yesterday", "Sweetheart of the Rodeo"] },
+                        { key: "year", operator: "Exists" },
+                    ],
+                },
+                {
+                    matchLabels: {
+                        recordLabel: "RCA",
+                    },
+                    matchExpressions: [
+                        { key: "manager", operator: "In", values: ["Roger McGuinn", "Chris Hillman"] },
+                    ],
+                },
+            ];
+            ss.forEach(s => {
+                assert(!labelMatch(r, s));
+            });
+        });
+
+        it("should throw an error when match expression operator invalid", () => {
+            assert.throws(() => labelMatch(r, { matchExpressions: [{ operator: "==" }] }),
+                /Unsupported match expression operator: /);
         });
 
     });
