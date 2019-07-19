@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
@@ -42,9 +41,8 @@ export interface KubernetesResourceKind {
 }
 
 /**
- * Various ways to select Kubernetes resources.  If a property is not
- * provided, it is not considered in the selection.  So if you just
- * provide an empty object, all resources will be returned.
+ * Various ways to select Kubernetes resources.  All means provided
+ * are logically ANDed together.
  */
 export interface KubernetesResourceSelector {
     /**
@@ -54,47 +52,33 @@ export interface KubernetesResourceSelector {
     action?: "include" | "exclude";
     /**
      * If provided, only resources of a kind provided will be
-     * returned.  If not provided,
-     * [[defaultKubernetesResourceSelectorKinds]] is used.
+     * considered.  See [[populateResourceSelectorDefaults]] for
+     * rules on how it is populated if it is not set.
      */
     kinds?: KubernetesResourceKind[];
     /**
-     * If provided, only resources with names matching either
-     * the entire string or regular expression will be returned.
+     * If provided, only resources with names matching either the
+     * entire string or regular expression will be returned.  If not
+     * provided, the resource name is not considered when matching.
      */
     name?: string | RegExp;
     /**
-     * If provided, only resources in namespaces matching either
-     * the entire strings or regular expression will be returned.
+     * If provided, only resources in namespaces matching either the
+     * entire strings or regular expression will be returned.  If not
+     * provided, the resource namespace is not considered when
+     * matching.
      */
     namespace?: string | RegExp;
     /**
      * Kubernetes-style label selectors.  If provided, only resources
-     * matching the selectors are returned.
+     * matching the selectors are returned.  If not provided, the
+     * resource labels are not considered when matching.
      */
     labelSelector?: DeepPartial<k8s.V1LabelSelector>;
 }
 
 /**
- * Version of [[KubernetesResourceSelector]] where `action` and
- * `kinds` are not optional.
- */
-export interface K8sSelector extends KubernetesResourceSelector {
-    /**
-     * Whether this selector is for inclusion or exclusion.
-     * If not provided, the rule will be used for inclusion.
-     */
-    action: "include" | "exclude";
-    /**
-     * If provided, only resources of a kind provided will be
-     * returned.  If not provided,
-     * [[defaultKubernetesResourceSelectorKinds]] is used.
-     */
-    kinds: KubernetesResourceKind[];
-}
-
-/**
- * Default set of kinds of Kubernetes resource returned.
+ * Useful default set of kinds of Kubernetes resources.
  */
 export const defaultKubernetesResourceSelectorKinds: KubernetesResourceKind[] = [
     { apiVersion: "v1", kind: "ConfigMap" },
@@ -124,10 +108,8 @@ export const defaultKubernetesResourceSelectorKinds: KubernetesResourceKind[] = 
 export interface KubernetesFetchOptions {
     /**
      * Array of Kubernetes resource selectors.  The selectors are
-     * processed in order, each processing the array of objects
-     * returned by the previous selector, or, for the first selector,
-     * all resources in the Kubernetes cluster matching any resource
-     * kind in an include selector.
+     * applied in order to each resource and the action of the first
+     * matching selector is applied.
      */
     selectors?: KubernetesResourceSelector[];
 }
@@ -135,9 +117,9 @@ export interface KubernetesFetchOptions {
 /**
  * The default options used when fetching resource from a Kubernetes
  * cluster.  By default it fetches resources whose kind is in the
- * [[defaultKubernetesResourceSelectorKinds]] array that are not in a
- * namespace that starts with "kube-", excluding the `kubernetes`
- * service in the `default` namespace.
+ * [[defaultKubernetesResourceSelectorKinds]] array, excluding the
+ * `kubernetes` service in the `default` namespace and resources a
+ * namespace that starts with "kube-".
  */
 export const defaultKubernetesFetchOptions: KubernetesFetchOptions = {
     selectors: [
@@ -152,7 +134,11 @@ export const defaultKubernetesFetchOptions: KubernetesFetchOptions = {
  * fetch options, removing read-only properties filled by the
  * Kubernetes system.
  *
- * @param options Kubernetes fetch options.
+ * The inclusion selectors are processed to determine which resources
+ * in the Kubernetes cluster to query.
+ *
+ * @param options Kubernetes fetch options
+ * @return Kubernetes resources matching the fetch options
  */
 export async function kubernetesFetch(options: KubernetesFetchOptions = defaultKubernetesFetchOptions): Promise<K8sObject[]> {
     let client: K8sObjectApi;
@@ -175,7 +161,7 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
         try {
             const obj = apiObject(apiKind);
             const listResponse = await client.list(obj);
-            specs.push(...listResponse.body.items.map(cleanKubernetesSpec));
+            specs.push(...listResponse.body.items.map(s => cleanKubernetesSpec(s, apiKind)));
         } catch (e) {
             e.message = `Failed to list cluster resources ${apiKind.apiVersion}/${apiKind.kind}: ${e.message}`;
             logger.error(e.message);
@@ -198,7 +184,7 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
             try {
                 const obj = apiObject(apiKind, ns);
                 const listResponse = await client.list(obj);
-                specs.push(...listResponse.body.items.map(cleanKubernetesSpec));
+                specs.push(...listResponse.body.items.map(s => cleanKubernetesSpec(s, apiKind)));
             } catch (e) {
                 e.message = `Failed to list resources ${apiKind.apiVersion}/${apiKind.kind} in namespace ${ns}: ${e.message}`;
                 logger.error(e.message);
@@ -211,17 +197,24 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
 }
 
 /**
- * Make sure action and kinds property are populated with default values.
+ * Make sure Kubernetes resource selectors have appropriate properties
+ * populated with default values.  If the selector does not have an
+ * `action` set, it is set to "include".  If the selector does not have
+ * `kinds` set and `action` is "include", `kinds` is set to
+ * [[defaultKubernetesResourceSelectorKinds]].  Rules with `action` set
+ * to "exclude" and have no selectors are discarded.
+ *
+ * @param selectors Kubernetes resource selectors to ensure have default values
+ * @return Properly defaulted Kubernetes resource selectors
  */
-export function populateResourceSelectorDefaults(selectors: KubernetesResourceSelector[]): K8sSelector[] {
+export function populateResourceSelectorDefaults(selectors: KubernetesResourceSelector[]): KubernetesResourceSelector[] {
     return selectors.map(s => {
-        const k: K8sSelector = {
-            action: "include",
-            kinds: defaultKubernetesResourceSelectorKinds,
-            ...s,
-        };
+        const k: KubernetesResourceSelector = { action: "include", ...s };
+        if (!k.kinds && k.action === "include") {
+            k.kinds = defaultKubernetesResourceSelectorKinds;
+        }
         return k;
-    });
+    }).filter(s => s.action === "include" || s.kinds || s.labelSelector || s.name || s.namespace);
 }
 
 /**
@@ -236,7 +229,7 @@ export function populateResourceSelectorDefaults(selectors: KubernetesResourceSe
  * @param selectors All the resource selectors
  * @return A deduplicated array of Kubernetes cluster resource kinds among the inclusion rules
  */
-export function clusterResourceKinds(selectors: K8sSelector[]): KubernetesResourceKind[] {
+export function clusterResourceKinds(selectors: KubernetesResourceSelector[]): KubernetesResourceKind[] {
     const included = includedResourceKinds(selectors);
     return included.filter(ak => isClusterResource("list", ak.kind));
 }
@@ -252,7 +245,7 @@ export function clusterResourceKinds(selectors: K8sSelector[]): KubernetesResour
  * @param selectors All the resource selectors
  * @return A deduplicated array of Kubernetes resource kinds among the inclusion rules
  */
-export function includedResourceKinds(selectors: K8sSelector[]): KubernetesResourceKind[] {
+export function includedResourceKinds(selectors: KubernetesResourceSelector[]): KubernetesResourceKind[] {
     const includeSelectors = selectors.filter(s => s.action === "include");
     const includeKinds = _.flatten(includeSelectors.map(s => s.kinds));
     const uniqueKinds = _.uniqBy(includeKinds, "kind");
@@ -267,11 +260,11 @@ export function includedResourceKinds(selectors: K8sSelector[]): KubernetesResou
  * @param selectors Selectors to evaluate
  * @return A deduplicated array of Kubernetes resource kinds among the inclusion rules for namespace `ns`
  */
-export function namespaceResourceKinds(ns: string, selectors: K8sSelector[]): KubernetesResourceKind[] {
+export function namespaceResourceKinds(ns: string, selectors: KubernetesResourceSelector[]): KubernetesResourceKind[] {
     const apiKinds: KubernetesResourceKind[] = [];
-    for (const selector of selectors) {
-        if (includeMatch(selector.action, ns, selector.namespace)) {
-            apiKinds.push(...selector.kinds);
+    for (const selector of selectors.filter(s => s.action === "include")) {
+        if (nameMatch(ns, selector.namespace)) {
+            apiKinds.push(...selector.kinds.filter(ak => !isClusterResource("list", ak.kind)));
         }
     }
     return _.uniqBy(apiKinds, "kind");
@@ -294,16 +287,18 @@ function apiObject(apiKind: KubernetesResourceKind, ns?: string): K8sObject {
 /**
  * Remove read-only type properties not useful to retain in a resource
  * specification used for upserting resources.  This is probably not
- * perfect.
+ * perfect.  Add the `apiVersion` and `kind` properties since the they
+ * are not included in the items returned by the list endpoint,
+ * https://github.com/kubernetes/kubernetes/issues/3030 .
  *
  * @param obj Kubernetes spec to clean
  * @return Kubernetes spec with status-like properties removed
  */
-export function cleanKubernetesSpec(obj: k8s.KubernetesObject): K8sObject {
+export function cleanKubernetesSpec(obj: k8s.KubernetesObject, apiKind: KubernetesResourceKind): K8sObject {
     if (!obj) {
         return obj;
     }
-    const spec: any = obj;
+    const spec: any = { ...apiKind, ...obj };
     if (spec.metadata) {
         delete spec.metadata.creationTimestamp;
         delete spec.metadata.generation;
@@ -327,27 +322,29 @@ export function cleanKubernetesSpec(obj: k8s.KubernetesObject): K8sObject {
 
 /**
  * Filter provided Kubernetes resources according to the provides
- * selectors.
+ * selectors.  Each selector is applied in turn to each spec.  The
+ * action of the first selector that matches a resource is applied to
+ * that resource.  If no selector matches a resource, it is not
+ * returned, i.e., the default is to exclude.
  *
  * @param specs Kubernetes resources to filter
  * @param selectors Filtering rules
  * @return Filtered array of Kubernetes resources
  */
-export function selectKubernetesResources(specs: K8sObject[], selectors: K8sSelector[]): K8sObject[] {
+export function selectKubernetesResources(specs: K8sObject[], selectors: KubernetesResourceSelector[]): K8sObject[] {
     const uniqueSpecs = _.uniqBy(specs, kubernetesResourceIdentity);
     if (!selectors || selectors.length < 1) {
         return uniqueSpecs;
     }
     const filteredSpecs: K8sObject[] = [];
-    specLoop:
     for (const spec of uniqueSpecs) {
         for (const selector of selectors) {
             const action = selectorMatch(spec, selector);
             if (action === "include") {
                 filteredSpecs.push(spec);
-                continue specLoop;
+                break;
             } else if (action === "exclude") {
-                continue specLoop;
+                break;
             }
         }
     }
@@ -376,7 +373,7 @@ export function kubernetesResourceIdentity(obj: K8sObject): string {
  * @param selector Selector to use for checking
  * @return Selector action if there is a match, `undefined` otherwise
  */
-export function selectorMatch(spec: K8sObject, selector: K8sSelector): "include" | "exclude" | undefined {
+export function selectorMatch(spec: K8sObject, selector: KubernetesResourceSelector): "include" | "exclude" | undefined {
     if (!nameMatch(spec.metadata.name, selector.name)) {
         return undefined;
     }
@@ -386,41 +383,25 @@ export function selectorMatch(spec: K8sObject, selector: K8sSelector): "include"
     if (!labelMatch(spec, selector.labelSelector)) {
         return undefined;
     }
+    if (!kindMatch(spec, selector.kinds)) {
+        return undefined;
+    }
     return selector.action;
 }
 
 /**
+ * Determine if Kubernetes resource `kind` property is among the kinds
+ * provided.  If no kinds are provided, it is considered matching.
+ * Only the resource's `kind` property is considered when matching,
+ * `apiVersion` is ignored.
  *
- * Determine whether a a resource describe by `value` should be
- * included in the returned results.  If `action` is "include" and
- * there is a match, return `true`.  If `action` is "exclude" and
- * there is a match, return `false`.  If there is not a match,
- * return the opposite.
- *
- * The matching rules are as follows:
- *
- * -   If the `matcher` is a string, `value` and `matcher` must be equal (===).
- * -   If `matcher` is a regular expression, `value` must match the regular expression according to RegExp.test().
- * -   If no `matcher` is provided, any `value` matches.
- *
- * @param action Matching action
- * @param value String to match
- * @param matcher String or RegExp to match against
- * @return `true` if it should be included, `false` otherwise
+ * @param spec Kubernetes resource to check
+ * @param kinds Kubernetes resource selector `kinds` property to use for checking
+ * @return Return `true` if it is a match, `false` otherwise
  */
-export function includeMatch(action: "include" | "exclude", value: string, matcher?: string | RegExp): boolean {
-    if (action !== "include" && action !== "exclude") {
-        throw new Error(`Provided action is neither 'include' or 'exclude': '${action}'`);
+export function kindMatch(spec: K8sObject, kinds: KubernetesResourceKind[]): boolean {
+    if (!kinds || kinds.length < 1) {
+        return true;
     }
-    if (typeof matcher === "string") {
-        const match = matcher === value;
-        return (action === "include") ? match : !match;
-    } else if (matcher instanceof RegExp) {
-        const match = matcher.test(value);
-        return (action === "include") ? match : !match;
-    } else if (!matcher) {
-        return action === "include";
-    } else {
-        throw new Error(`Provided matcher is neither a string or RegExp: ${stringify(matcher)}: ${typeof matcher}`);
-    }
+    return kinds.map(ak => ak.kind).includes(spec.kind);
 }

@@ -90,8 +90,10 @@ export function applicationLabels(req: ApplicationLabelInput): { [key: string]: 
 }
 
 /**
- * Determine if labels match selector.  If the selector contains
- * no label selector, it is considered a match.
+ * Determine if labels match selector.  If the selector contains no
+ * label selector, it is considered a match.  If the the matchLabels
+ * contain no properties, it is considered matching.  If the
+ * matchExpressions array is empty, it is considered matching.
  *
  * @param spec Kubernetes object spec
  * @param selector Kubernetes label selector
