@@ -146,27 +146,32 @@ export function encodeSecret(name: string, data: { [key: string]: string }): k8s
 }
 
 /**
- * Encrypt secret values, which should already be base64 encoded.
+ * Return a copy of the provided secret with its data values
+ * encrypted.  The provided secret should have its data values base64
+ * encoded.  The provided secret is not modified.
  *
  * @param secret Kubernetes secret with base64 encoded data values
  * @return Kubernetes secret object with encrypted data values
  */
 export async function encryptSecret(secret: DeepPartial<k8s.V1Secret>, key: string): Promise<k8s.V1Secret> {
+    const encrypted = _.cloneDeep(secret);
     for (const datum of Object.keys(secret.data)) {
-        secret.data[datum] = await encrypt(secret.data[datum], key);
+        encrypted.data[datum] = await encrypt(secret.data[datum], key);
     }
-    return secret as k8s.V1Secret;
+    return encrypted as k8s.V1Secret;
 }
 
 /**
- * Dencrypt secret values.
+ * Return a copy of the provided secret with its data valued
+ * decrypted.  The provided secret is not modified.
  *
  * @param secret Kubernetes secret with encrypted data values
  * @return Kubernetes secret object with base64 encoded data values
  */
 export async function decryptSecret(secret: DeepPartial<k8s.V1Secret>, key: string): Promise<k8s.V1Secret> {
+    const decrypted = _.cloneDeep(secret);
     for (const datum of Object.keys(secret.data)) {
-        secret.data[datum] = await decrypt(secret.data[datum], key);
+        decrypted.data[datum] = await decrypt(secret.data[datum], key);
     }
-    return secret as k8s.V1Secret;
+    return decrypted as k8s.V1Secret;
 }
