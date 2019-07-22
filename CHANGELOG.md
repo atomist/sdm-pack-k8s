@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.5.1...HEAD)
 
+### Added
+
+-   Add Kubernetes fetch. [#61](https://github.com/atomist/sdm-pack-k8s/issues/61)
+
 ## [1.5.1](https://github.com/atomist/sdm-pack-k8s/compare/1.5.0...1.5.1) - 2019-06-04
 
 ### Changed
