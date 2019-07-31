@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.6.0...HEAD)
 
+### Added
+
+-   Write to progress log when syncing. [#63](https://github.com/atomist/sdm-pack-k8s/issues/63)
+
 ### Fixed
 
 -   Fetch should fetch non-standard namespaces. [#62](https://github.com/atomist/sdm-pack-k8s/issues/62)
