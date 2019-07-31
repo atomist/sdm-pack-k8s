@@ -107,6 +107,8 @@ export const K8sSync: ExecuteGoal = async gi => {
         const changes = await diffPush(p, push, tag, log);
         const errs: Error[] = [];
         for (const change of changes) {
+            const verb = (change.change === "delete") ? "Deleting" : "Applying";
+            log.write(`${verb} '${change.path}' from commit ${change.sha}`);
             try {
                 await changeResource(p, change);
             } catch (e) {
@@ -119,6 +121,8 @@ export const K8sSync: ExecuteGoal = async gi => {
         if (errs.length > 0) {
             return { code: errs.length, message: errs.map(e => e.message).join("; ") };
         }
-        return { code: 0, message: `Changed ${changes.length} resources` };
+        const message = `Changed ${changes.length} resources`;
+        log.write(message);
+        return { code: 0, message };
     });
 };
