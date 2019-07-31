@@ -92,6 +92,13 @@ export interface KubernetesSyncOptions {
      * to manually encrypt and decrypt values using the same strategy.
      */
     secretKey?: string;
+    /**
+     * Default format to use when creating Kubernetes specs in the
+     * sync repo.  If updating an existing file, the format of the
+     * existing file will be used.  If not provided, "yaml" is the
+     * default.
+     */
+    specFormat?: "json" | "yaml";
 }
 
 /**

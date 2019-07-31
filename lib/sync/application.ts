@@ -151,15 +151,21 @@ export function syncResources(
  * @param fs File and spec object that matches resource, may be undefined
  */
 async function resourceUpserted(resource: K8sObject, p: Project, fs: ProjectFileSpec, opts: KubernetesSyncOptions): Promise<void> {
+    let format: KubernetesSyncOptions["specFormat"] = "yaml";
+    if (fs && fs.file) {
+        format = (/\.ya?ml$/.test(fs.file.path)) ? "yaml" : "json";
+    } else if (opts.specFormat) {
+        format = opts.specFormat;
+    }
     const stringifyOptions: KubernetesSpecStringifyOptions = {
-        format: (fs && fs.file && /\.ya?ml$/.test(fs.file.path)) ? "yaml" : "json",
+        format,
         secretKey: opts.secretKey,
     };
     const resourceString = await kubernetesSpecStringify(resource, stringifyOptions);
     if (fs) {
         await fs.file.setContent(resourceString);
     } else {
-        const specPath = await uniqueSpecFile(resource, p);
+        const specPath = await uniqueSpecFile(resource, p, format);
         await p.addFile(specPath, resourceString);
     }
 }
@@ -201,9 +207,9 @@ export function matchSpec(spec: K8sObject, fileSpecs: ProjectFileSpec[]): Projec
  * @param p Kubernetes spec project
  * @return Unique spec file name that sorts properly
  */
-export async function uniqueSpecFile(resource: K8sObject, p: Project): Promise<string> {
+export async function uniqueSpecFile(resource: K8sObject, p: Project, format: KubernetesSyncOptions["specFormat"]): Promise<string> {
     const specRoot = kubernetesSpecFileBasename(resource);
-    const specExt = ".json";
+    const specExt = `.${format}`;
     let specPath = specRoot + specExt;
     while (await p.getFile(specPath)) {
         specPath = specRoot + "_" + guid().split("-")[0] + specExt;
