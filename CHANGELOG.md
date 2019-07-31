@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.6.1...HEAD)
 
+### Changed
+
+-   Make sync default spec format YAML. [#65](https://github.com/atomist/sdm-pack-k8s/issues/65)
+
 ## [1.6.1](https://github.com/atomist/sdm-pack-k8s/compare/1.6.0...1.6.1) - 2019-07-31
 
 ### Added
