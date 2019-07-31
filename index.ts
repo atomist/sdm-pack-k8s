@@ -35,7 +35,9 @@ export {
     KubernetesDelete,
 } from "./lib/kubernetes/request";
 export {
+    decryptSecret,
     encodeSecret,
+    encryptSecret,
 } from "./lib/kubernetes/secret";
 export {
     kubernetesSpecFileBasename,
