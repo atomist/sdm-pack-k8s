@@ -57,6 +57,7 @@ describe("kubernetes/fetch", () => {
                     action: "include",
                     kinds: [
                         { apiVersion: "v1", kind: "ConfigMap" },
+                        { apiVersion: "v1", kind: "Namespace" },
                         { apiVersion: "v1", kind: "Secret" },
                         { apiVersion: "v1", kind: "Service" },
                         { apiVersion: "v1", kind: "ServiceAccount" },
@@ -150,6 +151,7 @@ describe("kubernetes/fetch", () => {
                     action: "include",
                     kinds: [
                         { apiVersion: "v1", kind: "ConfigMap" },
+                        { apiVersion: "v1", kind: "Namespace" },
                         { apiVersion: "v1", kind: "Secret" },
                         { apiVersion: "v1", kind: "Service" },
                         { apiVersion: "v1", kind: "ServiceAccount" },
@@ -283,6 +285,7 @@ describe("kubernetes/fetch", () => {
             const s: KubernetesResourceSelector[] = [{ action: "include", kinds: defaultKubernetesResourceSelectorKinds }];
             const c = clusterResourceKinds(s);
             const e = [
+                { apiVersion: "v1", kind: "Namespace" },
                 { apiVersion: "v1", kind: "PersistentVolume" },
                 { apiVersion: "extensions/v1beta1", kind: "PodSecurityPolicy" },
                 { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRole" },
@@ -300,6 +303,7 @@ describe("kubernetes/fetch", () => {
             ];
             const c = clusterResourceKinds(s);
             const e = [
+                { apiVersion: "v1", kind: "Namespace" },
                 { apiVersion: "v1", kind: "PersistentVolume" },
                 { apiVersion: "extensions/v1beta1", kind: "PodSecurityPolicy" },
                 { apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRole" },
@@ -955,56 +959,45 @@ describe("kubernetes/fetch", () => {
             assert.deepStrictEqual(c, e);
         });
 
-    });
-
-    describe("kubernetesResourceIdentity", () => {
-
-        it("should return all unique objects", () => {
-            const o = [
-                { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
-                { kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
-                { kind: "Deployment", metadata: { name: "waterloo-sunset-mono", namespace: "something-else" } },
-                { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
-                { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face-to-face" } },
-                { kind: "Service", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
-                { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
-                { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
-            ];
-            const u = _.uniqBy(o, kubernetesResourceIdentity);
-            const e = [
-                { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
-                { kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
-                { kind: "Deployment", metadata: { name: "waterloo-sunset-mono", namespace: "something-else" } },
-                { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
-                { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face-to-face" } },
-                { kind: "Service", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
-                { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
-                { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
-            ];
-            assert.deepStrictEqual(u, e);
+        it("should remove secrets from service account", () => {
+            const s: any = {
+                metadata: {
+                    name: "the-way-i-see-it",
+                    namespace: "raphael-saadiq",
+                },
+                secrets: [{ name: "sdm-serviceaccount-token-f97ps" }],
+            };
+            const c = cleanKubernetesSpec(s, { apiVersion: "v1", kind: "ServiceAccount" });
+            const e = {
+                apiVersion: "v1",
+                kind: "ServiceAccount",
+                metadata: {
+                    name: "the-way-i-see-it",
+                    namespace: "raphael-saadiq",
+                },
+            };
+            assert.deepStrictEqual(c, e);
         });
 
-        it("should filter out duplicates", () => {
-            const o = [
-                { kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
-                { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
-                { apiVersion: "extensions/v1beta1", kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
-                { apiVersion: "extensions/v1beta1", kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
-                { apiVersion: "apps/v1", kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
-                { kind: "Service", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
-                { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
-                { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
-            ];
-            const u = _.uniqBy(o, kubernetesResourceIdentity);
-            const e = [
-                { kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
-                { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
-                { apiVersion: "extensions/v1beta1", kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
-                { kind: "Service", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
-                { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
-                { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
-            ];
-            assert.deepStrictEqual(u, e);
+        it("should not remove secrets from non-service account", () => {
+            const s: any = {
+                metadata: {
+                    name: "the-way-i-see-it",
+                    namespace: "raphael-saadiq",
+                },
+                secrets: [{ name: "sdm-serviceaccount-token-f97ps" }],
+            };
+            const c = cleanKubernetesSpec(s, { apiVersion: "v1", kind: "SorviceAccount" });
+            const e = {
+                apiVersion: "v1",
+                kind: "SorviceAccount",
+                metadata: {
+                    name: "the-way-i-see-it",
+                    namespace: "raphael-saadiq",
+                },
+                secrets: [{ name: "sdm-serviceaccount-token-f97ps" }],
+            };
+            assert.deepStrictEqual(c, e);
         });
 
     });
@@ -1043,6 +1036,10 @@ describe("kubernetes/fetch", () => {
 
         it("should filter resources using defaults", () => {
             const r: any[] = [
+                { apiVersion: "v1", kind: "Namespace", metadata: { name: "default" } },
+                { apiVersion: "v1", kind: "Namespace", metadata: { name: "kube-system" } },
+                { apiVersion: "v1", kind: "Namespace", metadata: { name: "kinda-kinks" } },
+                { apiVersion: "v1", kind: "Namespace", metadata: { name: "something-else" } },
                 { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
                 { kind: "ClusterRole", metadata: { name: "admin" } },
                 { kind: "ClusterRole", metadata: { name: "cluster-admin" } },
@@ -1072,6 +1069,8 @@ describe("kubernetes/fetch", () => {
             const s = defaultKubernetesFetchOptions.selectors;
             const o = selectKubernetesResources(r, s);
             const e = [
+                { apiVersion: "v1", kind: "Namespace", metadata: { name: "kinda-kinks" } },
+                { apiVersion: "v1", kind: "Namespace", metadata: { name: "something-else" } },
                 { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
                 { kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
                 { kind: "Deployment", metadata: { name: "waterloo-sunset-mono", namespace: "something-else" } },
@@ -1142,6 +1141,58 @@ describe("kubernetes/fetch", () => {
                 { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society", labels } },
             ];
             assert.deepStrictEqual(o, e);
+        });
+
+    });
+
+    describe("kubernetesResourceIdentity", () => {
+
+        it("should return all unique objects", () => {
+            const o = [
+                { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
+                { kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
+                { kind: "Deployment", metadata: { name: "waterloo-sunset-mono", namespace: "something-else" } },
+                { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
+                { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face-to-face" } },
+                { kind: "Service", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
+                { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
+                { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
+            ];
+            const u = _.uniqBy(o, kubernetesResourceIdentity);
+            const e = [
+                { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
+                { kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
+                { kind: "Deployment", metadata: { name: "waterloo-sunset-mono", namespace: "something-else" } },
+                { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
+                { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face-to-face" } },
+                { kind: "Service", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
+                { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
+                { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
+            ];
+            assert.deepStrictEqual(u, e);
+        });
+
+        it("should filter out duplicates", () => {
+            const o = [
+                { kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
+                { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
+                { apiVersion: "extensions/v1beta1", kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
+                { apiVersion: "extensions/v1beta1", kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
+                { apiVersion: "apps/v1", kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
+                { kind: "Service", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
+                { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
+                { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
+            ];
+            const u = _.uniqBy(o, kubernetesResourceIdentity);
+            const e = [
+                { kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
+                { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
+                { apiVersion: "extensions/v1beta1", kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
+                { kind: "Service", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
+                { kind: "ServiceAccount", metadata: { name: "tired-of-waiting-for-you", namespace: "kinda-kinks" } },
+                { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society" } },
+            ];
+            assert.deepStrictEqual(u, e);
         });
 
     });

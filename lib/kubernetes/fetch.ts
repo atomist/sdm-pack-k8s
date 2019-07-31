@@ -88,6 +88,7 @@ export interface KubernetesResourceSelector {
  */
 export const defaultKubernetesResourceSelectorKinds: KubernetesResourceKind[] = [
     { apiVersion: "v1", kind: "ConfigMap" },
+    { apiVersion: "v1", kind: "Namespace" },
     { apiVersion: "v1", kind: "Secret" },
     { apiVersion: "v1", kind: "Service" },
     { apiVersion: "v1", kind: "ServiceAccount" },
@@ -134,6 +135,8 @@ export const defaultKubernetesFetchOptions: KubernetesFetchOptions = {
     selectors: [
         { action: "exclude", namespace: /^kube-/ },
         { action: "exclude", name: /^(?:kubeadm|system):/ },
+        { action: "exclude", kinds: [{ apiVersion: "v1", kind: "Namespace" }], name: "default" },
+        { action: "exclude", kinds: [{ apiVersion: "v1", kind: "Namespace" }], name: /^kube-/ },
         { action: "exclude", kinds: [{ apiVersion: "v1", kind: "Service" }], namespace: "default", name: "kubernetes" },
         { action: "exclude", kinds: [{ apiVersion: "v1", kind: "ServiceAccount" }], name: "default" },
         {
@@ -193,16 +196,18 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
         }
     }
 
-    let namespaces: string[];
+    let namespaces: k8s.V1Namespace[];
     try {
         const nsResponse = await clients.core.listNamespace();
-        namespaces = nsResponse.body.items.map((ns: K8sObject) => ns.metadata.name);
+        namespaces = nsResponse.body.items;
     } catch (e) {
         e.message = `Failed to list namespaces: ${e.message}`;
         logger.error(e.message);
         throw e;
     }
-    for (const ns of namespaces) {
+    for (const nsObj of namespaces) {
+        specs.push(cleanKubernetesSpec(nsObj, { apiVersion: "v1", kind: "Namespace" }));
+        const ns = nsObj.metadata.name;
         const apiKinds = namespaceResourceKinds(ns, selectors);
         for (const apiKind of apiKinds) {
             try {
@@ -341,6 +346,9 @@ export function cleanKubernetesSpec(obj: k8s.KubernetesObject, apiKind: Kubernet
         delete spec.spec.template.metadata.creationTimestamp;
     }
     delete spec.status;
+    if (spec.kind === "ServiceAccount") {
+        delete spec.secrets;
+    }
     return spec;
 }
 
