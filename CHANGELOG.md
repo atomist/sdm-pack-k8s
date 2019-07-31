@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.6.1...HEAD)
 
+### Added
+
+-   Export decryptSecret & encryptSecret. [c47d24d](https://github.com/atomist/sdm-pack-k8s/commit/c47d24d0a92ddd06468f36f96ce1445dc3e1d402)
+
 ### Changed
 
 -   Make sync default spec format YAML. [#65](https://github.com/atomist/sdm-pack-k8s/issues/65)
