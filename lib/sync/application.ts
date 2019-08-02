@@ -26,6 +26,7 @@ import {
 } from "@atomist/automation-client";
 import {
     CachingProjectLoader,
+    execPromise,
     ProjectLoader,
     ProjectLoadingParameters,
 } from "@atomist/sdm";
@@ -37,6 +38,7 @@ import { parseKubernetesSpecFile } from "../deploy/spec";
 import { K8sObject } from "../kubernetes/api";
 import {
     appName,
+    isKubernetesApplication,
     KubernetesDelete,
 } from "../kubernetes/request";
 import {
@@ -44,6 +46,7 @@ import {
     kubernetesSpecStringify,
     KubernetesSpecStringifyOptions,
 } from "../kubernetes/spec";
+import { logRetry } from "../support/retry";
 import { cloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
 import { commitTag } from "./tag";
@@ -114,13 +117,15 @@ export function syncResources(
 ): (p: GitProject) => Promise<void> {
 
     return async syncProject => {
+        const slug = `${syncProject.id.owner}/${syncProject.id.repo}`;
+        const aName = appName(app);
         const specs: ProjectFileSpec[] = [];
         await projectUtils.doWithFiles(syncProject, k8sSpecGlob, async file => {
             try {
                 const spec = await parseKubernetesSpecFile(file);
                 specs.push({ file, spec });
             } catch (e) {
-                logger.warn(`Failed to process sync repo spec ${file.path}, ignoring: ${e.message}`);
+                logger.warn(`Failed to process sync repo ${slug} spec ${file.path}, ignoring: ${e.message}`);
             }
         });
         const [syncAction, syncVerb] = (action === "delete") ? [resourceDeleted, "Delete"] : [resourceUpserted, "Update"];
@@ -132,12 +137,29 @@ export function syncResources(
             return;
         }
         try {
-            await syncProject.commit(`${syncVerb} specs for ${appName(app)}\n\n[atomist:generated] ${commitTag()}\n`);
-            await syncProject.push();
+            const v = isKubernetesApplication(app) ? app.image.replace(/^.*:/, ":") : "";
+            await syncProject.commit(`${syncVerb} specs for ${aName}${v}\n\n` +
+                `[atomist:generated] ${commitTag()}\n`);
         } catch (e) {
-            e.message = `Failed to commit and push resource changes to sync repo: ${e.message}`;
+            e.message = `Failed to commit resource changes for ${aName} to sync repo ${slug}: ${e.message}`;
             logger.error(e.message);
             throw e;
+        }
+        try {
+            await syncProject.push();
+        } catch (e) {
+            logger.warn(`Failed on initial sync repo ${slug} push attempt: ${e.message}`);
+            try {
+                await logRetry(async () => {
+                    const pullResult = await execPromise("git", ["pull", "--rebase"], { cwd: syncProject.baseDir });
+                    logger.debug(`Sync project 'git pull --rebase': ${pullResult.stdout}; ${pullResult.stderr}`);
+                    await syncProject.push();
+                }, `sync project ${slug} git pull and push`);
+            } catch (e) {
+                e.message = `Failed sync repo ${slug} pull and rebase retries: ${e.message}`;
+                logger.error(e.message);
+                throw e;
+            }
         }
     };
 }

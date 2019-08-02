@@ -24,7 +24,6 @@ import {
 } from "@atomist/automation-client";
 import * as assert from "power-assert";
 import { KubernetesSyncOptions } from "../../lib/config";
-import { KubernetesApplication } from "../../lib/kubernetes/request";
 import {
     matchSpec,
     ProjectFileSpec,
@@ -211,10 +210,12 @@ describe("sync/application", () => {
             p.commit = async msg => { commitMessage = msg; return p; };
             let pushed = false;
             p.push = async msg => { pushed = true; return p; };
-            const a: KubernetesApplication = {
+            const a = {
+                image: "hub.tonina.com/black-angel/como-yo:3.58",
                 name: "tonina",
                 ns: "black-angel",
-            } as any;
+                workspaceId: "T0N1N4",
+            };
             const rs = [
                 {
                     apiVersion: "apps/v1",
@@ -263,7 +264,7 @@ describe("sync/application", () => {
                 specFormat: "json",
             };
             await syncResources(a, rs, "upsert", o)(p);
-            const eCommitMessage = `Update specs for black-angel/tonina
+            const eCommitMessage = `Update specs for black-angel/tonina:3.58
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
 `;
@@ -310,10 +311,12 @@ describe("sync/application", () => {
             p.commit = async msg => { commitMessage = msg; return p; };
             let pushed = false;
             p.push = async msg => { pushed = true; return p; };
-            const a: KubernetesApplication = {
+            const a = {
+                image: "hub.tonina.com/black-angel/como-yo:3.58",
                 name: "tonina",
                 ns: "black-angel",
-            } as any;
+                workspaceId: "T0N1N4",
+            };
             const rs = [
                 {
                     apiVersion: "apps/v1",
@@ -340,7 +343,7 @@ describe("sync/application", () => {
                 },
             };
             await syncResources(a, rs, "upsert", o)(p);
-            const eCommitMessage = `Update specs for black-angel/tonina
+            const eCommitMessage = `Update specs for black-angel/tonina:3.58
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
 `;
@@ -392,10 +395,12 @@ metadata:
             p.commit = async msg => { commitMessage = msg; return p; };
             let pushed = false;
             p.push = async msg => { pushed = true; return p; };
-            const a: KubernetesApplication = {
+            const a = {
+                image: "hub.tonina.com/black-angel/como-yo:3.5.8-20180406",
                 name: "tonina",
                 ns: "black-angel",
-            } as any;
+                workspaceId: "T0N1N4",
+            };
             const rs = [
                 {
                     apiVersion: "apps/v1",
@@ -459,7 +464,7 @@ metadata:
                 specFormat: "json",
             };
             await syncResources(a, rs, "upsert", o)(p);
-            const eCommitMessage = `Update specs for black-angel/tonina
+            const eCommitMessage = `Update specs for black-angel/tonina:3.5.8-20180406
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
 `;
@@ -545,10 +550,11 @@ metadata:
             p.commit = async msg => { commitMessage = msg; return p; };
             let pushed = false;
             p.push = async msg => { pushed = true; return p; };
-            const a: KubernetesApplication = {
+            const a = {
                 name: "tonina",
                 ns: "black-angel",
-            } as any;
+                workspaceId: "T0N1N4",
+            };
             const rs = [
                 {
                     apiVersion: "apps/v1",
