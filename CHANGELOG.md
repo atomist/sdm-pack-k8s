@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.7.0...HEAD)
 
+### Fixed
+
+-   Sync fails if push fails. [#66](https://github.com/atomist/sdm-pack-k8s/issues/66)
+
 ## [1.7.0](https://github.com/atomist/sdm-pack-k8s/compare/1.6.1...1.7.0) - 2019-08-01
 
 ### Added
