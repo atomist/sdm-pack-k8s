@@ -19,9 +19,9 @@ import {
     InMemoryProject,
 } from "@atomist/automation-client";
 import * as assert from "power-assert";
-import { sortSpecs } from "../../lib/sync/startup";
+import { sortSpecs } from "../../lib/sync/sync";
 
-describe("sync/startup", () => {
+describe("sync/sync", () => {
 
     describe("sortSpecs", () => {
 

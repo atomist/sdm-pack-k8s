@@ -47,7 +47,7 @@ import {
     KubernetesSpecStringifyOptions,
 } from "../kubernetes/spec";
 import { logRetry } from "../support/retry";
-import { cloneOptions } from "./clone";
+import { defaultCloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
 import { commitTag } from "./tag";
 
@@ -73,7 +73,7 @@ export async function syncApplication(app: KubernetesDelete, resources: K8sObjec
     }
     const projectLoadingParameters: ProjectLoadingParameters = {
         credentials: syncOpts.credentials,
-        cloneOptions,
+        cloneOptions: defaultCloneOptions,
         id: syncRepo,
         readOnly: false,
     };
@@ -138,8 +138,7 @@ export function syncResources(
         }
         try {
             const v = isKubernetesApplication(app) ? app.image.replace(/^.*:/, ":") : "";
-            await syncProject.commit(`${syncVerb} ${aName}${v}\n\n` +
-                `[atomist:generated] ${commitTag()}\n`);
+            await syncProject.commit(`${syncVerb} ${aName}${v}\n\n[atomist:generated] ${commitTag()}\n`);
         } catch (e) {
             e.message = `Failed to commit resource changes for ${aName} to sync repo ${slug}: ${e.message}`;
             logger.error(e.message);

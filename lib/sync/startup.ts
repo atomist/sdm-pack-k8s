@@ -14,33 +14,22 @@
  * limitations under the License.
  */
 
-import {
-    GitProject,
-    logger,
-    ProjectFile,
-} from "@atomist/automation-client";
-import {
-    fakeContext,
-    ProjectLoadingParameters,
-    StartupListener,
-} from "@atomist/sdm";
+import { StartupListener } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as cluster from "cluster";
 import * as _ from "lodash";
-import { KubernetesSyncOptions } from "../config";
-import { parseKubernetesSpecFile } from "../deploy/spec";
-import { applySpec } from "../kubernetes/apply";
-import { decryptSecret } from "../kubernetes/secret";
-import { errMsg } from "../support/error";
-import { cloneOptions } from "./clone";
-import { k8sSpecGlob } from "./diff";
 import { queryForScmProvider } from "./repo";
+import { repoSync } from "./sync";
 
 /**
  * If the SDM is registered with one or more workspaces and not
  * running in local mode, query cortex for the sync repo and replace
  * the sdm.k8s.options.sync.repo property with a RemoteRepoRef for
- * that repo.  If this is the master, run [[initialSync]].
+ * that repo.  If this is the cluster master, run [[repoSync]].  If
+ * this is the cluster master and the SDM configuration has a
+ * [[KubernetesSyncOptions]] with a positive value of
+ * `intervalMinutes`, it will set up an interval timer to apply the
+ * specs from the sync repo periodically.
  */
 export const syncRepoStartupListener: StartupListener = async ctx => {
     if (isInLocalMode()) {
@@ -53,89 +42,10 @@ export const syncRepoStartupListener: StartupListener = async ctx => {
     if (!cluster.isMaster) {
         return;
     }
-    const disposers: Array<() => Promise<void>> = [];
-    const workspaceId: string = _.get(sdm, "configuration.workspaceIds[0]");
-    const context = fakeContext(workspaceId);
-    context.lifecycle = {
-        dispose: async () => { await Promise.all(disposers.map(d => d())); },
-        registerDisposable: (d: () => Promise<void>) => { disposers.push(d); },
-    };
-    const projectLoadingParameters: ProjectLoadingParameters = {
-        credentials: sdm.configuration.sdm.k8s.options.sync.credentials,
-        cloneOptions,
-        context,
-        id: sdm.configuration.sdm.k8s.options.sync.repo,
-        readOnly: true,
-    };
-    const opts: KubernetesSyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
-    try {
-        await sdm.configuration.sdm.projectLoader.doWithProject(projectLoadingParameters, initialSync(opts));
-    } catch (e) {
-        e.message = `Failed to perform inital sync using repo ${opts.repo.owner}/${opts.repo.repo}: ${e.message}`;
-        logger.error(e.message);
-    } finally {
-        try {
-            await context.lifecycle.dispose();
-        } catch (e) {
-            logger.warn(`Failed to clean up startup sync repo: ${e.message}`);
-        }
+    await repoSync(sdm);
+    const interval: number = _.get(sdm, "configuration.sdm.k8s.options.sync.intervalMinutes");
+    if (interval && interval > 0) {
+        setInterval(() => repoSync(sdm), interval * 60 * 1000);
     }
     return;
 };
-
-/**
- * Ensure all specs in `syncRepo` have corresponding resources in the
- * Kubernetes cluster.  If the resource does not exist, it is created
- * using the spec.  If it does exist, it is patched using the spec.
- * Errors are collected and thrown after processing all specs so one
- * bad spec does not stop processing.
- *
- * @param syncRepo Repository of specs to sync
- */
-function initialSync(opts: KubernetesSyncOptions): (p: GitProject) => Promise<void> {
-    return async syncRepo => {
-        const specFiles = await sortSpecs(syncRepo);
-        const errors: Error[] = [];
-        for (const specFile of specFiles) {
-            logger.debug(`Processing spec ${specFile.path}`);
-            try {
-                let spec = await parseKubernetesSpecFile(specFile);
-                if (spec.kind === "Secret" && opts && opts.secretKey) {
-                    spec = await decryptSecret(spec, opts.secretKey);
-                }
-                await applySpec(spec);
-            } catch (e) {
-                e.message = `Failed to apply '${specFile.path}': ${errMsg(e)}`;
-                logger.error(e.message);
-                errors.push(e);
-            }
-        }
-        if (errors.length > 0) {
-            errors[0].message = `There were errors during initial repo sync: ${errors.map(e => e.message).join("; ")}`;
-            throw errors[0];
-        }
-        return;
-    };
-}
-
-/**
- * Consume stream of files from project and sort them by their `path`
- * property using `localeCompare`.  Any file at the root of the
- * project, i.e., not in a subdirectory, having the extensions
- * ".json", ".yaml", or ".yml` are considered specs.
- *
- * Essentially, this function converts a FileStream into a Promise of
- * sorted ProjectFiles.
- *
- * @param syncRepo Repository of specs to sort
- * @return Sorted array of specs in project
- */
-export function sortSpecs(syncRepo: GitProject): Promise<ProjectFile[]> {
-    return new Promise<ProjectFile[]>((resolve, reject) => {
-        const specsStream = syncRepo.streamFiles(k8sSpecGlob);
-        const specs: ProjectFile[] = [];
-        specsStream.on("data", f => specs.push(f));
-        specsStream.on("error", reject);
-        specsStream.on("end", () => resolve(specs.sort((a, b) => a.path.localeCompare(b.path))));
-    });
-}

@@ -16,7 +16,7 @@
 
 import { CloneOptions } from "@atomist/automation-client";
 
-export const cloneOptions: CloneOptions = {
+export const defaultCloneOptions: CloneOptions = {
     alwaysDeep: false,
     depth: 1,
     detachHead: false,

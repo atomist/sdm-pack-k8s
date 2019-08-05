@@ -34,7 +34,7 @@ import {
     RepoScmProvider,
     ScmProviders,
 } from "../typings/types";
-import { cloneOptions } from "./clone";
+import { defaultCloneOptions } from "./clone";
 
 export interface RepoCredentials {
     credentials: ProjectOperationCredentials;
@@ -213,7 +213,7 @@ async function queryScm(sdm: SoftwareDeliveryMachine): Promise<RepoCredentials |
             if (rc) {
                 logger.debug(`Attempting to clone ${slug} using ${rc.repo.cloneUrl}`);
                 try {
-                    const p = await GitCommandGitProject.cloned(rc.credentials, rc.repo, cloneOptions);
+                    const p = await GitCommandGitProject.cloned(rc.credentials, rc.repo, defaultCloneOptions);
                     if (p) {
                         rc.repo.branch = rc.repo.branch || p.branch || defaultDefaultBranch;
                         return rc;

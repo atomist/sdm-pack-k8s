@@ -82,14 +82,22 @@ export interface KubernetesSyncOptions {
      */
     credentials?: ProjectOperationCredentials;
     /**
+     * If provided, the SDM will apply all specs in the sync repo
+     * approximately every `intervalMinutes` minutes.  If not provided
+     * or set to zero (0) or a negative number, specs will only be
+     * applied at startup or when they are changed by a commit.
+     */
+    intervalMinutes?: number;
+    /**
      * Key to use to encrypt Kubernetes Secret resource values before
      * storing them in the sync repo and decrypt them when reading
      * them from the sync repo.  If it is not provided, secrets are
      * not encrypted in the sync repo, so hopefully they aren't too
      * secret.
      *
-     * You can use the bin/secret.js script bundled with this package
-     * to manually encrypt and decrypt values using the same strategy.
+     * You can use the Atomist CLI or bin/secret.js script bundled
+     * with this package to manually encrypt and decrypt values using
+     * the same strategy.
      */
     secretKey?: string;
     /**
