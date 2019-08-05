@@ -138,7 +138,7 @@ export function syncResources(
         }
         try {
             const v = isKubernetesApplication(app) ? app.image.replace(/^.*:/, ":") : "";
-            await syncProject.commit(`${syncVerb} specs for ${aName}${v}\n\n` +
+            await syncProject.commit(`${syncVerb} ${aName}${v}\n\n` +
                 `[atomist:generated] ${commitTag()}\n`);
         } catch (e) {
             e.message = `Failed to commit resource changes for ${aName} to sync repo ${slug}: ${e.message}`;

@@ -264,7 +264,7 @@ describe("sync/application", () => {
                 specFormat: "json",
             };
             await syncResources(a, rs, "upsert", o)(p);
-            const eCommitMessage = `Update specs for black-angel/tonina:3.58
+            const eCommitMessage = `Update black-angel/tonina:3.58
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
 `;
@@ -343,7 +343,7 @@ describe("sync/application", () => {
                 },
             };
             await syncResources(a, rs, "upsert", o)(p);
-            const eCommitMessage = `Update specs for black-angel/tonina:3.58
+            const eCommitMessage = `Update black-angel/tonina:3.58
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
 `;
@@ -464,7 +464,7 @@ metadata:
                 specFormat: "json",
             };
             await syncResources(a, rs, "upsert", o)(p);
-            const eCommitMessage = `Update specs for black-angel/tonina:3.5.8-20180406
+            const eCommitMessage = `Update black-angel/tonina:3.5.8-20180406
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
 `;
@@ -603,7 +603,7 @@ metadata:
                 },
             };
             await syncResources(a, rs, "delete", o)(p);
-            const eCommitMessage = `Delete specs for black-angel/tonina
+            const eCommitMessage = `Delete black-angel/tonina
 
 [atomist:generated] [atomist:sync-commit=@atomist/sdm-pack-k8s]
 `;
