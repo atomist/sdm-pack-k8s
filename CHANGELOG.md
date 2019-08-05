@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.7.1...HEAD)
 
+### Added
+
+-   Add periodic sync reconciliation. [#68](https://github.com/atomist/sdm-pack-k8s/issues/68)
+
 ### Changed
 
 -   Shorten sync app commit message. [2f323b8](https://github.com/atomist/sdm-pack-k8s/commit/2f323b8c7886c0c5203dfd1bbb1869bd9dcfdc2a)
