@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 -   Provide default details for KubernetesDeploy. [8aebc40](https://github.com/atomist/sdm-pack-k8s/commit/8aebc40aa87ea04e570b1117341c1b752d16cf2d)
+-   Clean up SyncRepoRef interface. [60b768c](https://github.com/atomist/sdm-pack-k8s/commit/60b768c41a7d75c3e6f5535c2fadac1a2c969551)
 
 ## [1.7.1](https://github.com/atomist/sdm-pack-k8s/compare/1.7.0...1.7.1) - 2019-08-02
 
