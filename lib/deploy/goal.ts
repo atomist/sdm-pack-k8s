@@ -127,7 +127,7 @@ export class KubernetesDeploy extends FulfillableGoalWithRegistrations<Kubernete
      * @param details Define unique aspects of this Kubernetes deployment, see [[KubernetesDeploy.details]].
      * @param dependsOn Other goals that must complete successfully before scheduling this goal.
      */
-    constructor(public readonly details?: FulfillableGoalDetails, ...dependsOn: Goal[]) {
+    constructor(public readonly details: FulfillableGoalDetails = {}, ...dependsOn: Goal[]) {
         super(getGoalDefinitionFrom(details, DefaultGoalNameGenerator.generateName("kubernetes-deploy")), ...dependsOn);
     }
 
