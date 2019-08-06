@@ -20,7 +20,6 @@ import {
     ProjectOperationCredentials,
     QueryNoCacheOptions,
     RemoteRepoRef,
-    RepoRef,
 } from "@atomist/automation-client";
 import { isRemoteRepoRef } from "@atomist/automation-client/lib/operations/common/RepoId";
 import { SoftwareDeliveryMachine } from "@atomist/sdm";
@@ -82,7 +81,7 @@ export async function queryForScmProvider(sdm: SoftwareDeliveryMachine): Promise
         return false;
     }
 
-    const repoProvided = isRemoteRepoRef(repoRef);
+    const repoProvided = isRemoteRepo(repoRef);
     const credsProvided = !!syncOptions.credentials;
     if (repoProvided && credsProvided) {
         logger.info(`Using provided remote repo ref and credentials for sync repo`);
@@ -104,6 +103,100 @@ export async function queryForScmProvider(sdm: SoftwareDeliveryMachine): Promise
     return false;
 }
 
+/**
+ * See if provided sync repo is a RemoteRepoRef.
+ */
+export function isRemoteRepo(repo: SyncRepoRef | RemoteRepoRef): repo is RemoteRepoRef {
+    return isRemoteRepoRef(repo as RemoteRepoRef);
+}
+
+/**
+ * Query cortex across all available workspaces for repo.
+ */
+async function queryRepo(sdm: SoftwareDeliveryMachine): Promise<RepoCredentials | undefined> {
+    const repoRef = syncRepoRef(sdm);
+    const slug = repoSlug(repoRef);
+    const repoProviderId = (repoRef as SyncRepoRef).providerId;
+    for (const workspaceId of sdm.configuration.workspaceIds) {
+        const graphClient = sdm.configuration.graphql.client.factory.create(workspaceId, sdm.configuration);
+        logger.debug(`Querying workspace ${workspaceId} for repo ${slug}`);
+        const repos = await graphClient.query<RepoScmProvider.Query, RepoScmProvider.Variables>({
+            name: "RepoScmProvider",
+            variables: { repo: repoRef.repo, owner: repoRef.owner },
+            options: QueryNoCacheOptions,
+        });
+        if (!repos || !repos.Repo || repos.Repo.length < 1) {
+            logger.debug(`Repo ${slug} not found in workspace ${workspaceId}`);
+            continue;
+        }
+        let searchRepos = repos.Repo;
+        if (repoProviderId) {
+            logger.debug(`Filtering repos from workspace ${workspaceId} on providerId '${repoProviderId}'`);
+            searchRepos = searchRepos.filter(r => r.org.scmProvider.providerId === repoProviderId);
+        }
+        if (searchRepos.length > 1) {
+            logger.warn(`More than one repo found in workspace ${workspaceId} with owner/repo ${slug}`);
+        }
+        for (const repo of searchRepos) {
+            const rc = repoCredentials(sdm, repo);
+            if (rc) {
+                rc.repo.branch = rc.repo.branch || repo.defaultBranch || defaultDefaultBranch;
+                logger.info(`Returning first ${slug} repo with valid SCM provider`);
+                return rc;
+            }
+        }
+    }
+    return undefined;
+}
+
+/**
+ * For each SDM provider in cortex in each workspace, try to clone the
+ * sync repo.  Return the information for the first successful clone.
+ */
+async function queryScm(sdm: SoftwareDeliveryMachine): Promise<RepoCredentials | undefined> {
+    const repoRef = syncRepoRef(sdm);
+    const slug = repoSlug(repoRef);
+    const repoProviderId = (repoRef as SyncRepoRef).providerId;
+    for (const workspaceId of sdm.configuration.workspaceIds) {
+        const graphClient = sdm.configuration.graphql.client.factory.create(workspaceId, sdm.configuration);
+        logger.debug(`Querying workspace ${workspaceId} for SCM providers`);
+        const providers = await graphClient.query<ScmProviders.Query, ScmProviders.Variables>({
+            name: "ScmProviders",
+            options: QueryNoCacheOptions,
+        });
+        if (!providers || !providers.SCMProvider || providers.SCMProvider.length < 1) {
+            logger.debug(`Found no SCM providers in workspace ${workspaceId}`);
+            continue;
+        }
+        for (const provider of providers.SCMProvider) {
+            if (repoProviderId && provider.providerId !== repoProviderId) {
+                logger.debug(`SCM provider '${provider.providerId}' does not match '${repoProviderId}'`);
+                continue;
+            }
+            const rc = scmCredentials(sdm, provider);
+            if (rc) {
+                logger.debug(`Attempting to clone ${slug} using ${rc.repo.cloneUrl}`);
+                try {
+                    const p = await GitCommandGitProject.cloned(rc.credentials, rc.repo, defaultCloneOptions);
+                    if (p) {
+                        rc.repo.branch = rc.repo.branch || p.branch || defaultDefaultBranch;
+                        return rc;
+                    }
+                } catch (e) {
+                    logger.debug(`Failed to clone ${slug} from ${rc.repo.cloneUrl}: ${e.message}`);
+                }
+            }
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Create RemoteRepoRef and Credentials object from SDM and repo from
+ * cortex.  If the provided repo does not contain an org with a
+ * provider, it returns `undefined`.  Otherwise it uses the SCM
+ * provider to call [[scmCredentials]] and return its value.
+ */
 export function repoCredentials(sdm: SoftwareDeliveryMachine, repo: RepoScmProvider.Repo): RepoCredentials | undefined {
     if (repo.org && repo.org.scmProvider) {
         return scmCredentials(sdm, repo.org.scmProvider);
@@ -111,6 +204,14 @@ export function repoCredentials(sdm: SoftwareDeliveryMachine, repo: RepoScmProvi
     return undefined;
 }
 
+/**
+ * Given the SDM and an SCM, use the configured repo ref resolver to
+ * create a RemoteRepoRef.  Use the SDM Kubernetes option sync
+ * credentials or SCM `credential.secret` to create the credentials,
+ * giving the SDM sync credentials preference.  Return `undefined` if
+ * there is not enough information to created the repo credential
+ * object.
+ */
 export function scmCredentials(sdm: SoftwareDeliveryMachine, scm: ScmProviders.ScmProvider): RepoCredentials | undefined {
     const repoRef = syncRepoRef(sdm);
     const credentials = _.get(sdm, "configuration.sdm.k8s.options.sync.credentials");
@@ -131,15 +232,12 @@ export function scmCredentials(sdm: SoftwareDeliveryMachine, scm: ScmProviders.S
             },
         };
         const options = {
-            sha: repoRef.sha,
             branch: repoRef.branch,
         };
         try {
             const repo = repoResolver.toRemoteRepoRef(repoFrag, options);
-            // RepoRefResolver does support setting path when creating
-            repo.path = repo.path || repoRef.path;
             return {
-                credentials: credentials || { token: scm.credential.secret },
+                credentials: credentials || { token: secret },
                 repo,
             };
         } catch (e) {
@@ -149,80 +247,20 @@ export function scmCredentials(sdm: SoftwareDeliveryMachine, scm: ScmProviders.S
     return undefined;
 }
 
-function repoSlug(repo: RepoRef): string {
+/** Create repo slug string. */
+export function repoSlug(repo: SyncRepoRef | RemoteRepoRef): string {
     return `${repo.owner}/${repo.repo}`;
 }
 
-function syncRepoRef(sdm: SoftwareDeliveryMachine): SyncRepoRef | RemoteRepoRef | undefined {
-    return _.get(sdm, "configuration.sdm.k8s.options.sync.repo");
-}
-
 /**
- * Query cortex across all available workspaces for repo.
+ * Extract the Kubernetes option sync repo from the SDM configuration.
+ * This function should only be called if the sync repo object is
+ * defined.
  */
-async function queryRepo(sdm: SoftwareDeliveryMachine): Promise<RepoCredentials | undefined> {
-    const repoRef = syncRepoRef(sdm);
-    const slug = repoSlug(repoRef);
-    for (const workspaceId of sdm.configuration.workspaceIds) {
-        const graphClient = sdm.configuration.graphql.client.factory.create(workspaceId, sdm.configuration);
-        logger.debug(`Querying workspace ${workspaceId} for repo ${slug}`);
-        const repos = await graphClient.query<RepoScmProvider.Query, RepoScmProvider.Variables>({
-            name: "RepoScmProvider",
-            variables: { repo: repoRef.repo, owner: repoRef.owner },
-            options: QueryNoCacheOptions,
-        });
-        if (!repos || !repos.Repo || repos.Repo.length < 1) {
-            logger.debug(`Repo ${slug} not found in workspace ${workspaceId}`);
-            continue;
-        }
-        if (repos.Repo.length > 1) {
-            logger.warn(`More than one repo found in workspace ${workspaceId} with owner/repo ${slug}`);
-        }
-        for (const repo of repos.Repo) {
-            const rc = repoCredentials(sdm, repo);
-            if (rc) {
-                rc.repo.branch = rc.repo.branch || repo.defaultBranch || defaultDefaultBranch;
-                logger.info(`Returning first ${slug} repo with valid SCM provider`);
-                return rc;
-            }
-        }
+function syncRepoRef(sdm: SoftwareDeliveryMachine): SyncRepoRef | RemoteRepoRef {
+    const repo: SyncRepoRef | RemoteRepoRef = _.get(sdm, "configuration.sdm.k8s.options.sync.repo");
+    if (!repo) {
+        throw new Error(`Failed to get sync repo from SDM configuration`);
     }
-    return undefined;
-}
-
-/**
- * For each SDM provider in cortex in each workspace, try to clone the
- * sync repo.  Return the information for the first successful clone.
- */
-async function queryScm(sdm: SoftwareDeliveryMachine): Promise<RepoCredentials | undefined> {
-    const repoRef = syncRepoRef(sdm);
-    const slug = repoSlug(repoRef);
-    for (const workspaceId of sdm.configuration.workspaceIds) {
-        const graphClient = sdm.configuration.graphql.client.factory.create(workspaceId, sdm.configuration);
-        logger.debug(`Querying workspace ${workspaceId} for SCM providers`);
-        const providers = await graphClient.query<ScmProviders.Query, ScmProviders.Variables>({
-            name: "ScmProviders",
-            options: QueryNoCacheOptions,
-        });
-        if (!providers || !providers.SCMProvider || providers.SCMProvider.length < 1) {
-            logger.debug(`Found no SCM providers in workspace ${workspaceId}`);
-            continue;
-        }
-        for (const provider of providers.SCMProvider) {
-            const rc = scmCredentials(sdm, provider);
-            if (rc) {
-                logger.debug(`Attempting to clone ${slug} using ${rc.repo.cloneUrl}`);
-                try {
-                    const p = await GitCommandGitProject.cloned(rc.credentials, rc.repo, defaultCloneOptions);
-                    if (p) {
-                        rc.repo.branch = rc.repo.branch || p.branch || defaultDefaultBranch;
-                        return rc;
-                    }
-                } catch (e) {
-                    logger.debug(`Failed to clone ${slug} from ${rc.repo.cloneUrl}: ${e.message}`);
-                }
-            }
-        }
-    }
-    return undefined;
+    return repo;
 }

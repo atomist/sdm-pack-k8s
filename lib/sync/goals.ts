@@ -34,6 +34,10 @@ import { KubernetesSyncOptions } from "../config";
 import { errMsg } from "../support/error";
 import { changeResource } from "./change";
 import { diffPush } from "./diff";
+import {
+    isRemoteRepo,
+    repoSlug,
+} from "./repo";
 import { commitTag } from "./tag";
 
 export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undefined {
@@ -42,11 +46,17 @@ export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undef
         logger.debug(`SDM configuration contains no sync repo, will not create sync repo push test`);
         return undefined;
     }
+    const repo = syncOptions.repo;
+    const slug = repoSlug(repo);
+    if (!isRemoteRepo(repo)) {
+        throw new Error(`SyncRepoRef did not get converted to proper RemoteRepoRef at startup: ${slug}`);
+        return undefined;
+    }
     return pushTest("IsSyncRepoCommit", async p => {
-        if (p.id.providerType === syncOptions.repo.providerType &&
-            p.id.owner === syncOptions.repo.owner &&
-            p.id.repo === syncOptions.repo.repo &&
-            p.id.branch === syncOptions.repo.branch) {
+        if (p.id.providerType === repo.providerType &&
+            p.id.owner === repo.owner &&
+            p.id.repo === repo.repo &&
+            p.id.branch === repo.branch) {
             const tag = commitTag(sdm.configuration);
             return p.push.commits.some(c => !c.message.includes(tag));
         }

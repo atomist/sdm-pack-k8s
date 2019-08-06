@@ -17,21 +17,17 @@
 import {
     ProjectOperationCredentials,
     RemoteRepoRef,
-    RepoRef,
-    ScmProviderType,
 } from "@atomist/automation-client";
 
 /**
  * Information needed to create a proper RemoteRepoRef for the
- * [[SdmPackK8sOptions.syncRepo]].  If `apiBase` and `providerType`
- * are not provided, cortex is queried to find the information.
+ * [[SdmPackK8sOptions.sync.repo]] by querying cortex.
  */
-export interface SyncRepoRef extends RepoRef {
-    /**
-     * Root API URL.  Default is dependent on [[providerType]].  This
-     * value is typically not set but rather looked up in cortex.
-     */
-    apiBase?: string;
+export interface SyncRepoRef {
+    /** Owner, i.e., user or organization, of sync repo. */
+    owner: string;
+    /** Name of sync repository. */
+    repo: string;
     /**
      * If branch is provided, it is used.  If it is not provided,
      * things get complicated.  If the repo exists in the graph and it
@@ -46,10 +42,17 @@ export interface SyncRepoRef extends RepoRef {
      */
     branch?: string;
     /**
-     * Git SDM provider, e.g., "github_com".  Typically this value is
-     * not set and looked up in cortex.
+     * The internal cortex ID of the source code management (SCM)
+     * provider for the sync repo.  Typically this is not necessary
+     * and not provided.  It is only necessary to provide the provider
+     * ID if your Atomist workspace has multiple SCM providers and the
+     * name and owner of the sync repo you want to use matches
+     * different repositories in different SCM providers.  For
+     * example, if you want to use "my/specs" as your sync repo and
+     * your Atomist workspace is linked to both GitHub.com and a GHE
+     * instance, both of which have a repo named "my/specs".
      */
-    providerType?: ScmProviderType;
+    providerId?: string;
 }
 
 /**

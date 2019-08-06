@@ -52,7 +52,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -76,7 +75,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -104,7 +102,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -130,7 +127,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -157,7 +153,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -186,7 +181,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -215,7 +209,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://ghe.sugar.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -257,7 +250,6 @@ describe("sync/repo", () => {
                                         branch: "beaster",
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -284,7 +276,7 @@ describe("sync/repo", () => {
             assert((rc.repo as GitHubRepoRef).scheme === "https://");
         });
 
-        it("should create a bitbucket ref with path", () => {
+        it("should create a bitbucket", () => {
             const m: SoftwareDeliveryMachine = {
                 configuration: {
                     sdm: {
@@ -295,9 +287,7 @@ describe("sync/repo", () => {
                                     repo: {
                                         branch: "FunHouse",
                                         owner: "TheStooges",
-                                        path: "Down/on/the/Street",
                                         repo: "iggy",
-                                        url: "https://bitbucket.iggyandthestooges.com/TheStooges/iggy",
                                     },
                                 },
                             },
@@ -318,7 +308,6 @@ describe("sync/repo", () => {
             assert((rc.repo as BitBucketServerRepoRef).apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
             assert(rc.repo.branch === "FunHouse");
             assert(rc.repo.owner === "TheStooges");
-            assert(rc.repo.path === "Down/on/the/Street");
             assert(rc.repo.providerType === ScmProviderType.bitbucket);
             assert(rc.repo.remoteBase === "bitbucket.iggyandthestooges.com");
             assert(rc.repo.repo === "iggy");
@@ -340,7 +329,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -364,7 +352,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -390,7 +377,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -418,7 +404,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -462,7 +447,6 @@ describe("sync/repo", () => {
                                         branch: "too-much-too-soon",
                                         owner: "NewYorkDolls",
                                         repo: "trash",
-                                        url: "http://gitlab.nydolls.com/NewYorkDolls/trash",
                                     },
                                 },
                             },
@@ -548,7 +532,6 @@ describe("sync/repo", () => {
                                         branch: "beaster",
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -620,7 +603,6 @@ describe("sync/repo", () => {
                                     repo: {
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -636,6 +618,93 @@ describe("sync/repo", () => {
             assert(ss.credentials.token === "H00v34D@m");
             assert(ss.repo.apiBase === "api.github.com");
             assert(ss.repo.branch === "copper-blue");
+            assert(ss.repo.owner === "bob-mould");
+            assert(ss.repo.path === undefined);
+            assert(ss.repo.providerType === ScmProviderType.github_com);
+            assert(ss.repo.remoteBase === "github.com");
+            assert(ss.repo.repo === "sugar");
+            assert(ss.repo.scheme === "https://");
+        });
+
+        it("should find the repo with correct provider ID", async () => {
+            let queried = false;
+            const s: SoftwareDeliveryMachine = {
+                configuration: {
+                    graphql: {
+                        client: {
+                            factory: {
+                                create: (w: string) => {
+                                    assert(w === "A4USK34DU");
+                                    return {
+                                        query: async (o: any) => {
+                                            if (o.name === "RepoScmProvider") {
+                                                queried = true;
+                                                assert(o.variables.owner === "bob-mould");
+                                                assert(o.variables.repo === "sugar");
+                                                return {
+                                                    Repo: [
+                                                        {
+                                                            defaultBranch: "copper-blue",
+                                                            name: "sugar",
+                                                            org: {
+                                                                scmProvider: {
+                                                                    apiUrl: "https://ghe.mould.com/v3",
+                                                                    credential: {
+                                                                        secret: "m@n-0n-th3-m00n",
+                                                                    },
+                                                                    providerId: "hoover-dam",
+                                                                },
+                                                            },
+                                                            owner: "bob-mould",
+                                                        },
+                                                        {
+                                                            defaultBranch: "copper-blue",
+                                                            name: "sugar",
+                                                            org: {
+                                                                scmProvider: {
+                                                                    apiUrl: "https://api.github.com",
+                                                                    credential: {
+                                                                        secret: "m@n-0n-th3-m00n",
+                                                                    },
+                                                                    providerId: "slim",
+                                                                },
+                                                            },
+                                                            owner: "bob-mould",
+                                                        },
+                                                    ],
+                                                };
+                                            }
+                                            return { SCMProvider: [] as any[] };
+                                        },
+                                    };
+                                },
+                            },
+                        },
+                    },
+                    sdm: {
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        branch: "beaster",
+                                        owner: "bob-mould",
+                                        repo: "sugar",
+                                        providerId: "slim",
+                                    },
+                                },
+                            },
+                        },
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                    workspaceIds: ["A4USK34DU"],
+                },
+            } as any;
+            assert(await queryForScmProvider(s));
+            assert(queried, "query method never called");
+            const ss = s.configuration.sdm.k8s.options.sync;
+            assert(ss.credentials.token === "m@n-0n-th3-m00n");
+            assert(ss.repo.apiBase === "api.github.com");
+            assert(ss.repo.branch === "beaster");
             assert(ss.repo.owner === "bob-mould");
             assert(ss.repo.path === undefined);
             assert(ss.repo.providerType === ScmProviderType.github_com);
@@ -671,7 +740,6 @@ describe("sync/repo", () => {
                                         branch: "beaster",
                                         owner: "bob-mould",
                                         repo: "sugar",
-                                        url: "https://github.com/bob-mould/sugar",
                                     },
                                 },
                             },
@@ -729,9 +797,7 @@ describe("sync/repo", () => {
                                     repo: {
                                         branch: "FunHouse",
                                         owner: "TheStooges",
-                                        path: "cluster/specs",
                                         repo: "iggy",
-                                        url: "https://bitbucket.iggyandthestooges.com/TheStooges/iggy",
                                     },
                                 },
                             },
@@ -749,7 +815,6 @@ describe("sync/repo", () => {
             assert(ss.repo.apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
             assert(ss.repo.branch === "FunHouse");
             assert(ss.repo.owner === "TheStooges");
-            assert(ss.repo.path === "cluster/specs");
             assert(ss.repo.providerType === ScmProviderType.bitbucket);
             assert(ss.repo.remoteBase === "bitbucket.iggyandthestooges.com");
             assert(ss.repo.repo === "iggy");
@@ -869,6 +934,83 @@ describe("sync/repo", () => {
             assert(ss.repo.providerType === ScmProviderType.gitlab_enterprise);
             assert(ss.repo.remoteBase === "gitlab.minutemen.org");
             assert(ss.repo.repo === "double-nickels-on-the-dime");
+            assert(ss.repo.scheme === "https://");
+        });
+
+        it("should find the repo with proper provider ID via provider", async () => {
+            const clonedOrig = GitCommandGitProject.cloned;
+            GitCommandGitProject.cloned = async (creds, id, opts) => ({} as any);
+            let queried = false;
+            const s: SoftwareDeliveryMachine = {
+                configuration: {
+                    graphql: {
+                        client: {
+                            factory: {
+                                create: (w: string) => {
+                                    assert(w === "IGGYP0P");
+                                    return {
+                                        query: async (o: any) => {
+                                            if (o.name === "ScmProviders") {
+                                                queried = true;
+                                                return {
+                                                    SCMProvider: [
+                                                        {
+                                                            apiUrl: "https://api.github.com/",
+                                                            credential: {
+                                                                secret: "R3@1C001T1m3",
+                                                            },
+                                                            providerId: "proto-punk",
+                                                            providerType: "github_com",
+                                                        },
+                                                        {
+                                                            apiUrl: "https://bitbucket.iggyandthestooges.com/",
+                                                            credential: {
+                                                                secret: "1w@nn@b3y0u4d0g",
+                                                            },
+                                                            providerId: "garage-rock",
+                                                            providerType: "bitbucket",
+                                                        },
+                                                    ],
+                                                };
+                                            }
+                                            assert(o.variables.owner === "TheStooges");
+                                            assert(o.variables.repo === "iggy");
+                                            return { Repo: [] as any[] };
+                                        },
+                                    };
+                                },
+                            },
+                        },
+                    },
+                    sdm: {
+                        k8s: {
+                            options: {
+                                sync: {
+                                    repo: {
+                                        branch: "FunHouse",
+                                        owner: "TheStooges",
+                                        repo: "iggy",
+                                        providerId: "garage-rock",
+                                    },
+                                },
+                            },
+                        },
+                        repoRefResolver: new DefaultRepoRefResolver(),
+                    },
+                    workspaceIds: ["IGGYP0P"],
+                },
+            } as any;
+            assert(await queryForScmProvider(s));
+            GitCommandGitProject.cloned = clonedOrig;
+            assert(queried, "query method never called");
+            const ss = s.configuration.sdm.k8s.options.sync;
+            assert(ss.credentials.token === "1w@nn@b3y0u4d0g");
+            assert(ss.repo.apiBase === "bitbucket.iggyandthestooges.com/rest/api/1.0");
+            assert(ss.repo.branch === "FunHouse");
+            assert(ss.repo.owner === "TheStooges");
+            assert(ss.repo.providerType === ScmProviderType.bitbucket);
+            assert(ss.repo.remoteBase === "bitbucket.iggyandthestooges.com");
+            assert(ss.repo.repo === "iggy");
             assert(ss.repo.scheme === "https://");
         });
 
