@@ -18,6 +18,8 @@ import {
     ProjectOperationCredentials,
     RemoteRepoRef,
 } from "@atomist/automation-client";
+import { SoftwareDeliveryMachine } from "@atomist/sdm";
+import * as _ from "lodash";
 
 /**
  * Information needed to create a proper RemoteRepoRef for the
@@ -138,4 +140,20 @@ export interface SdmPackK8sOptions {
 /** Validate the the partial SyncOptions contains a repo property. */
 export function validSyncOptions(o: Partial<KubernetesSyncOptions>): o is KubernetesSyncOptions {
     return !!o && !!o.repo;
+}
+
+/**
+ * Safely merge the the provided Kubernetes options with those already
+ * existing in the SDM.  The values in the SDM take precedence over
+ * those in the passed in options.  The passed in SDM is modified in
+ * place and returned.
+ *
+ * @param sdm Software Delivery Machine that may or may not have any Kubernetes pack options
+ * @param options Kubernetes pack options
+ * @return Modified SDM object
+ */
+export function mergeK8sOptions(sdm: SoftwareDeliveryMachine, options?: SdmPackK8sOptions): SoftwareDeliveryMachine {
+    _.defaultsDeep(sdm.configuration.sdm, { k8s: { options: {} } });
+    sdm.configuration.sdm.k8s.options = _.merge({}, options, sdm.configuration.sdm.k8s.options);
+    return sdm;
 }

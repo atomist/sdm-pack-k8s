@@ -20,7 +20,10 @@ import {
 } from "@atomist/sdm";
 import * as _ from "lodash";
 import { kubernetesUndeploy } from "./commands/kubernetesUndeploy";
-import { SdmPackK8sOptions } from "./config";
+import {
+    mergeK8sOptions,
+    SdmPackK8sOptions,
+} from "./config";
 import { kubernetesDeployHandler } from "./events/kubernetesDeploy";
 import { providerStartupListener } from "./provider/kubernetesCluster";
 import { minikubeStartupListener } from "./support/minikube";
@@ -55,16 +58,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
         ...metadata(),
         configure: sdm => {
 
-            const k8sOptions = {
-                configuration: {
-                    sdm: {
-                        k8s: {
-                            options,
-                        },
-                    },
-                },
-            };
-            _.merge(sdm, k8sOptions);
+            mergeK8sOptions(sdm, options);
 
             if (sdm.configuration.sdm.k8s.options.addCommands) {
                 sdm.addCommand(kubernetesUndeploy);
