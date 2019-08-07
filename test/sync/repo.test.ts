@@ -28,6 +28,7 @@ import { SoftwareDeliveryMachine } from "@atomist/sdm";
 import { DefaultRepoRefResolver } from "@atomist/sdm-core";
 import * as assert from "power-assert";
 import {
+    isRemoteRepo,
     queryForScmProvider,
     repoCredentials,
     scmCredentials,
@@ -38,6 +39,34 @@ import {
 } from "../../lib/typings/types";
 
 describe("sync/repo", () => {
+
+    describe("isRemoteRepo", () => {
+
+        it("should return false if nothing passed", () => {
+            [undefined, {}].forEach((x: any) => assert(!isRemoteRepo(x)));
+        });
+
+        it("should return false for SyncRepoRef", () => {
+            const r = {
+                branch: "the-slim",
+                owner: "bob-mould",
+                providerId: "copper-blue",
+                repo: "sugar",
+            };
+            assert(!isRemoteRepo(r));
+        });
+
+        it("should return true for a RemoteRepoRef", () => {
+            const r = GitHubRepoRef.from({
+                branch: "the-slim",
+                owner: "bob-mould",
+                path: "copper/blue",
+                repo: "sugar",
+            });
+            assert(isRemoteRepo(r));
+        });
+
+    });
 
     describe("scmCredentials", () => {
 

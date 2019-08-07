@@ -107,7 +107,7 @@ export async function queryForScmProvider(sdm: SoftwareDeliveryMachine): Promise
  * See if provided sync repo is a RemoteRepoRef.
  */
 export function isRemoteRepo(repo: SyncRepoRef | RemoteRepoRef): repo is RemoteRepoRef {
-    return isRemoteRepoRef(repo as RemoteRepoRef);
+    return !!repo && isRemoteRepoRef(repo as RemoteRepoRef);
 }
 
 /**

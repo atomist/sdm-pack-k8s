@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
+import {
+    logger,
+    RemoteRepoRef,
+} from "@atomist/automation-client";
 import {
     execPromise,
     ExecuteGoal,
@@ -30,7 +33,10 @@ import {
     whenPushSatisfies,
 } from "@atomist/sdm";
 import * as _ from "lodash";
-import { KubernetesSyncOptions } from "../config";
+import {
+    KubernetesSyncOptions,
+    SyncRepoRef,
+} from "../config";
 import { errMsg } from "../support/error";
 import { changeResource } from "./change";
 import { diffPush } from "./diff";
@@ -46,17 +52,14 @@ export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undef
         logger.debug(`SDM configuration contains no sync repo, will not create sync repo push test`);
         return undefined;
     }
-    const repo = syncOptions.repo;
-    const slug = repoSlug(repo);
-    if (!isRemoteRepo(repo)) {
-        throw new Error(`SyncRepoRef did not get converted to proper RemoteRepoRef at startup: ${slug}`);
-        return undefined;
-    }
     return pushTest("IsSyncRepoCommit", async p => {
-        if (p.id.providerType === repo.providerType &&
-            p.id.owner === repo.owner &&
-            p.id.repo === repo.repo &&
-            p.id.branch === repo.branch) {
+        const repo: SyncRepoRef | RemoteRepoRef = _.get(sdm, "configuration.sdm.k8s.options.sync.repo");
+        const slug = repoSlug(repo);
+        if (!isRemoteRepo(repo)) {
+            throw new Error(`SyncRepoRef did not get converted to proper RemoteRepoRef at startup: ${slug}`);
+        }
+        if (p.id.providerType === repo.providerType && p.id.owner === repo.owner &&
+            p.id.repo === repo.repo && p.id.branch === repo.branch) {
             const tag = commitTag(sdm.configuration);
             return p.push.commits.some(c => !c.message.includes(tag));
         }
