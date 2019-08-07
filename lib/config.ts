@@ -153,7 +153,7 @@ export function validSyncOptions(o: Partial<KubernetesSyncOptions>): o is Kubern
  * @return Modified SDM object
  */
 export function mergeK8sOptions(sdm: SoftwareDeliveryMachine, options?: SdmPackK8sOptions): SoftwareDeliveryMachine {
-    _.defaultsDeep(sdm.configuration.sdm, { k8s: { options: {} } });
+    _.defaultsDeep(sdm, { configuration: { sdm: { k8s: { options: {} } } } });
     sdm.configuration.sdm.k8s.options = _.merge({}, options, sdm.configuration.sdm.k8s.options);
     return sdm;
 }
