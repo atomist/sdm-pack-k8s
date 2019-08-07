@@ -15,7 +15,9 @@
  */
 
 export {
+    KubernetesApplicationDataCallback,
     KubernetesDeploy,
+    KubernetesDeployDataSources,
     KubernetesDeployRegistration,
 } from "./lib/deploy/goal";
 export {

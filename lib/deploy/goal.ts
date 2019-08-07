@@ -50,7 +50,7 @@ export function goalEventSlug(goalEvent: SdmGoalEvent): string {
  * Function signature for callback that can modify and return the
  * [[KubernetesApplication]] object.
  */
-export type ApplicationDataCallback =
+export type KubernetesApplicationDataCallback =
     (a: KubernetesApplication, p: GitProject, g: KubernetesDeploy, e: SdmGoalEvent, ctx: HandlerContext) => Promise<KubernetesApplication>;
 
 /**
@@ -86,7 +86,7 @@ export interface KubernetesDeployRegistration {
      * Allows the user of this pack to modify the default application
      * data before execution of deployment.
      */
-    applicationData?: ApplicationDataCallback;
+    applicationData?: KubernetesApplicationDataCallback;
     /**
      * If falsey, this SDM will fulfill its own Kubernetes deployment
      * goals.  If set, its value defines the name of the SDM that will
