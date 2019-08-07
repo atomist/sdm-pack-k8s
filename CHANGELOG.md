@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 -   Add periodic sync reconciliation. [#68](https://github.com/atomist/sdm-pack-k8s/issues/68)
+-   Export Kubernetes deploy interfaces. [efcf7b8](https://github.com/atomist/sdm-pack-k8s/commit/efcf7b834fa72ef822cdf09570b3e61d1aebef07)
 
 ### Changed
 
