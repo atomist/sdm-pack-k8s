@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 -   Shorten sync app commit message. [2f323b8](https://github.com/atomist/sdm-pack-k8s/commit/2f323b8c7886c0c5203dfd1bbb1869bd9dcfdc2a)
+-   Add SDM name to undeploy command intent. [b49d841](https://github.com/atomist/sdm-pack-k8s/commit/b49d84174bf7841913e5c20a527fff65b1fce3c7)
 
 ### Fixed
 
