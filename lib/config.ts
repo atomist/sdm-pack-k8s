@@ -22,39 +22,26 @@ import { SoftwareDeliveryMachine } from "@atomist/sdm";
 import * as _ from "lodash";
 
 /**
- * Information needed to create a proper RemoteRepoRef for the
- * [[SdmPackK8sOptions.sync.repo]] by querying cortex.
+ * Configuration options to be passed to the extension pack creation.
  */
-export interface SyncRepoRef {
-    /** Owner, i.e., user or organization, of sync repo. */
-    owner: string;
-    /** Name of sync repository. */
-    repo: string;
+export interface SdmPackK8sOptions {
     /**
-     * If branch is provided, it is used.  If it is not provided,
-     * things get complicated.  If the repo exists in the graph and it
-     * has the defaultBranch property set, then the defaultBranch is
-     * used.  If the repo does not exist in the graph or its
-     * defaultBranch property is not set, "master" is used.  Since the
-     * repo defaultBranch property could not be set initially but get
-     * set at a later time, how sync repo behaves can change even if
-     * the configuration does not.  Long story short, even though
-     * branch is optional, set it if you want sync repo to behave
-     * deterministically.
+     * Whether to add the undelete command.  Typically you would only
+     * want to enable this in one SDM per workspace.  If no value is
+     * provided, the comand is not added.
      */
-    branch?: string;
+    addCommands?: boolean;
+
     /**
-     * The internal cortex ID of the source code management (SCM)
-     * provider for the sync repo.  Typically this is not necessary
-     * and not provided.  It is only necessary to provide the provider
-     * ID if your Atomist workspace has multiple SCM providers and the
-     * name and owner of the sync repo you want to use matches
-     * different repositories in different SCM providers.  For
-     * example, if you want to use "my/specs" as your sync repo and
-     * your Atomist workspace is linked to both GitHub.com and a GHE
-     * instance, both of which have a repo named "my/specs".
+     * Whether to register and converge a k8s cluster.  Typically this
+     * is used from k8s-sdm to manage k8s cluster it is running in.
      */
-    providerId?: string;
+    registerCluster?: boolean;
+
+    /**
+     * Synchronize resources in k8s cluster with a Git repo.
+     */
+    sync?: KubernetesSyncOptions;
 }
 
 /**
@@ -115,26 +102,39 @@ export interface KubernetesSyncOptions {
 }
 
 /**
- * Configuration options to be passed to the extension pack creation.
+ * Information needed to create a proper RemoteRepoRef for the
+ * [[SdmPackK8sOptions.sync.repo]] by querying cortex.
  */
-export interface SdmPackK8sOptions {
+export interface SyncRepoRef {
+    /** Owner, i.e., user or organization, of sync repo. */
+    owner: string;
+    /** Name of sync repository. */
+    repo: string;
     /**
-     * Whether to add the undelete command.  Typically you would only
-     * want to enable this in one SDM per workspace.  If no value is
-     * provided, the comand is not added.
+     * If branch is provided, it is used.  If it is not provided,
+     * things get complicated.  If the repo exists in the graph and it
+     * has the defaultBranch property set, then the defaultBranch is
+     * used.  If the repo does not exist in the graph or its
+     * defaultBranch property is not set, "master" is used.  Since the
+     * repo defaultBranch property could not be set initially but get
+     * set at a later time, how sync repo behaves can change even if
+     * the configuration does not.  Long story short, even though
+     * branch is optional, set it if you want sync repo to behave
+     * deterministically.
      */
-    addCommands?: boolean;
-
+    branch?: string;
     /**
-     * Whether to register and converge a k8s cluster.  Typically this
-     * is used from k8s-sdm to manage k8s cluster it is running in.
+     * The internal cortex ID of the source code management (SCM)
+     * provider for the sync repo.  Typically this is not necessary
+     * and not provided.  It is only necessary to provide the provider
+     * ID if your Atomist workspace has multiple SCM providers and the
+     * name and owner of the sync repo you want to use matches
+     * different repositories in different SCM providers.  For
+     * example, if you want to use "my/specs" as your sync repo and
+     * your Atomist workspace is linked to both GitHub.com and a GHE
+     * instance, both of which have a repo named "my/specs".
      */
-    registerCluster?: boolean;
-
-    /**
-     * Synchronize resources in k8s cluster with a Git repo.
-     */
-    sync?: KubernetesSyncOptions;
+    providerId?: string;
 }
 
 /** Validate the the partial SyncOptions contains a repo property. */
