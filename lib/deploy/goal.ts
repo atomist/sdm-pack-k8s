@@ -61,7 +61,7 @@ export enum KubernetesDeployDataSources {
     DeploymentSpec = "DeploymentSpec",
     /** Read EXPOSE from Dockerfile to get service port. */
     Dockerfile = "Dockerfile",
-    /** Parse `goalEvent.` as JSON. */
+    /** Parse `goalEvent.data` as JSON. */
     GoalEvent = "GoalEvent",
     /** Read ingress spec from `.atomist/kubernetes`. */
     IngressSpec = "IngressSpec",
