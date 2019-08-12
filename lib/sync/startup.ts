@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-import { StartupListener } from "@atomist/sdm";
+import { logger } from "@atomist/automation-client";
+import {
+    createJob,
+    fakeContext,
+    SoftwareDeliveryMachine,
+    StartupListener,
+} from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import * as cluster from "cluster";
 import * as _ from "lodash";
 import { queryForScmProvider } from "./repo";
-import { repoSync } from "./sync";
+import { kubernetesSync } from "./sync";
 
 /**
  * If the SDM is registered with one or more workspaces and not
  * running in local mode, query cortex for the sync repo and replace
  * the sdm.k8s.options.sync.repo property with a RemoteRepoRef for
- * that repo.  If this is the cluster master, run [[repoSync]].  If
- * this is the cluster master and the SDM configuration has a
- * [[KubernetesSyncOptions]] with a positive value of
- * `intervalMinutes`, it will set up an interval timer to apply the
+ * that repo.  If this is the cluster master, it will create a job to
+ * perform a sync.  If this is the cluster master and the SDM
+ * configuration has a [[KubernetesSyncOptions]] with a positive value
+ * of `intervalMinutes`, it will set up an interval timer to apply the
  * specs from the sync repo periodically.
  */
 export const syncRepoStartupListener: StartupListener = async ctx => {
@@ -42,10 +48,35 @@ export const syncRepoStartupListener: StartupListener = async ctx => {
     if (!cluster.isMaster) {
         return;
     }
-    await repoSync(sdm);
+    await sdmRepoSync(sdm);
     const interval: number = _.get(sdm, "configuration.sdm.k8s.options.sync.intervalMinutes");
     if (interval && interval > 0) {
-        setInterval(() => repoSync(sdm), interval * 60 * 1000);
+        sdm.addTriggeredListener({
+            trigger: { interval: interval * 60 * 1000 },
+            listener: async li => sdmRepoSync(li.sdm),
+        });
     }
     return;
 };
+
+/**
+ * Create the trappings required for executing repoSync and then call
+ * repoSync.
+ */
+async function sdmRepoSync(sdm: SoftwareDeliveryMachine): Promise<void> {
+    const disposers: Array<() => Promise<void>> = [];
+    const workspaceId: string = _.get(sdm, "configuration.workspaceIds[0]");
+    const context = fakeContext(workspaceId);
+    context.graphClient = sdm.configuration.graphql.client.factory.create(workspaceId, sdm.configuration);
+    context.lifecycle = {
+        dispose: async () => { await Promise.all(disposers.map(d => d())); },
+        registerDisposable: (d: () => Promise<void>) => { disposers.push(d); },
+    };
+    await createJob({ command: kubernetesSync, parameters: [] }, context);
+    try {
+        await context.lifecycle.dispose();
+    } catch (e) {
+        logger.warn(`Failed to clean up sync repo: ${e.message}`);
+    }
+    return;
+}
