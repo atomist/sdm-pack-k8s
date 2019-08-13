@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.8.0...HEAD)
 
+### Fixed
+
+-   Fix naming of kube undeploy command. [426c1d0](https://github.com/atomist/sdm-pack-k8s/commit/426c1d01a188d21c759a6ae7d23cfb1f231754e6)
+
 ## [1.8.0](https://github.com/atomist/sdm-pack-k8s/compare/1.7.1...1.8.0) - 2019-08-08
 
 ### Added
