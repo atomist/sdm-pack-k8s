@@ -29,6 +29,7 @@ import { providerStartupListener } from "./provider/kubernetesCluster";
 import { minikubeStartupListener } from "./support/minikube";
 import { syncGoals } from "./sync/goals";
 import { syncRepoStartupListener } from "./sync/startup";
+import { kubernetesSync } from "./sync/sync";
 
 /**
  * Register Kubernetes deployment support for provided goals.  Any
@@ -38,7 +39,8 @@ import { syncRepoStartupListener } from "./sync/startup";
  * object, with those passed in taking precedence.
  *
  * If the merged options result in a truthy `addCommands`, then the
- * [[kubernetesUndeploy]] command is added to the SDM.
+ * [[kubernetesUndeploy]] and [[kubernetesSync]] commands are added to
+ * the SDM.
  *
  * The [[kubernetesDeployHandler]] event handler for this SDM is added
  * to the SDM.
@@ -62,6 +64,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
 
             if (sdm.configuration.sdm.k8s.options.addCommands) {
                 sdm.addCommand(kubernetesUndeploy(sdm));
+                sdm.addCommand(kubernetesSync(sdm));
             }
 
             sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));
