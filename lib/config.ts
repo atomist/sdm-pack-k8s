@@ -26,9 +26,9 @@ import * as _ from "lodash";
  */
 export interface SdmPackK8sOptions {
     /**
-     * Whether to add the undelete command.  Typically you would only
-     * want to enable this in one SDM per workspace.  If no value is
-     * provided, the comand is not added.
+     * Whether to add the bot/web-app commands provided by this SDM
+     * extension pack.  If no value is provided, the commands are not
+     * added.
      */
     addCommands?: boolean;
 
