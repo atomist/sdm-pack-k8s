@@ -16,13 +16,14 @@
 
 import {
     GitProject,
+    HandlerResult,
     logger,
     ProjectFile,
 } from "@atomist/automation-client";
 import {
-    fakeContext,
+    CommandHandlerRegistration,
+    CommandListenerInvocation,
     ProjectLoadingParameters,
-    SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";
@@ -30,41 +31,65 @@ import { parseKubernetesSpecFile } from "../deploy/spec";
 import { applySpec } from "../kubernetes/apply";
 import { decryptSecret } from "../kubernetes/secret";
 import { errMsg } from "../support/error";
+import { clientName } from "../support/name";
 import { defaultCloneOptions } from "./clone";
 import { k8sSpecGlob } from "./diff";
+import { isRemoteRepo } from "./repo";
+
+/**
+ * Command to synchronize the resources in a Kubernetes cluster with
+ * the resource specs in the configured sync repo.  The sync repo will
+ * be cloned and the resources applied against the Kubernetes API in
+ * lexical order sorted by file name.  If no sync repo is configured
+ * in the SDM, the command errors.  This command is typically executed
+ * on an interval timer by setting the `intervalMinutes`
+ * [[KubernetesSyncOptions]].
+ */
+export const kubernetesSync: CommandHandlerRegistration = {
+    intent: `kube sync ${clientName()}`,
+    name: "KubernetesSync",
+    listener: repoSync,
+};
 
 /**
  * Clone the sync repo and apply the specs to the Kubernetes cluster.
  */
-export async function repoSync(sdm: SoftwareDeliveryMachine): Promise<void> {
-    const disposers: Array<() => Promise<void>> = [];
-    const workspaceId: string = _.get(sdm, "configuration.workspaceIds[0]");
-    const context = fakeContext(workspaceId);
-    context.lifecycle = {
-        dispose: async () => { await Promise.all(disposers.map(d => d())); },
-        registerDisposable: (d: () => Promise<void>) => { disposers.push(d); },
-    };
+export async function repoSync(cli: CommandListenerInvocation): Promise<HandlerResult> {
+    const opts: KubernetesSyncOptions = _.get(cli.configuration, "sdm.k8s.options.sync");
+    if (!opts) {
+        const message = `SDM has no sync options defined`;
+        logger.error(message);
+        await cli.context.messageClient.respond(message);
+        return { code: 2, message };
+    }
+    if (!isRemoteRepo(opts.repo)) {
+        const message = `SDM sync option repo is not a valid remote repo`;
+        logger.error(message);
+        await cli.context.messageClient.respond(message);
+        return { code: 2, message };
+    }
+
     const projectLoadingParameters: ProjectLoadingParameters = {
-        credentials: sdm.configuration.sdm.k8s.options.sync.credentials,
+        credentials: opts.credentials,
         cloneOptions: defaultCloneOptions,
-        context,
-        id: sdm.configuration.sdm.k8s.options.sync.repo,
+        context: cli.context,
+        id: opts.repo,
         readOnly: true,
     };
-    const opts: KubernetesSyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
+    const slug = `${opts.repo.owner}/${opts.repo.repo}`;
     try {
-        await sdm.configuration.sdm.projectLoader.doWithProject(projectLoadingParameters, syncApply(opts));
+        logger.info(`Starting sync of repo ${slug}`);
+        await cli.configuration.sdm.projectLoader.doWithProject(projectLoadingParameters, syncApply(opts));
     } catch (e) {
-        e.message = `Failed to perform sync using repo ${opts.repo.owner}/${opts.repo.repo}: ${e.message}`;
-        logger.error(e.message);
-    } finally {
-        try {
-            await context.lifecycle.dispose();
-        } catch (e) {
-            logger.warn(`Failed to clean up sync repo: ${e.message}`);
-        }
+        const message = `Failed to sync repo ${slug}: ${e.message}`;
+        logger.error(message);
+        await cli.context.messageClient.respond(message);
+        return { code: 1, message };
     }
-    return;
+    const msg = `Completed sync of repo ${slug}`;
+    logger.info(msg);
+    await cli.context.messageClient.respond(msg);
+    return { code: 0, message: msg };
 }
 
 /**
