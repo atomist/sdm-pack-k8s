@@ -61,7 +61,7 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
             mergeK8sOptions(sdm, options);
 
             if (sdm.configuration.sdm.k8s.options.addCommands) {
-                sdm.addCommand(kubernetesUndeploy);
+                sdm.addCommand(kubernetesUndeploy(sdm));
             }
 
             sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));

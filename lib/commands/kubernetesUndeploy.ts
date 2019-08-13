@@ -15,7 +15,6 @@
  */
 
 import {
-    configurationValue,
     HandlerResult,
     logger,
     Parameter,
@@ -23,10 +22,13 @@ import {
 } from "@atomist/automation-client";
 import {
     CommandHandlerRegistration,
+    CommandListenerInvocation,
     slackSuccessMessage,
+    SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import { deleteApplication } from "../kubernetes/application";
 import { defaultNamespace } from "../kubernetes/namespace";
+import { cleanName } from "../support/name";
 import { syncApplication } from "../sync/application";
 
 @Parameters()
@@ -59,55 +61,65 @@ export class KubernetesUndeployParameters {
 }
 
 /**
- * Safely remove all resources related to an Kubernetes deployment.
+ * Safely remove all resources related to a Kubernetes application.
  */
-export const kubernetesUndeploy: CommandHandlerRegistration<KubernetesUndeployParameters> = {
-    name: "KubernetesUndeploy",
-    intent: "kube undeploy " + configurationValue<string>("name", "@atomist/sdm-pack-k8s"),
-    description: "remove all resources related to an application from Kubernetes cluster",
-    paramsMaker: KubernetesUndeployParameters,
-    listener: async ci => {
+export function kubernetesUndeploy(sdm: SoftwareDeliveryMachine): CommandHandlerRegistration<KubernetesUndeployParameters> {
+    return {
+        name: "KubernetesUndeploy",
+        intent: `kube undeploy ${cleanName(sdm.configuration.name)}`,
+        description: "remove all resources related to an application from Kubernetes cluster",
+        paramsMaker: KubernetesUndeployParameters,
+        listener: kubeUndeploy,
+    };
+}
 
-        const slug = `${ci.parameters.ns}/${ci.parameters.name}`;
-        const delApp = {
-            name: ci.parameters.name,
-            ns: ci.parameters.ns,
-            workspaceId: ci.context.workspaceId,
-        };
-        const result: HandlerResult = {
-            code: 0,
-            message: `Successfully deleted ${slug} resources from Kubernetes`,
-        };
+/**
+ * Delete an application from a Kubernetes cluster.  If any of the
+ * application resources do not exist in the cluster, they are
+ * ignored.  In other words, it is not an error to try to delete
+ * something that does not exist.  If a sync repo is configured, the
+ * corresponding resource specs are deleted from the sync repo.
+ */
+async function kubeUndeploy(ci: CommandListenerInvocation<KubernetesUndeployParameters>): Promise<HandlerResult> {
+    const slug = `${ci.parameters.ns}/${ci.parameters.name}`;
+    const delApp = {
+        name: ci.parameters.name,
+        ns: ci.parameters.ns,
+        workspaceId: ci.context.workspaceId,
+    };
+    const result: HandlerResult = {
+        code: 0,
+        message: `Successfully deleted ${slug} resources from Kubernetes`,
+    };
+    try {
+        const deleted = await deleteApplication(delApp);
+        logger.info(result.message);
         try {
-            const deleted = await deleteApplication(delApp);
-            logger.info(result.message);
-            try {
-                await syncApplication(delApp, deleted, "delete");
-            } catch (err) {
-                result.code++;
-                const msg = `Failed to delete resource specs from sync repo: ${err.message}`;
-                logger.error(msg);
-                result.message = `${result.message} but ${msg}`;
-            }
-            try {
-                await ci.context.messageClient.respond(slackSuccessMessage("Kubernetes Undeploy", result.message));
-            } catch (err) {
-                const msg = `Failed to send response message: ${err.message}`;
-                logger.error(msg);
-                result.message = `${result.message} but ${msg}`;
-            }
-        } catch (e) {
+            await syncApplication(delApp, deleted, "delete");
+        } catch (err) {
             result.code++;
-            result.message = `Failed to delete all ${slug} resources from Kubernetes: ${e.message}`;
-            logger.error(result.message);
-            try {
-                await ci.context.messageClient.respond(result.message);
-            } catch (err) {
-                result.code++;
-                result.message = `${result.message}; Failed to send response message: ${err.message}`;
-                logger.error(result.message);
-            }
+            const msg = `Failed to delete resource specs from sync repo: ${err.message}`;
+            logger.error(msg);
+            result.message = `${result.message} but ${msg}`;
         }
-        return result;
-    },
-};
+        try {
+            await ci.context.messageClient.respond(slackSuccessMessage("Kubernetes Undeploy", result.message));
+        } catch (err) {
+            const msg = `Failed to send response message: ${err.message}`;
+            logger.error(msg);
+            result.message = `${result.message} but ${msg}`;
+        }
+    } catch (e) {
+        result.code++;
+        result.message = `Failed to delete all ${slug} resources from Kubernetes: ${e.message}`;
+        logger.error(result.message);
+        try {
+            await ci.context.messageClient.respond(result.message);
+        } catch (err) {
+            result.code++;
+            result.message = `${result.message}; Failed to send response message: ${err.message}`;
+            logger.error(result.message);
+        }
+    }
+    return result;
+}
