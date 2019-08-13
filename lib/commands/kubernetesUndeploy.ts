@@ -15,7 +15,6 @@
  */
 
 import {
-    configurationValue,
     HandlerResult,
     logger,
     Parameter,
@@ -27,6 +26,7 @@ import {
 } from "@atomist/sdm";
 import { deleteApplication } from "../kubernetes/application";
 import { defaultNamespace } from "../kubernetes/namespace";
+import { clientName } from "../support/name";
 import { syncApplication } from "../sync/application";
 
 @Parameters()
@@ -63,7 +63,7 @@ export class KubernetesUndeployParameters {
  */
 export const kubernetesUndeploy: CommandHandlerRegistration<KubernetesUndeployParameters> = {
     name: "KubernetesUndeploy",
-    intent: "kube undeploy " + configurationValue<string>("name", "@atomist/sdm-pack-k8s"),
+    intent: `kube undeploy ${clientName()}`,
     description: "remove all resources related to an application from Kubernetes cluster",
     paramsMaker: KubernetesUndeployParameters,
     listener: async ci => {
