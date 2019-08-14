@@ -52,12 +52,6 @@ export const syncRepoStartupListener: StartupListener = async ctx => {
     const interval: number = _.get(sdm, "configuration.sdm.k8s.options.sync.intervalMinutes");
     if (interval && interval > 0) {
         logger.info(`Creating sync repo trigger every ${interval} minutes`);
-        /* See https://github.com/atomist/sdm/issues/762
-        sdm.addTriggeredListener({
-            trigger: { interval: interval * 60 * 1000 },
-            listener: li => sdmRepoSync(li.sdm),
-        });
-        */
         setInterval(() => sdmRepoSync(sdm), interval * 60 * 1000);
     }
     return;
