@@ -52,32 +52,35 @@ export interface KubernetesResourceSelector {
     action?: "include" | "exclude";
     /**
      * If provided, only resources of a kind provided will be
-     * considered a match.  See [[populateResourceSelectorDefaults]] for
+     * considered a match.  Only the "kind" is considered when
+     * matching, since the same kind can appear under multiple
+     * "apiVersion"s.  See [[populateResourceSelectorDefaults]] for
      * rules on how it is populated if it is not set.
      */
     kinds?: KubernetesResourceKind[];
     /**
      * If provided, only resources with names matching either the
-     * entire string or regular expression will be considered a match.  If not
-     * provided, the resource name is not considered when matching.
+     * entire string or regular expression will be considered a match.
+     * If not provided, the resource name is not considered when
+     * matching.
      */
     name?: string | RegExp;
     /**
      * If provided, only resources in namespaces matching either the
-     * entire strings or regular expression will be considered a match.  If not
-     * provided, the resource namespace is not considered when
-     * matching.
+     * entire strings or regular expression will be considered a
+     * match.  If not provided, the resource namespace is not
+     * considered when matching.
      */
     namespace?: string | RegExp;
     /**
      * Kubernetes-style label selectors.  If provided, only resources
-     * matching the selectors are considered a match.  If not provided, the
-     * resource labels are not considered when matching.
+     * matching the selectors are considered a match.  If not
+     * provided, the resource labels are not considered when matching.
      */
     labelSelector?: DeepPartial<k8s.V1LabelSelector>;
     /**
      * If provided, resources will be considered a match if their
-     * filter function returns `true`.   If not provided, this property
+     * filter function returns `true`.  If not provided, this property
      * has no effect on matching.
      */
     filter?: (r: K8sObject) => boolean;
@@ -141,12 +144,12 @@ export const defaultKubernetesFetchOptions: KubernetesFetchOptions = {
         { action: "exclude", kinds: [{ apiVersion: "v1", kind: "ServiceAccount" }], name: "default" },
         {
             action: "exclude",
-            kinds: [{ apiVersion: "rbac.authorization.k8s.io", kind: "ClusterRole" }],
+            kinds: [{ apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRole" }],
             name: /^(?:(?:cluster-)?admin|edit|view|cloud-provider)$/,
         },
         {
             action: "exclude",
-            kinds: [{ apiVersion: "rbac.authorization.k8s.io", kind: "ClusterRoleBinding" }],
+            kinds: [{ apiVersion: "rbac.authorization.k8s.io/v1", kind: "ClusterRoleBinding" }],
             name: /^(?:cluster-admin(?:-binding)?|cloud-provider|kubernetes-dashboard)$/,
         },
         { action: "exclude", kinds: [{ apiVersion: "storage.k8s.io/v1", kind: "StorageClass" }], name: "standard" },
