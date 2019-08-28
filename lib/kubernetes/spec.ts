@@ -120,3 +120,19 @@ export async function kubernetesSpecStringify(spec: K8sObject, options: Kubernet
         return stableStringify(resource, { space: 2 }) + "\n";
     }
 }
+
+/**
+ * Parses content of string as Kubernetes JSON or YAML specs.  It
+ * parses the file as YAML, since JSON is valid YAML, and returns an
+ * array of [[K8sObject]]s, since a YAML file can contain multiple
+ * documents.  It validates that each document parsed looks something
+ * like a Kubernetes spec.  If it does not, it is filtered out of the
+ * returned specs.
+ *
+ * @param specString String representation of Kubernetes spec(s)
+ * @return Parsed and filtered Kubernetes spec objects
+ */
+export function parseKubernetesSpecs(specString: string): K8sObject[] {
+    const specs: K8sObject[] = yaml.safeLoadAll(specString);
+    return specs.filter(s => s && s.apiVersion && s.kind && s.metadata && s.metadata.name);
+}

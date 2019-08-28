@@ -29,9 +29,10 @@ import {
 } from "@atomist/sdm";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";
-import { parseKubernetesSpecFile } from "../deploy/spec";
+import { specUriPath } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { decryptSecret } from "../kubernetes/secret";
+import { parseKubernetesSpecs } from "../kubernetes/spec";
 import { errMsg } from "../support/error";
 import { cleanName } from "../support/name";
 import { defaultCloneOptions } from "./clone";
@@ -123,11 +124,21 @@ function syncApply(opts: KubernetesSyncOptions): (p: GitProject) => Promise<void
         for (const specFile of specFiles) {
             logger.debug(`Processing spec ${specFile.path}`);
             try {
-                let spec = await parseKubernetesSpecFile(specFile);
-                if (spec.kind === "Secret" && opts && opts.secretKey) {
-                    spec = await decryptSecret(spec, opts.secretKey);
+                const specString = await specFile.getContent();
+                const specs = parseKubernetesSpecs(specString);
+                for (let spec of specs) {
+                    try {
+                        if (spec.kind === "Secret" && opts && opts.secretKey) {
+                            spec = await decryptSecret(spec, opts.secretKey);
+                        }
+                        await applySpec(spec);
+                    } catch (e) {
+                        const specSlug = specUriPath(spec, "read");
+                        e.message = `Failed to apply spec '${specSlug}' from '${specFile.path}': ${errMsg(e)}`;
+                        logger.error(e.message);
+                        errors.push(e);
+                    }
                 }
-                await applySpec(spec);
             } catch (e) {
                 e.message = `Failed to apply '${specFile.path}': ${errMsg(e)}`;
                 logger.error(e.message);

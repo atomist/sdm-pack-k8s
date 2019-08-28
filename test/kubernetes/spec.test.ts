@@ -18,6 +18,7 @@ import * as assert from "power-assert";
 import {
     kubernetesSpecFileBasename,
     kubernetesSpecStringify,
+    parseKubernetesSpecs,
 } from "../../lib/kubernetes/spec";
 
 describe("kubernetes/spec", () => {
@@ -244,6 +245,221 @@ spec:
 }
 `;
             assert(s === e);
+        });
+
+    });
+
+    describe("parseKubernetesSpecs", () => {
+
+        it("should parse JSON", async () => {
+            const c = `{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "satisfied-mind",
+    "namespace": "the-byrds"
+  },
+  "spec": {
+    "ports": [
+      {
+        "port": 80
+      }
+    ],
+    "selector": {
+      "app.kubernetes.io/name": "satisfied-mind"
+    }
+  }
+}
+`;
+            const s = parseKubernetesSpecs(c);
+            const e = [{
+                apiVersion: "v1",
+                kind: "Service",
+                metadata: {
+                    name: "satisfied-mind",
+                    namespace: "the-byrds",
+                },
+                spec: {
+                    ports: [
+                        {
+                            port: 80,
+                        },
+                    ],
+                    selector: {
+                        "app.kubernetes.io/name": "satisfied-mind",
+                    },
+                },
+            }];
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should parse YAML", async () => {
+            const c = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: turn-turn-turn
+  namespace: the-byrds
+spec:
+  template:
+    spec:
+      serviceAccountName: sdm-serviceaccount
+      terminationGracePeriodSeconds: 180
+`;
+            const s = parseKubernetesSpecs(c);
+            const e = [{
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    name: "turn-turn-turn",
+                    namespace: "the-byrds",
+                },
+                spec: {
+                    template: {
+                        spec: {
+                            serviceAccountName: "sdm-serviceaccount",
+                            terminationGracePeriodSeconds: 180,
+                        },
+                    },
+                },
+            }];
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should parse empty YAML and return nothing", async () => {
+            const c = "";
+            const s = parseKubernetesSpecs(c);
+            assert.deepStrictEqual(s, []);
+        });
+
+        it("should filter out non-specs", async () => {
+            [
+                "",
+                "{}",
+                `{"apiVersion":"v1"}`,
+                `{"kind":"Secret"}`,
+                `{"metadata":{"name":"niteclub"}}`,
+                `{"apiVersion":"v1","kind":"Secret"}`,
+                `{"kind":"Secret","metadata":{"name":"niteclub"}}`,
+                `{"apiVersion":"v1","kind":"Secret","metadata":{"namespace":"old97s"}}`,
+            ].forEach(c => {
+                const s = parseKubernetesSpecs(c);
+                assert.deepStrictEqual(s, []);
+            });
+        });
+
+        it("should parse multiple YAML documents", async () => {
+            const c = `apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    certmanager.k8s.io/disable-validation: "true"
+
+---
+---
+# Source: cert-manager/charts/cainjector/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-manager-cainjector
+  namespace: "cert-manager"
+  labels:
+    app: cainjector
+    app.kubernetes.io/name: cainjector
+    app.kubernetes.io/instance:  cert-manager
+    app.kubernetes.io/managed-by: Tiller
+    helm.sh/chart: cainjector-v0.9.1
+
+---
+# Source: cert-manager/charts/webhook/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-manager-webhook
+  namespace: "cert-manager"
+  labels:
+    app: webhook
+    app.kubernetes.io/name: webhook
+    app.kubernetes.io/instance:  cert-manager
+    app.kubernetes.io/managed-by: Tiller
+    helm.sh/chart: webhook-v0.9.1
+
+---
+# Source: cert-manager/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-manager
+  namespace: "cert-manager"
+  labels:
+    app: cert-manager
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/instance:  cert-manager
+    app.kubernetes.io/managed-by: Tiller
+    helm.sh/chart: cert-manager-v0.9.1
+
+---
+
+`;
+            const s = parseKubernetesSpecs(c);
+            const e = [
+                {
+                    apiVersion: "v1",
+                    kind: "Namespace",
+                    metadata: {
+                        name: "cert-manager",
+                        labels: {
+                            "certmanager.k8s.io/disable-validation": "true",
+                        },
+                    },
+                },
+                {
+                    apiVersion: "v1",
+                    kind: "ServiceAccount",
+                    metadata: {
+                        name: "cert-manager-cainjector",
+                        namespace: "cert-manager",
+                        labels: {
+                            "app": "cainjector",
+                            "app.kubernetes.io/name": "cainjector",
+                            "app.kubernetes.io/instance": "cert-manager",
+                            "app.kubernetes.io/managed-by": "Tiller",
+                            "helm.sh/chart": "cainjector-v0.9.1",
+                        },
+                    },
+                },
+                {
+                    apiVersion: "v1",
+                    kind: "ServiceAccount",
+                    metadata: {
+                        name: "cert-manager-webhook",
+                        namespace: "cert-manager",
+                        labels: {
+                            "app": "webhook",
+                            "app.kubernetes.io/name": "webhook",
+                            "app.kubernetes.io/instance": "cert-manager",
+                            "app.kubernetes.io/managed-by": "Tiller",
+                            "helm.sh/chart": "webhook-v0.9.1",
+                        },
+                    },
+                },
+                {
+                    apiVersion: "v1",
+                    kind: "ServiceAccount",
+                    metadata: {
+                        name: "cert-manager",
+                        namespace: "cert-manager",
+                        labels: {
+                            "app": "cert-manager",
+                            "app.kubernetes.io/name": "cert-manager",
+                            "app.kubernetes.io/instance": "cert-manager",
+                            "app.kubernetes.io/managed-by": "Tiller",
+                            "helm.sh/chart": "cert-manager-v0.9.1",
+                        },
+                    },
+                },
+            ];
+            assert.deepStrictEqual(s, e);
         });
 
     });

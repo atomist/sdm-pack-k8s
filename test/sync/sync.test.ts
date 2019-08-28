@@ -118,9 +118,15 @@ describe("sync/sync", () => {
             { path: "70_scar_scar_dep.yaml", content: "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: scar\n  namespace: scar\n" },
             { path: "lib/stuff.ts", content: "// comment\n" },
             { path: "00_guest_ornette_ds.json", content: `{"apiVersion":"apps/v1","kind":"DaemonSet","metadata":{"name":"ornette"}}` },
-            { path: "80_jlh_stop_ingress.yml", content: "apiVersion: networking.k8s.io/v1\nkind: Ingress\n" },
+            {
+                path: "80_jlh_stop_ingress.yml",
+                content: "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: stop\n  namespace: jlh\n",
+            },
             { path: "test/stuff.test.ts", content: "/* comment */" },
-            { path: "60_jlh_stop_secret.yml", content: "apiVersion: v1\nkind: Secret\ndata:\n  amor: +WgqDCG3DW42vXwmS/ZYAg==\n" },
+            {
+                path: "60_jlh_stop_secret.yml",
+                content: "apiVersion: v1\nkind: Secret\nmetadata:\n  name: stop\n  namespace: jlh\ndata:\n  amor: +WgqDCG3DW42vXwmS/ZYAg==\n",
+            },
         ) as any;
         const context = fakeContext("AT34RFU1N4T10N");
 
@@ -167,11 +173,11 @@ describe("sync/sync", () => {
             assert(loaded, "Project was never loaded");
             const eSpecs = [
                 { apiVersion: "apps/v1", kind: "DaemonSet", metadata: { name: "ornette" } },
-                { apiVersion: "v1", kind: "Secret", data: { amor: "U3RvcA==" } },
+                { apiVersion: "v1", kind: "Secret", metadata: { name: "stop", namespace: "jlh" }, data: { amor: "U3RvcA==" } },
                 { apiVersion: "v1", kind: "Service", metadata: { name: "stop", namespace: "jlh" } },
                 { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "stop" } },
                 { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "scar", namespace: "scar" } },
-                { apiVersion: "networking.k8s.io/v1", kind: "Ingress" },
+                { apiVersion: "networking.k8s.io/v1", kind: "Ingress", metadata: { name: "stop", namespace: "jlh" } },
             ];
             assert.deepStrictEqual(specs, eSpecs);
         });
@@ -287,9 +293,15 @@ describe("sync/sync", () => {
                 { path: "70_scar_scar_dep.yaml", content: "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: scar\n  namespace: scar\n" },
                 { path: "lib/stuff.ts", content: "// comment\n" },
                 { path: "00_guest_ornette_ds.json", content: `{"apiVersion":"apps/v1","kind":"DaemonSet","metadata":{"name":"ornette"}}` },
-                { path: "80_jlh_stop_ingress.yml", content: "apiVersion: networking.k8s.io/v1\nkind: Ingress\n" },
+                {
+                    path: "80_jlh_stop_ingress.yml",
+                    content: "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: stop\n  namespace: jlh\n",
+                },
                 { path: "test/stuff.test.ts", content: "/* comment */" },
-                { path: "60_jlh_stop_secret.yml", content: "apiVersion: v1\nkind: Secret\ndata:\n  amor: +WgqDCG3DW42vXwmS/ZYAg==\n" },
+                {
+                    path: "60_jlh_stop_secret.yml",
+                    content: "apiVersion: v1\nkind: Secret\nmetadata:\n  name: stop\n  namespace: jlh\ndata:\n  amor: +WgqDCG3DW42vXwmS/ZYAg==\n",
+                },
             ) as any;
             const context = fakeContext("AT34RFU1N4T10N");
             const cli: any = {
@@ -317,14 +329,15 @@ describe("sync/sync", () => {
             };
             const v = await repoSync(cli);
             assert(v.code === 1);
-            assert(v.message ===
-                "Failed to sync repo reprise/JoeHenry: There were errors during repo sync: Failed to apply 'd.json': applySpec failure");
+            const eMessage = "Failed to sync repo reprise/JoeHenry: There were errors during repo sync: Failed to apply " +
+                "spec 'apis/apps/v1/namespaces/default/deployments/stop' from 'd.json': applySpec failure";
+            assert(v.message === eMessage);
             const eSpecs = [
                 { apiVersion: "apps/v1", kind: "DaemonSet", metadata: { name: "ornette" } },
-                { apiVersion: "v1", kind: "Secret", data: { amor: "U3RvcA==" } },
+                { apiVersion: "v1", kind: "Secret", metadata: { name: "stop", namespace: "jlh" }, data: { amor: "U3RvcA==" } },
                 { apiVersion: "v1", kind: "Service", metadata: { name: "stop", namespace: "jlh" } },
                 { apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "scar", namespace: "scar" } },
-                { apiVersion: "networking.k8s.io/v1", kind: "Ingress" },
+                { apiVersion: "networking.k8s.io/v1", kind: "Ingress", metadata: { name: "stop", namespace: "jlh" } },
             ];
             assert.deepStrictEqual(specs, eSpecs);
         });
