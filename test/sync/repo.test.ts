@@ -165,7 +165,7 @@ describe("sync/repo", () => {
             } as any;
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
-                credential: {},
+                credential: {} as any,
             };
             const rc = scmCredentials(m, s);
             assert(rc === undefined);
