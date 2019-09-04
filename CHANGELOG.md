@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 -   Support multi-document YAML specs. [#73](https://github.com/atomist/sdm-pack-k8s/issues/73)
 
+### Fixed
+
+-   Sync not working when commands not registered. [#74](https://github.com/atomist/sdm-pack-k8s/issues/74)
+
 ## [1.9.0](https://github.com/atomist/sdm-pack-k8s/compare/1.8.0...1.9.0) - 2019-08-14
 
 ### Added
