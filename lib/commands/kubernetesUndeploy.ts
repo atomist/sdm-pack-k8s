@@ -26,6 +26,7 @@ import {
     slackSuccessMessage,
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
+import * as _ from "lodash";
 import { deleteApplication } from "../kubernetes/application";
 import { defaultNamespace } from "../kubernetes/namespace";
 import { cleanName } from "../support/name";
@@ -62,15 +63,23 @@ export class KubernetesUndeployParameters {
 
 /**
  * Safely remove all resources related to a Kubernetes application.
+ *
+ * If the SDM configuration says this packs commands should be added,
+ * i.e., `sdm.configuration.sdm.k8s.options.addCommands` is `true`,
+ * the command will have the intent `kube undeploy SDM_NAME`.
+ * Otherwise the command will be registered without an intent.
  */
 export function kubernetesUndeploy(sdm: SoftwareDeliveryMachine): CommandHandlerRegistration<KubernetesUndeployParameters> {
-    return {
+    const cmd: CommandHandlerRegistration<KubernetesUndeployParameters> = {
         name: "KubernetesUndeploy",
-        intent: `kube undeploy ${cleanName(sdm.configuration.name)}`,
         description: "remove all resources related to an application from Kubernetes cluster",
         paramsMaker: KubernetesUndeployParameters,
         listener: kubeUndeploy,
     };
+    if (_.get(sdm, "configuration.sdm.k8s.options.addCommands", false)) {
+        cmd.intent = `kube undeploy ${cleanName(sdm.configuration.name)}`;
+    }
+    return cmd;
 }
 
 /**

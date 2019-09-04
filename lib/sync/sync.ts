@@ -49,13 +49,21 @@ export const KubernetesSync = "KubernetesSync";
  * in the SDM, the command errors.  This command is typically executed
  * on an interval timer by setting the `intervalMinutes`
  * [[KubernetesSyncOptions]].
+ *
+ * If the SDM configuration says this packs commands should be added,
+ * i.e., `sdm.configuration.sdm.k8s.options.addCommands` is `true`,
+ * the command will have the intent `kube sync SDM_NAME`.  Otherwise
+ * the command will be registered without an intent.
  */
 export function kubernetesSync(sdm: SoftwareDeliveryMachine): CommandHandlerRegistration {
-    return {
-        intent: `kube sync ${cleanName(sdm.configuration.name)}`,
+    const cmd: CommandHandlerRegistration = {
         name: KubernetesSync,
         listener: repoSync,
     };
+    if (_.get(sdm, "configuration.sdm.k8s.options.addCommands", false)) {
+        cmd.intent = `kube sync ${cleanName(sdm.configuration.name)}`;
+    }
+    return cmd;
 }
 
 /**

@@ -25,11 +25,52 @@ import * as assert from "power-assert";
 import { K8sObject } from "../../lib/kubernetes/api";
 import * as apply from "../../lib/kubernetes/apply";
 import {
+    kubernetesSync,
     repoSync,
     sortSpecs,
 } from "../../lib/sync/sync";
 
 describe("sync/sync", () => {
+
+    describe("kubernetesSync", () => {
+
+        it("should return the command with intent", () => {
+            const s: any = {
+                configuration: {
+                    name: "@imogen/heap",
+                    sdm: {
+                        k8s: {
+                            options: {
+                                addCommands: true,
+                            },
+                        },
+                    },
+                },
+            };
+            const c = kubernetesSync(s);
+            assert(c.name === "KubernetesSync");
+            assert(c.intent === "kube sync imogen/heap");
+        });
+
+        it("should return the command without intent", () => {
+            const s: any = {
+                configuration: {
+                    name: "@imogen/heap",
+                    sdm: {
+                        k8s: {
+                            options: {
+                                addCommands: false,
+                            },
+                        },
+                    },
+                },
+            };
+            const c = kubernetesSync(s);
+            assert(c.name === "KubernetesSync");
+            assert(c.intent === undefined);
+        });
+
+    });
 
     describe("sortSpecs", () => {
 

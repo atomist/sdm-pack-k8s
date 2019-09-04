@@ -40,7 +40,7 @@ import { kubernetesSync } from "./sync/sync";
  *
  * If the merged options result in a truthy `addCommands`, then the
  * [[kubernetesUndeploy]] and [[kubernetesSync]] commands are added to
- * the SDM.
+ * the SDM with intents.
  *
  * The [[kubernetesDeployHandler]] event handler for this SDM is added
  * to the SDM.
@@ -62,10 +62,8 @@ export function k8sSupport(options: SdmPackK8sOptions = {}): ExtensionPack {
 
             mergeK8sOptions(sdm, options);
 
-            if (sdm.configuration.sdm.k8s.options.addCommands) {
-                sdm.addCommand(kubernetesUndeploy(sdm));
-                sdm.addCommand(kubernetesSync(sdm));
-            }
+            sdm.addCommand(kubernetesUndeploy(sdm));
+            sdm.addCommand(kubernetesSync(sdm));
 
             sdm.addEvent(kubernetesDeployHandler(sdm.configuration.name));
 
