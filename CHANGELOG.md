@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.10.0...HEAD)
 
+### Fixed
+
+-   Fix error when repo undefined. [87de4b3](https://github.com/atomist/sdm-pack-k8s/commit/87de4b340caeb31bd20b59d0fe4af6411ddfdf81)
+
 ## [1.10.0](https://github.com/atomist/sdm-pack-k8s/compare/1.9.0...1.10.0) - 2019-09-09
 
 ### Changed
