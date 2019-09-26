@@ -32,6 +32,7 @@ import {
     SoftwareDeliveryMachine,
     whenPushSatisfies,
 } from "@atomist/sdm";
+import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import {
     KubernetesSyncOptions,
@@ -40,10 +41,7 @@ import {
 import { errMsg } from "../support/error";
 import { changeResource } from "./change";
 import { diffPush } from "./diff";
-import {
-    isRemoteRepo,
-    repoSlug,
-} from "./repo";
+import { isRemoteRepo } from "./repo";
 import { commitTag } from "./tag";
 
 export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undefined {
@@ -54,9 +52,8 @@ export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undef
     }
     return pushTest("IsSyncRepoCommit", async p => {
         const repo: SyncRepoRef | RemoteRepoRef = _.get(sdm, "configuration.sdm.k8s.options.sync.repo");
-        const slug = repoSlug(repo);
         if (!isRemoteRepo(repo)) {
-            throw new Error(`SyncRepoRef did not get converted to proper RemoteRepoRef at startup: ${slug}`);
+            throw new Error(`SyncRepoRef did not get converted to proper RemoteRepoRef at startup: ${stringify(repo)}`);
         }
         if (p.id.providerType === repo.providerType && p.id.owner === repo.owner &&
             p.id.repo === repo.repo && p.id.branch === repo.branch) {
