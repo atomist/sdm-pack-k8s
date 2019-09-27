@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...HEAD)
 
+### Changed
+
+-   Truncate long masked strings. [611f471](https://github.com/atomist/sdm-pack-k8s/commit/611f471861a85f3b55afedbbd325ba921b3e30f3)
+
 ### Fixed
 
 -   Improve information in errors of retry failures. [#75](https://github.com/atomist/sdm-pack-k8s/issues/75)
