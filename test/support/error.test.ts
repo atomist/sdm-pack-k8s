@@ -346,7 +346,7 @@ describe("support/error", () => {
     describe("maskString", () => {
 
         it("should mask entire string", () => {
-            ["a", "abc", "abcde", "abcdef0", "abcdef012", "abcdef0123456", "abcdef012345678"].forEach(t => {
+            ["abcdef", "abcdef0", "abcdef012", "abcdef0123456", "abcdef012345678"].forEach(t => {
                 const m = maskString(t);
                 const e = "*".repeat(t.length);
                 assert(m === e);
@@ -362,6 +362,20 @@ describe("support/error", () => {
                 const m = maskString(t.t);
                 assert(m === t.e);
             });
+        });
+
+        it("should obscure a short string", () => {
+            ["", "a", "ab", "abc", "abcd", "abcde", "abcdef"].forEach(t => {
+                const m = maskString(t);
+                assert(m === "******");
+            });
+        });
+
+        it("should truncate a long string", () => {
+            const t = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+{}|:<>?`-=[]\;',./abcdefghijklmnopqrstuvwxyz012345";
+            const m = maskString(t);
+            const e = "a***************************************************************************************************...";
+            assert(m === e);
         });
 
     });

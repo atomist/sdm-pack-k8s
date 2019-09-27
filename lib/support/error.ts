@@ -100,7 +100,14 @@ function keyFilter<T>(key: string, value: T): T | string | undefined {
  * @return Masked string
  */
 export function maskString(raw: string): string {
-    const masked = (raw.length < 16) ? "*".repeat(raw.length) :
-        raw.charAt(0) + "*".repeat(raw.length - 2) + raw.charAt(raw.length - 1);
-    return masked;
+    const l = raw.length;
+    if (l < 7) {
+        return "******";
+    } else if (l < 16) {
+        return "*".repeat(raw.length);
+    } else if (l < 100) {
+        return raw.charAt(0) + "*".repeat(raw.length - 2) + raw.charAt(raw.length - 1);
+    } else {
+        return raw.charAt(0) + "*".repeat(99) + "...";
+    }
 }
