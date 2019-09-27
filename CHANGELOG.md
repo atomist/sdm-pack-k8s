@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...HEAD)
 
+### Fixed
+
+-   Improve information in errors of retry failures. [#75](https://github.com/atomist/sdm-pack-k8s/issues/75)
+
 ## [1.10.1](https://github.com/atomist/sdm-pack-k8s/compare/1.10.0...1.10.1) - 2019-09-26
 
 ### Fixed
