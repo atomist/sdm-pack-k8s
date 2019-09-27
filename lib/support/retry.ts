@@ -36,8 +36,19 @@ export async function logRetry<T>(f: () => Promise<T>, desc: string, options: pR
         },
         ...options,
     };
-    return pRetry(count => {
+    return pRetry(async (count: number) => {
         logger.debug(`Retry ${desc} attempt ${count}`);
-        return f();
+        let r: T;
+        try {
+            r = await f();
+        } catch (e) {
+            if (!(e instanceof Error)) {
+                const err = new Error(errMsg(e));
+                Object.keys(e).forEach(k => (err as any)[k] = e[k]);
+                throw err;
+            }
+            throw e;
+        }
+        return r;
     }, opts);
 }

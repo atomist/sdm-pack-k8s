@@ -407,7 +407,78 @@ describe("kubernetes/api", () => {
             assert(!d1.stdout.includes(d.metadata.name));
             const s1 = await execPromise("kubectl", ["get", "-n", d.metadata.namespace, "services"]);
             assert(!s1.stdout.includes(s.metadata.name));
-            DefaultLogRetryOptions.retries = defaultRetries;
+        });
+
+        it("should throw a proper error", async () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Service",
+                metadata: {
+                    name: `_not_a_valid_name_`,
+                    namespace: "default",
+                },
+                spec: {
+                    ports: [
+                        {
+                            port: 80,
+                            protocol: "TCP",
+                            targetPort: 80,
+                        },
+                    ],
+                    selector: {
+                        app: "sleep",
+                    },
+                },
+            };
+            let thrown = false;
+            try {
+                await applySpec(s);
+            } catch (e) {
+                thrown = true;
+                assert(/Service "_not_a_valid_name_" is invalid: metadata.name: Invalid value: "_not_a_valid_name_":/.test(e.message));
+            }
+            assert(thrown, "error not thrown");
+            const d = {
+                apiVersion: "applications/v1",
+                kind: "Deployment",
+                metadata: {
+                    name: `sdm-pack-k8s-api-int-${Math.floor(Math.random() * 100000)}`,
+                    namespace: "default",
+                },
+                spec: {
+                    selector: {
+                        matchLabels: {
+                            app: "sleep",
+                        },
+                    },
+                    template: {
+                        metadata: {
+                            labels: {
+                                app: "sleep",
+                            },
+                        },
+                        spec: {
+                            containers: [
+                                {
+                                    args: ["60"],
+                                    command: ["sleep"],
+                                    image: "alpine",
+                                    name: "sleep",
+                                    ports: [{ containerPort: 80 }],
+                                },
+                            ],
+                        },
+                    },
+                },
+            };
+            thrown = false;
+            try {
+                await applySpec(d);
+            } catch (e) {
+                thrown = true;
+                assert(/404 page not found/.test(e.message));
+            }
+            assert(thrown, "error not thrown");
         });
 
     });

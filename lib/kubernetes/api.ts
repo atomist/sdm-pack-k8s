@@ -20,6 +20,7 @@ import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as request from "request";
 import { DeepPartial } from "ts-essentials";
+import { requestError } from "../support/error";
 import { defaultNamespace } from "./namespace";
 
 export interface K8sObjectResponse {
@@ -141,7 +142,7 @@ export class K8sObjectApi extends k8s.ApisApi {
                     if (response.statusCode >= 200 && response.statusCode <= 299) {
                         resolve({ response, body });
                     } else {
-                        reject({ response, body });
+                        reject(requestError({ response, body }));
                     }
                 }
             });

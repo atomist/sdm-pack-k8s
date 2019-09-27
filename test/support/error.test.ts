@@ -18,6 +18,8 @@ import * as assert from "power-assert";
 import {
     errMsg,
     maskString,
+    requestErrMsg,
+    requestError,
 } from "../../lib/support/error";
 
 describe("support/error", () => {
@@ -44,7 +46,7 @@ describe("support/error", () => {
 
         it("should handle a Kubernetes API error", () => {
             /* tslint:disable:max-line-length no-null-keyword */
-            const r = {
+            const r: any = {
                 response: {
                     statusCode: 422,
                     body: {
@@ -119,10 +121,56 @@ describe("support/error", () => {
                 },
                 attemptNumber: 1,
                 retriesLeft: 5,
-            } as any;
+            };
             /* tslint:enable:max-line-length no-null-keyword */
             const m = errMsg(r);
             assert(m === r.body.message);
+        });
+
+        it("should handle a 404", () => {
+            /* tslint:disable:no-null-keyword */
+            const r: any = {
+                response: {
+                    statusCode: 404,
+                    body: "404 page not found\n",
+                    headers: {
+                        "content-type": "text/plain; charset=utf-8",
+                        "x-content-type-options": "nosniff",
+                        "date": "Thu, 26 Sep 2019 21:37:37 GMT",
+                        "content-length": "19",
+                        "connection": "close",
+                    },
+                    request: {
+                        uri: {
+                            protocol: "https:",
+                            slashes: true,
+                            auth: null,
+                            host: "h:8443",
+                            port: "8443",
+                            hostname: "h",
+                            hash: null,
+                            search: null,
+                            query: null,
+                            pathname: "/apis/application/v1/namespaces/default/deployments",
+                            path: "/apis/application/v1/namespaces/default/deployments",
+                            href: "https://h:8443/apis/application/v1/namespaces/default/deployments",
+                        },
+                        method: "POST",
+                        headers: {
+                            "authorization": "",
+                            "accept": "application/json",
+                            "content-type": "application/json",
+                            "content-length": 348,
+                        },
+                    },
+                },
+                body: "404 page not found\n",
+                attemptNumber: 1,
+                retriesLeft: 5,
+            };
+            /* tslint:disable:no-null-keyword */
+            const m = errMsg(r);
+            assert(m === "404 page not found\n");
         });
 
         it("should stringify something without a message", () => {
@@ -175,6 +223,122 @@ describe("support/error", () => {
             };
             const m = errMsg(r);
             assert(m === "Blitzen Trapper");
+        });
+
+    });
+
+    describe("requestErrMsg", () => {
+
+        it("should use the body", () => {
+            const r: any = {
+                body: "404 Not Found",
+                response: {},
+            };
+            const m = requestErrMsg(r);
+            assert(m === "404 Not Found");
+        });
+
+        it("should use the body message", () => {
+            const r: any = {
+                body: {
+                    message: "namespaces \"defaults\" not found",
+                },
+                response: {},
+            };
+            const m = requestErrMsg(r);
+            assert(m === "namespaces \"defaults\" not found");
+        });
+
+        it("should use the response body", () => {
+            const r: any = {
+                body: {},
+                response: {
+                    body: "404 Not Found",
+                },
+            };
+            const m = requestErrMsg(r);
+            assert(m === "404 Not Found");
+        });
+
+        it("should use the body message", () => {
+            const r: any = {
+                body: {},
+                response: {
+                    body: {
+                        message: "namespaces \"defaults\" not found",
+                    },
+                },
+            };
+            const m = requestErrMsg(r);
+            assert(m === "namespaces \"defaults\" not found");
+        });
+
+        it("should use the body message", () => {
+            const r: any = {
+                body: {},
+                response: {
+                    body: {
+                        message: "namespaces \"defaults\" not found",
+                    },
+                },
+            };
+            const m = requestErrMsg(r);
+            assert(m === "namespaces \"defaults\" not found");
+        });
+
+        it("should return undefined", () => {
+            const rs: any[] = [
+                {},
+                { body: {} },
+                { response: {} },
+                { body: {}, response: {} },
+                { body: [], response: [] },
+            ];
+            rs.forEach(r => {
+                const m = requestErrMsg(r);
+                assert(m === undefined);
+            });
+        });
+
+    });
+
+    describe("requestError", () => {
+
+        it("should return Error with default message", () => {
+            const r: any = {};
+            const e = requestError(r);
+            assert(e instanceof Error);
+            assert(e.message === "Kubernetes API request failed");
+            assert(e.body === undefined);
+            assert(e.response === undefined);
+        });
+
+        it("should include body and response in Error", () => {
+            const r: any = {
+                body: {
+                    message: "No luck",
+                },
+                response: {
+                    Status: "Failure",
+                    body: {
+                        message: "No luck",
+                    },
+                },
+            };
+            const e = requestError(r);
+            assert(e instanceof Error);
+            assert(e.message === "No luck");
+            const b = {
+                message: "No luck",
+            };
+            const p = {
+                Status: "Failure",
+                body: {
+                    message: "No luck",
+                },
+            };
+            assert.deepStrictEqual(e.body, b);
+            assert.deepStrictEqual(e.response, p);
         });
 
     });
