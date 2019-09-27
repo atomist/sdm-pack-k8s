@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...HEAD)
+## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.10.2...HEAD)
+
+## [1.10.2](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...1.10.2) - 2019-09-27
 
 ### Changed
 
