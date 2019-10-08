@@ -3,8 +3,8 @@
 [![atomist sdm goals](http://badge.atomist.com/T29E48P34/atomist/sdm-pack-k8/36919e92-7d10-4e4c-87b7-a0fd58bca349)](https://app.atomist.com/workspace/T29E48P34)
 [![npm version](https://img.shields.io/npm/v/@atomist/sdm-pack-k8s.svg)](https://www.npmjs.com/package/@atomist/sdm-pack-k8s)
 
-[Atomist][atomist] software delivery machine (SDM) extension Pack for
-an Atomist SDM to enable deploying applications to
+[Atomist][atomist] software delivery machine (SDM) extension Pack
+enabling GitOps functionality and deploying applications to
 [Kubernetes][kubernetes] (k8s) clusters.
 
 See also: [API Documentation][apidoc]
