@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist/sdm-pack-k8s/compare/1.10.2...HEAD)
 
+### Added
+
+-   encryptSecret function supports stringData elements. [#80](https://github.com/atomist/sdm-pack-k8s/issues/80)
+
 ## [1.10.2](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...1.10.2) - 2019-09-27
 
 ### Changed
