@@ -154,11 +154,26 @@ export function encodeSecret(name: string, data: { [key: string]: string }): k8s
  * @return Kubernetes secret object with encrypted data values
  */
 export async function encryptSecret(secret: DeepPartial<k8s.V1Secret>, key: string): Promise<k8s.V1Secret> {
-    const encrypted = _.cloneDeep(secret);
-    for (const datum of Object.keys(secret.data)) {
-        encrypted.data[datum] = await encrypt(secret.data[datum], key);
+    const encrypted = handleDataStrings(_.cloneDeep(secret));
+    for (const datum of Object.keys(encrypted.data)) {
+        encrypted.data[datum] = await encrypt(encrypted.data[datum], key);
     }
     return encrypted as k8s.V1Secret;
+}
+
+/**
+ * Return the provided secret with any data residing in the
+ * stringData section base64 encoded and moved into the data section. Keys in
+ * stringData will override existing keys in data.
+ * @param secret Kubernetes secret with stringData elements
+ * @return Kubernetes secret with stringData elements encoded and moved to data
+ */
+function handleDataStrings(secret: DeepPartial<k8s.V1Secret>): DeepPartial<k8s.V1Secret> {
+    if (secret.stringData) {
+        Object.keys(secret.stringData).forEach(key => secret.data[key] = Buffer.from(secret.stringData[key]).toString("base64"));
+        delete secret.stringData;
+    }
+    return secret;
 }
 
 /**

@@ -283,6 +283,81 @@ describe("kubernetes/secret", () => {
             assert.deepStrictEqual(v, e);
         });
 
+        it("should encrypt secret stringData values", async () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "TmV2ZXJtaW5k",
+                    beck: "TWVsbG93IEdvbGQ=",
+                    nin: "UHJldHR5IEhhdGUgTWFjaGluZQ==",
+                },
+                stringData: {
+                    rodriguez: "sugar man",
+                },
+            };
+            const k = "Th1$W@yC0m3$";
+            const v = await encryptSecret(s, k);
+            const e = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "X4A0XdndoNRpP35GefUBeg==",
+                    beck: "regxucYRQO/1tGXOqlZVi+C78DhYlA7l20vFwWLluFE=",
+                    nin: "ap4QA+G47q6tr2JNrvxV2CW6rtHhMNzI8+a78BZ5cT0=",
+                    rodriguez: "rakPQtu/sN4j6JI8zm/75w==",
+                },
+            };
+            assert.deepStrictEqual(v, e);
+        });
+
+        it("should encrypt secret stringData values over data values", async () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "TmV2ZXJtaW5k",
+                    beck: "TWVsbG93IEdvbGQ=",
+                    nin: "UHJldHR5IEhhdGUgTWFjaGluZQ==",
+                },
+                stringData: {
+                    nin: "The Day the World Went Away",
+                },
+            };
+            const k = "Th1$W@yC0m3$";
+            const v = await encryptSecret(s, k);
+            const e = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "something",
+                    namespace: "wicked",
+                },
+                data: {
+                    nirvana: "X4A0XdndoNRpP35GefUBeg==",
+                    beck: "regxucYRQO/1tGXOqlZVi+C78DhYlA7l20vFwWLluFE=",
+                    nin: "AkJ5fZCiv3h5YqvA9vJyBh0UQBkNKcmoOvXE2m2LZd22TVzDiMbxungQgymAR/3x",
+                },
+            };
+            assert.deepStrictEqual(v, e);
+        });
+
     });
 
     describe("decryptSecret", () => {
