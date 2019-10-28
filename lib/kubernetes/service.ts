@@ -112,13 +112,11 @@ export async function serviceTemplate(req: KubernetesApplication & KubernetesSdm
             ports: [
                 {
                     name: "http",
-                    protocol: "TCP",
                     port: req.port,
-                    targetPort: "http" as any, // DeepPartial or TypeScript bug?
+                    targetPort: "http",
                 },
             ],
             selector: matchers,
-            sessionAffinity: "None",
             type: "NodePort",
         },
     };

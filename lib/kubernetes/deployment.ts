@@ -126,13 +126,20 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
         spec: {
             replicas: (req.replicas || req.replicas === 0) ? req.replicas : 1,
             selector,
+            strategy: {
+                type: "RollingUpdate",
+                rollingUpdate: {
+                    maxUnavailable: 0,
+                    maxSurge: 1,
+                },
+            },
             template: {
                 metadata: podMetadata,
                 spec: {
                     containers: [
                         {
-                            name: req.name,
                             image: req.image,
+                            name: req.name,
                             resources: {
                                 limits: {
                                     cpu: "1000m",
@@ -147,13 +154,6 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
                     ],
                 },
             },
-            strategy: {
-                type: "RollingUpdate",
-                rollingUpdate: {
-                    maxUnavailable: 0 as any, // DeepPartial or TypeScript bug?
-                    maxSurge: 1 as any,
-                },
-            },
         },
     };
     if (req.port) {
@@ -161,20 +161,14 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
             {
                 name: "http",
                 containerPort: req.port,
-                protocol: "TCP",
             } as any,
         ];
         const probe: k8s.V1Probe = {
             httpGet: {
                 path: "/",
                 port: "http",
-                scheme: "HTTP",
             },
             initialDelaySeconds: 30,
-            timeoutSeconds: 3,
-            periodSeconds: 10,
-            successThreshold: 1,
-            failureThreshold: 3,
         } as any;
         d.spec.template.spec.containers[0].readinessProbe = probe;
         d.spec.template.spec.containers[0].livenessProbe = probe;

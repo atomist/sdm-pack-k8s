@@ -57,23 +57,12 @@ describe("kubernetes/deployment", () => {
             assert(d.spec.template.spec.containers[0].ports.length === 1);
             assert(d.spec.template.spec.containers[0].ports[0].name === "http");
             assert(d.spec.template.spec.containers[0].ports[0].containerPort === r.port);
-            assert(d.spec.template.spec.containers[0].ports[0].protocol === "TCP");
             assert(d.spec.template.spec.containers[0].readinessProbe.httpGet.path === "/");
             assert(d.spec.template.spec.containers[0].readinessProbe.httpGet.port === "http");
-            assert(d.spec.template.spec.containers[0].readinessProbe.httpGet.scheme === "HTTP");
             assert(d.spec.template.spec.containers[0].readinessProbe.initialDelaySeconds === 30);
-            assert(d.spec.template.spec.containers[0].readinessProbe.timeoutSeconds === 3);
-            assert(d.spec.template.spec.containers[0].readinessProbe.periodSeconds === 10);
-            assert(d.spec.template.spec.containers[0].readinessProbe.successThreshold === 1);
-            assert(d.spec.template.spec.containers[0].readinessProbe.failureThreshold === 3);
             assert(d.spec.template.spec.containers[0].livenessProbe.httpGet.path === "/");
             assert(d.spec.template.spec.containers[0].livenessProbe.httpGet.port === "http");
-            assert(d.spec.template.spec.containers[0].livenessProbe.httpGet.scheme === "HTTP");
             assert(d.spec.template.spec.containers[0].livenessProbe.initialDelaySeconds === 30);
-            assert(d.spec.template.spec.containers[0].livenessProbe.timeoutSeconds === 3);
-            assert(d.spec.template.spec.containers[0].livenessProbe.periodSeconds === 10);
-            assert(d.spec.template.spec.containers[0].livenessProbe.successThreshold === 1);
-            assert(d.spec.template.spec.containers[0].livenessProbe.failureThreshold === 3);
             assert(d.spec.template.spec.imagePullSecrets[0].name === r.imagePullSecret);
         });
 
@@ -160,31 +149,20 @@ describe("kubernetes/deployment", () => {
                                         httpGet: {
                                             path: "/",
                                             port: "http",
-                                            scheme: "HTTP",
                                         },
                                         initialDelaySeconds: 30,
-                                        timeoutSeconds: 3,
-                                        periodSeconds: 10,
-                                        successThreshold: 1,
-                                        failureThreshold: 3,
                                     },
                                     livenessProbe: {
                                         httpGet: {
                                             path: "/",
                                             port: "http",
-                                            scheme: "HTTP",
                                         },
                                         initialDelaySeconds: 30,
-                                        timeoutSeconds: 3,
-                                        periodSeconds: 10,
-                                        successThreshold: 1,
-                                        failureThreshold: 3,
                                     },
                                     ports: [
                                         {
                                             name: "http",
                                             containerPort: r.port,
-                                            protocol: "TCP",
                                         },
                                     ],
                                 },
@@ -278,31 +256,20 @@ describe("kubernetes/deployment", () => {
                                         httpGet: {
                                             path: "/",
                                             port: "http",
-                                            scheme: "HTTP",
                                         },
                                         initialDelaySeconds: 30,
-                                        timeoutSeconds: 3,
-                                        periodSeconds: 10,
-                                        successThreshold: 1,
-                                        failureThreshold: 3,
                                     },
                                     livenessProbe: {
                                         httpGet: {
                                             path: "/",
                                             port: "http",
-                                            scheme: "HTTP",
                                         },
                                         initialDelaySeconds: 30,
-                                        timeoutSeconds: 3,
-                                        periodSeconds: 10,
-                                        successThreshold: 1,
-                                        failureThreshold: 3,
                                     },
                                     ports: [
                                         {
                                             name: "http",
                                             containerPort: r.port,
-                                            protocol: "TCP",
                                         },
                                     ],
                                 },
@@ -391,31 +358,20 @@ describe("kubernetes/deployment", () => {
                                         httpGet: {
                                             path: "/",
                                             port: "http",
-                                            scheme: "HTTP",
                                         },
                                         initialDelaySeconds: 30,
-                                        timeoutSeconds: 3,
-                                        periodSeconds: 10,
-                                        successThreshold: 1,
-                                        failureThreshold: 3,
                                     },
                                     livenessProbe: {
                                         httpGet: {
                                             path: "/",
                                             port: "http",
-                                            scheme: "HTTP",
                                         },
                                         initialDelaySeconds: 30,
-                                        timeoutSeconds: 3,
-                                        periodSeconds: 10,
-                                        successThreshold: 1,
-                                        failureThreshold: 3,
                                     },
                                     ports: [
                                         {
                                             name: "http",
                                             containerPort: r.port,
-                                            protocol: "TCP",
                                         },
                                     ],
                                 },

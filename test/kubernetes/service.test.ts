@@ -53,7 +53,6 @@ describe("kubernetes/service", () => {
                         {
                             name: "http",
                             port: 5510,
-                            protocol: "TCP",
                             targetPort: "http",
                         },
                     ],
@@ -61,7 +60,6 @@ describe("kubernetes/service", () => {
                         "app.kubernetes.io/name": r.name,
                         "atomist.com/workspaceId": r.workspaceId,
                     },
-                    sessionAffinity: "None",
                     type: "NodePort",
                 },
             };
@@ -115,7 +113,6 @@ describe("kubernetes/service", () => {
                         {
                             name: "http",
                             port: 5510,
-                            protocol: "TCP",
                             targetPort: "http",
                         },
                     ],
@@ -179,7 +176,6 @@ describe("kubernetes/service", () => {
                         {
                             name: "http",
                             port: 5510,
-                            protocol: "TCP",
                             targetPort: "http",
                         },
                     ],
