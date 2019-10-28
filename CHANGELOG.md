@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 -   encryptSecret function supports stringData elements. [#80](https://github.com/atomist/sdm-pack-k8s/issues/80)
 
+### Changed
+
+-   Do not supply defaults in resource spec templates. [713120e](https://github.com/atomist/sdm-pack-k8s/commit/713120ece4163c9693c8a5c2fed322ae7162d78b)
+
 ## [1.10.2](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...1.10.2) - 2019-09-27
 
 ### Changed
