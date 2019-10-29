@@ -70,7 +70,7 @@ export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undef
 export function syncGoals(sdm: SoftwareDeliveryMachine): SoftwareDeliveryMachine {
     const syncRepoPushTest = isSyncRepoCommit(sdm);
     if (!syncRepoPushTest) {
-        logger.info(`No sync repo push test, not adding sync repo goals`);
+        logger.debug(`No sync repo push test, not adding sync repo goals`);
         return sdm;
     }
     const sync = new GoalWithFulfillment({

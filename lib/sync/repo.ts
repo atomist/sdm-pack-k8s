@@ -71,7 +71,7 @@ const defaultDefaultBranch = "master";
 export async function queryForScmProvider(sdm: SoftwareDeliveryMachine): Promise<boolean> {
     const syncOptions: KubernetesSyncOptions = _.get(sdm, "configuration.sdm.k8s.options.sync");
     if (!syncOptions) {
-        logger.info(`SDM configuration contains no sync repo`);
+        logger.debug(`SDM configuration contains no sync repo`);
         return false;
     }
     const repoRef = syncOptions.repo;
