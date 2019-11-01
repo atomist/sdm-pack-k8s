@@ -130,6 +130,50 @@ describe("kubernetes/serviceAccount", () => {
             assert.deepStrictEqual(s, e);
         });
 
+        it("should allow overriding name but not namespace", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
+                serviceAccountSpec: {
+                    apiVersion: "extensions/v1beta1",
+                    kind: "SorviceAccount",
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                        name: "wuthering-heights",
+                        namespace: "the-kick-inside",
+                    },
+                },
+            };
+            const s = await serviceAccountTemplate(r);
+            const e = {
+                apiVersion: "v1",
+                kind: "ServiceAccount",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                    name: "wuthering-heights",
+                    namespace: "hounds-of-love",
+                },
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
         it("should use provided service account name", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",

@@ -24,15 +24,11 @@ import {
 } from "../support/crypto";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
-import {
-    applicationLabels,
-    matchLabels,
-} from "./labels";
+import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
 import {
     appName,
     KubernetesApplication,
-    KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
@@ -57,48 +53,18 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<k8s
         const secretName = `${req.ns}/${secret.metadata.name}`;
         const spec = await secretTemplate(req, secret);
         try {
-            await req.clients.core.readNamespacedSecret(secret.metadata.name, req.ns);
+            await req.clients.core.readNamespacedSecret(secret.metadata.name, spec.metadata.namespace);
         } catch (e) {
             logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
             logger.info(`Creating secret ${slug} using '${stringifyObject(spec)}'`);
-            await logRetry(() => req.clients.core.createNamespacedSecret(req.ns, spec),
+            await logRetry(() => req.clients.core.createNamespacedSecret(spec.metadata.namespace, spec),
                 `create secret ${secretName} for ${slug}`);
             return spec;
         }
         logger.info(`Secret ${secretName} exists, patching using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, req.ns, spec),
+        await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, spec.metadata.namespace, spec),
             `patch secret ${secretName} for ${slug}`);
         return spec;
-    }));
-}
-
-/**
- * Delete secrets associated with application described by `req`, if
- * any exists.  If no such secrets exist, do nothing.
- *
- * @param req Kubernetes application delete request
- * @return Array of deleted secret specs, which may be empty
- */
-export async function deleteSecrets(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Secret[]> {
-    const slug = appName(req);
-    let secrets: k8s.V1SecretList;
-    const matchers = matchLabels(req);
-    const labelSelector = Object.keys(matchers).map(l => `${l}=${matchers[l]}`).join(",");
-    try {
-        const listResp = await req.clients.core.listNamespacedSecret(req.ns, undefined, undefined,
-            undefined, undefined, labelSelector);
-        secrets = listResp.body;
-    } catch (e) {
-        e.message = `Failed to list secrets in namespace for ${slug}: ${errMsg(e)}`;
-        logger.error(e.message);
-        throw e;
-    }
-    return Promise.all(secrets.items.map(async secret => {
-        const secretName = `${req.ns}/${secret.metadata.name}`;
-        logger.info(`Deleting secret ${secretName}`);
-        await logRetry(() => req.clients.core.deleteNamespacedSecret(secret.metadata.name, req.ns),
-            `delete secret ${secretName}`);
-        return secret;
     }));
 }
 
@@ -122,6 +88,7 @@ export async function secretTemplate(req: KubernetesApplication & KubernetesSdm,
         metadata,
     };
     _.merge(s, secret, { apiVersion, kind });
+    s.metadata.namespace = req.ns;
     return s as k8s.V1Secret;
 }
 

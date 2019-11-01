@@ -25,7 +25,6 @@ import { metadataTemplate } from "./metadata";
 import {
     appName,
     KubernetesApplication,
-    KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
@@ -42,7 +41,7 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
     if (req.roleSpec.kind === "ClusterRole") {
         const spec = await clusterRoleBindingTemplate(req);
         try {
-            await req.clients.rbac.readClusterRoleBinding(req.name);
+            await req.clients.rbac.readClusterRoleBinding(spec.metadata.name);
         } catch (e) {
             logger.debug(`Failed to read cluster role binding ${slug}, creating: ${errMsg(e)}`);
             logger.info(`Creating cluster role binding ${slug} using '${stringifyObject(spec)}'`);
@@ -51,62 +50,25 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
             return spec;
         }
         logger.info(`Cluster role binding ${slug} exists, patching using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.rbac.patchClusterRoleBinding(req.name, spec),
+        await logRetry(() => req.clients.rbac.patchClusterRoleBinding(spec.metadata.name, spec),
             `patch cluster role binding ${slug}`);
         return spec;
     } else {
         const spec = await roleBindingTemplate(req);
         try {
-            await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
+            await req.clients.rbac.readNamespacedRoleBinding(spec.metadata.name, spec.metadata.namespace);
         } catch (e) {
             logger.debug(`Failed to read role binding ${slug}, creating: ${errMsg(e)}`);
             logger.info(`Creating role binding ${slug} using '${stringifyObject(spec)}'`);
-            await logRetry(() => req.clients.rbac.createNamespacedRoleBinding(req.ns, spec),
+            await logRetry(() => req.clients.rbac.createNamespacedRoleBinding(spec.metadata.namespace, spec),
                 `create role binding ${slug}`);
             return spec;
         }
         logger.info(`Role binding ${slug} exists, patching using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(req.name, req.ns, spec),
+        await logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(spec.metadata.name, spec.metadata.namespace, spec),
             `patch role binding ${slug}`);
         return spec;
     }
-}
-
-/**
- * Delete Kubernetes application role or cluster role binding.
- *
- * @param req Kuberenetes delete request
- * @return deleted role or cluster role binding object, or undefined if no (cluster) role binding exists
- */
-export async function deleteRoleBinding(req: KubernetesDeleteResourceRequest): Promise<k8s.V1RoleBinding | k8s.V1ClusterRoleBinding | undefined> {
-    const slug = appName(req);
-    let roleBinding: k8s.V1RoleBinding | k8s.V1ClusterRoleBinding;
-
-    try {
-        const resp = await req.clients.rbac.readNamespacedRoleBinding(req.name, req.ns);
-        roleBinding = resp.body;
-    } catch (e) {
-        logger.debug(`Role binding ${slug} does not exist: ${errMsg(e)}`);
-    }
-    if (roleBinding) {
-        logger.info(`Deleting role binding ${slug}`);
-        await logRetry(() => req.clients.rbac.deleteNamespacedRoleBinding(req.name, req.ns), `delete role binding ${slug}`);
-        return roleBinding;
-    }
-
-    try {
-        const resp = await req.clients.rbac.readClusterRoleBinding(req.name, req.ns);
-        roleBinding = resp.body;
-    } catch (e) {
-        logger.debug(`Cluster role binding ${slug} does not exist: ${errMsg(e)}`);
-    }
-    if (roleBinding) {
-        logger.info(`Deleting cluster role binding ${slug}`);
-        await logRetry(() => req.clients.rbac.deleteClusterRoleBinding(req.name, req.ns), `delete cluster role binding ${slug}`);
-        return roleBinding;
-    }
-
-    return undefined;
 }
 
 /**
@@ -114,6 +76,10 @@ export async function deleteRoleBinding(req: KubernetesDeleteResourceRequest): P
  * `req.rbac.roleBindingSpec`, if it is not false, is merged into the
  * spec created by this function using `lodash.merge(default,
  * req.rbac.roleBindingSpec)`.
+ *
+ * It is possible to override the role binding name using the
+ * [[KubernetesApplication.roleBindingSpec]].  If you do this, make
+ * sure you know what you are doing.
  *
  * @param req application request
  * @return role binding resource specification
@@ -149,6 +115,7 @@ export async function roleBindingTemplate(req: KubernetesApplication & Kubernete
     }
     if (req.roleBindingSpec) {
         _.merge(rb, req.roleBindingSpec, { apiVersion, kind });
+        rb.metadata.namespace = req.ns;
     }
     return rb as k8s.V1RoleBinding;
 }
@@ -158,6 +125,10 @@ export async function roleBindingTemplate(req: KubernetesApplication & Kubernete
  * `req.rbac.roleBindingSpec` is merged into the
  * spec created by this function using `lodash.merge(default,
  * req.rbac.roleBindingSpec)`.
+ *
+ * It is possible to override the cluster role binding name using the
+ * [[KubernetesApplication.roleBindingSpec]].  If you do this, make
+ * sure you know what you are doing.
  *
  * @param req application request
  * @return cluster role binding resource specification

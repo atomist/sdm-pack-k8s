@@ -23,16 +23,19 @@ import { DeepPartial } from "ts-essentials";
 import { requestError } from "../support/error";
 import { defaultNamespace } from "./namespace";
 
+/** Response from methods that operate on an resource. */
 export interface K8sObjectResponse {
     body: k8s.KubernetesObject;
     response: http.IncomingMessage;
 }
 
+/** Response from list method. */
 export interface K8sListResponse {
     body: k8s.KubernetesListObject<k8s.KubernetesObject>;
     response: http.IncomingMessage;
 }
 
+/** Response from delete method. */
 export interface K8sDeleteResponse {
     body: k8s.V1Status;
     response: http.IncomingMessage;

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { execPromise } from "@atomist/sdm";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import * as assert from "power-assert";
@@ -37,6 +36,7 @@ import {
     selectorMatch,
 } from "../../lib/kubernetes/fetch";
 import { DefaultLogRetryOptions } from "../../lib/support/retry";
+import { k8sAvailable } from "../k8s";
 
 /* tslint:disable:max-file-line-count */
 
@@ -1358,13 +1358,8 @@ describe("kubernetes/fetch", () => {
         this.timeout(5000);
 
         let defaultRetries: number;
-
         before(async function(): Promise<void> {
-            try {
-                // see if minikube is available and responding
-                await execPromise("kubectl", ["config", "use-context", "minikube"]);
-                await execPromise("kubectl", ["get", "--request-timeout=200ms", "pods"]);
-            } catch (e) {
+            if (!await k8sAvailable()) {
                 // tslint:disable-next-line:no-invalid-this
                 this.skip();
             }

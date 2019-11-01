@@ -15,6 +15,7 @@
  */
 
 import * as k8s from "@kubernetes/client-node";
+import * as stringify from "json-stringify-safe";
 import { DeepPartial } from "ts-essentials";
 import { KubernetesClients } from "./clients";
 
@@ -176,4 +177,17 @@ export function isKubernetesApplication(o: { [key: string]: any }): o is Kuberne
     const required = ["image", "name", "ns", "workspaceId"];
     return required.every(k => o[k]);
 
+}
+
+/** Stringify filter for a Kubernetes request object. */
+export function reqFilter<T>(k: string, v: T): T | undefined {
+    if (k === "config" || k === "clients" || k === "secrets") {
+        return undefined;
+    }
+    return v;
+}
+
+/** Stringify a Kubernetes request object. */
+export function reqString(req: any): string {
+    return stringify(req, reqFilter, undefined, () => undefined);
 }

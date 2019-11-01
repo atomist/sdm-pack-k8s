@@ -20,6 +20,7 @@ import { DeepPartial } from "ts-essentials";
 import {
     applicationLabels,
     labelMatch,
+    labelSelector,
     matchLabels,
     safeLabelValue,
 } from "../../lib/kubernetes/labels";
@@ -79,7 +80,21 @@ describe("kubernetes/labels", () => {
 
     });
 
-    describe("labels", () => {
+    describe("labelSelector", () => {
+
+        it("should return the proper label selector string", () => {
+            const r = {
+                name: "cloudbusting",
+                workspaceId: "KAT3BU5H",
+            };
+            const l = labelSelector(r);
+            const e = "app.kubernetes.io/name=cloudbusting,atomist.com/workspaceId=KAT3BU5H";
+            assert(l === e);
+        });
+
+    });
+
+    describe("applicatonLabels", () => {
 
         it("should return the proper labels", () => {
             const r = {

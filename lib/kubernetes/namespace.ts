@@ -40,7 +40,7 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<k
     const slug = req.ns;
     const spec = await namespaceTemplate(req);
     try {
-        await req.clients.core.readNamespace(req.ns);
+        await req.clients.core.readNamespace(spec.metadata.name);
         logger.debug(`Namespace ${slug} exists`);
     } catch (e) {
         logger.debug(`Failed to get namespace ${slug}, creating: ${errMsg(e)}`);
@@ -50,9 +50,9 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<k
     }
     logger.info(`Namespace ${slug} exists, patching using '${stringifyObject(spec)}'`);
     try {
-        await logRetry(() => req.clients.core.patchNamespace(req.ns, spec), `patch namespace ${slug}`);
+        await logRetry(() => req.clients.core.patchNamespace(spec.metadata.name, spec), `patch namespace ${slug}`);
     } catch (e) {
-        logger.warn(`Failed to patch existing namespace, ignoring: ${errMsg(e)}`);
+        logger.warn(`Failed to patch existing namespace ${slug}, ignoring: ${errMsg(e)}`);
     }
     return spec;
 }

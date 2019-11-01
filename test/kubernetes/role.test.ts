@@ -20,6 +20,8 @@ import {
     roleTemplate,
 } from "../../lib/kubernetes/role";
 
+/* tslint:disable:max-file-line-count */
+
 describe("kubernetes/role", () => {
 
     describe("roleTemplate", () => {
@@ -195,6 +197,92 @@ describe("kubernetes/role", () => {
                         "atomist.com/workspaceId": r.workspaceId,
                         "emi.com/producer": "Kate Bush",
                     },
+                },
+                rules: [
+                    {
+                        apiGroups: [""],
+                        resources: ["services"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: [""],
+                        resources: ["pods"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: ["extensions"],
+                        resources: ["ingresses"],
+                        verbs: ["get", "watch", "list"],
+                    },
+                    {
+                        apiGroups: [""],
+                        resources: ["nodes"],
+                        verbs: ["list"],
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
+        it("should allow overriding name but not namespace", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
+                roleSpec: {
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                        name: "wuthering-heights",
+                        namespace: "the-kick-inside",
+                    },
+                    rules: [
+                        {
+                            apiGroups: [""],
+                            resources: ["services"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["pods"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: ["extensions"],
+                            resources: ["ingresses"],
+                            verbs: ["get", "watch", "list"],
+                        },
+                        {
+                            apiGroups: [""],
+                            resources: ["nodes"],
+                            verbs: ["list"],
+                        },
+                    ],
+                },
+            };
+            const s = await roleTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "Role",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                    name: "wuthering-heights",
+                    namespace: "hounds-of-love",
                 },
                 rules: [
                     {

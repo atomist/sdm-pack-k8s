@@ -25,7 +25,6 @@ import { metadataTemplate } from "./metadata";
 import {
     appName,
     KubernetesApplication,
-    KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
@@ -51,38 +50,17 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s
     }
     const spec = await ingressTemplate(req);
     try {
-        await req.clients.ext.readNamespacedIngress(req.name, req.ns);
+        await req.clients.ext.readNamespacedIngress(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read ingress ${slug}, creating: ${errMsg(e)}`);
         logger.info(`Creating ingress ${slug} using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.ext.createNamespacedIngress(req.ns, spec), `create ingress ${slug}`);
+        await logRetry(() => req.clients.ext.createNamespacedIngress(spec.metadata.namespace, spec), `create ingress ${slug}`);
         return spec;
     }
     logger.info(`Ingress ${slug} exists, patching using '${stringifyObject(spec)}'`);
-    await logRetry(() => req.clients.ext.patchNamespacedIngress(req.name, req.ns, spec), `patch ingress ${slug}`);
+    await logRetry(() => req.clients.ext.patchNamespacedIngress(spec.metadata.name, spec.metadata.namespace, spec),
+        `patch ingress ${slug}`);
     return spec;
-}
-
-/**
- * Delete an ingress if it exists.  If the resource does not exist, do
- * nothing.
- *
- * @param req Kuberenetes delete request
- * @return Deleted ingress object or undefined if resource does not exist
- */
-export async function deleteIngress(req: KubernetesDeleteResourceRequest): Promise<k8s.V1beta1Ingress | undefined> {
-    const slug = appName(req);
-    let ing: k8s.V1beta1Ingress;
-    try {
-        const resp = await req.clients.ext.readNamespacedIngress(req.name, req.ns);
-        ing = resp.body;
-    } catch (e) {
-        logger.debug(`Ingress ${slug} does not exist: ${errMsg(e)}`);
-        return undefined;
-    }
-    logger.info(`Deleting ingress ${slug}`);
-    await logRetry(() => req.clients.ext.deleteNamespacedIngress(req.name, req.ns), `delete ingress ${slug}`);
-    return ing;
 }
 
 /**
@@ -106,6 +84,10 @@ function httpIngressPath(req: KubernetesApplication): k8s.V1beta1HTTPIngressPath
  * Create the ingress for a deployment namespace.  If the
  * request has an `ingressSpec`, it is merged into the spec created
  * by this function using `lodash.merge(default, req.ingressSpec)`.
+ *
+ * It is possible to override the ingress name using the
+ * [[KubernetesApplication.ingressSpec]].  If you do this, make sure
+ * you know what you are doing.
  *
  * @param req Kubernestes application
  * @return ingress spec with single rule
@@ -149,6 +131,7 @@ export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm
     }
     if (req.ingressSpec) {
         _.merge(i, req.ingressSpec, { apiVersion, kind });
+        i.metadata.namespace = req.ns;
     }
     return i as k8s.V1beta1Ingress;
 }

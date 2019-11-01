@@ -25,7 +25,6 @@ import { metadataTemplate } from "./metadata";
 import {
     appName,
     KubernetesApplication,
-    KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
@@ -41,39 +40,18 @@ export async function upsertServiceAccount(req: KubernetesResourceRequest): Prom
     const slug = appName(req);
     const spec = await serviceAccountTemplate(req);
     try {
-        await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
+        await req.clients.core.readNamespacedServiceAccount(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read service account ${slug}, creating: ${errMsg(e)}`);
         logger.info(`Creating service account ${slug} using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.core.createNamespacedServiceAccount(req.ns, spec),
+        await logRetry(() => req.clients.core.createNamespacedServiceAccount(spec.metadata.namespace, spec),
             `create service account ${slug}`);
         return spec;
     }
     logger.info(`Service account ${slug} exists, patching using '${stringifyObject(spec)}'`);
-    await logRetry(() => req.clients.core.patchNamespacedServiceAccount(req.name, req.ns, spec),
+    await logRetry(() => req.clients.core.patchNamespacedServiceAccount(spec.metadata.name, spec.metadata.namespace, spec),
         `patch service account ${slug}`);
     return spec;
-}
-
-/**
- * Delete Kubernetes application service account if it exists.
- *
- * @param req Kuberenetes delete request
- * @return Deleted service account spec, or undefined it no service account exists
- */
-export async function deleteServiceAccount(req: KubernetesDeleteResourceRequest): Promise<k8s.V1ServiceAccount | undefined> {
-    const slug = appName(req);
-    let sa: k8s.V1ServiceAccount;
-    try {
-        const resp = await req.clients.core.readNamespacedServiceAccount(req.name, req.ns);
-        sa = resp.body;
-    } catch (e) {
-        logger.debug(`Service account ${slug} does not exist: ${errMsg(e)}`);
-        return undefined;
-    }
-    logger.info(`Deleting service account ${slug}`);
-    await logRetry(() => req.clients.core.deleteNamespacedServiceAccount(req.name, req.ns), `delete service account ${slug}`);
-    return sa;
 }
 
 /**
@@ -81,6 +59,11 @@ export async function deleteServiceAccount(req: KubernetesDeleteResourceRequest)
  * `req.rbac.serviceAccountSpec`, if it not false, is merged into the
  * spec created by this function using `lodash.merge(default,
  * req.rbac.serviceAccountSpec)`.
+ *
+ * It is possible to override the service account name using the
+ * [[KubernetesApplication.serviceAccountSpec]].  If you do this, make
+ * sure you know what you are doing and also override it in the
+ * [[KubernetesApplication.roleBindingSpec]].
  *
  * @param req application request
  * @return service account resource specification
@@ -102,6 +85,7 @@ export async function serviceAccountTemplate(req: KubernetesApplication & Kubern
     };
     if (req.serviceAccountSpec) {
         _.merge(sa, req.serviceAccountSpec, { apiVersion, kind });
+        sa.metadata.namespace = req.ns;
     }
     return sa as k8s.V1ServiceAccount;
 }

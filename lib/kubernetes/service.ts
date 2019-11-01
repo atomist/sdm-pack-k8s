@@ -28,7 +28,6 @@ import { metadataTemplate } from "./metadata";
 import {
     appName,
     KubernetesApplication,
-    KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
@@ -50,45 +49,27 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<k8s
     }
     const spec = await serviceTemplate(req);
     try {
-        await req.clients.core.readNamespacedService(req.name, req.ns);
+        await req.clients.core.readNamespacedService(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
         logger.info(`Creating service ${slug} using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.core.createNamespacedService(req.ns, spec), `create service ${slug}`);
+        await logRetry(() => req.clients.core.createNamespacedService(spec.metadata.namespace, spec), `create service ${slug}`);
         return spec;
     }
     logger.info(`Service ${slug} exists, patching using '${stringifyObject(spec)}'`);
-    await logRetry(() => req.clients.core.patchNamespacedService(req.name, req.ns, spec),
+    await logRetry(() => req.clients.core.patchNamespacedService(spec.metadata.name, spec.metadata.namespace, spec),
         `patch service ${slug}`);
     return spec;
-}
-
-/**
- * Delete a service if it exists.  If the resource does not exist, do
- * nothing.
- *
- * @param req Kuberenetes delete request
- * @return Simple deleted service spec, or undefined if resource does not exist
- */
-export async function deleteService(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Service | undefined> {
-    const slug = appName(req);
-    let svc: k8s.V1Service;
-    try {
-        const resp = await req.clients.core.readNamespacedService(req.name, req.ns);
-        svc = resp.body;
-    } catch (e) {
-        logger.debug(`Service ${slug} does not exist: ${errMsg(e)}`);
-        return undefined;
-    }
-    logger.info(`Deleting service ${slug}`);
-    await logRetry(() => req.clients.core.deleteNamespacedService(req.name, req.ns), `delete service ${slug}`);
-    return svc;
 }
 
 /**
  * Create service spec to front a Kubernetes application.  If the
  * request has a `serviceSpec`, it is merged into the spec created
  * by this function using `lodash.merge(default, req.serviceSpec)`.
+ *
+ * It is possible to override the service name using the
+ * [[KubernetesApplication.serviceSpec]].  If you do this, make sure
+ * you know what you are doing.
  *
  * @param req service template request
  * @return service resource specification
@@ -122,6 +103,7 @@ export async function serviceTemplate(req: KubernetesApplication & KubernetesSdm
     };
     if (req.serviceSpec) {
         _.merge(s, req.serviceSpec, { apiVersion, kind });
+        s.metadata.namespace = req.ns;
     }
     return s as k8s.V1Service;
 }

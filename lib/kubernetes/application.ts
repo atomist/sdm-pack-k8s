@@ -16,36 +16,22 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as stringify from "json-stringify-safe";
 import { errMsg } from "../support/error";
 import { K8sObject } from "./api";
 import { makeApiClients } from "./clients";
 import { loadKubeConfig } from "./config";
-import {
-    deleteDeployment,
-    upsertDeployment,
-} from "./deployment";
-import {
-    deleteIngress,
-    upsertIngress,
-} from "./ingress";
+import { deleteAppResources } from "./delete";
+import { upsertDeployment } from "./deployment";
+import { upsertIngress } from "./ingress";
 import { upsertNamespace } from "./namespace";
-import {
-    deleteRbac,
-    upsertRbac,
-} from "./rbac";
+import { upsertRbac } from "./rbac";
 import {
     KubernetesApplication,
     KubernetesDelete,
+    reqString,
 } from "./request";
-import {
-    deleteSecrets,
-    upsertSecrets,
-} from "./secret";
-import {
-    deleteService,
-    upsertService,
-} from "./service";
+import { upsertSecrets } from "./secret";
+import { upsertService } from "./service";
 
 /**
  * Create or update all the resources for an application in a
@@ -84,12 +70,12 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
 }
 
 /**
- * Delete an application from a kubernetes cluster.  If any resource
- * requested to be deleted does not exist, it is logged but no error
- * is returned.
+ * Delete resources associated with an application from a Kubernetes
+ * cluster.  If any resources fail to be deleted, an error is thrown.
+ * If no resources associated with the application exist, it does
+ * nothing successfully.
  *
  * @param req Delete application request object
- * @return Array of deleted objects, may be empty
  */
 export async function deleteApplication(del: KubernetesDelete): Promise<K8sObject[]> {
     const slug = `${del.ns}/${del.name}`;
@@ -106,53 +92,75 @@ export async function deleteApplication(del: KubernetesDelete): Promise<K8sObjec
 
     const deleted: K8sObject[] = [];
     const errs: Error[] = [];
-    try {
-        deleted.push(await deleteIngress(req));
-    } catch (e) {
-        e.message = `Failed to delete ingress ${slug}: ${errMsg(e)}`;
-        errs.push(e);
-    }
-    try {
-        deleted.push(await deleteDeployment(req));
-    } catch (e) {
-        e.message = `Failed to delete deployment ${slug}: ${errMsg(e)}`;
-        errs.push(e);
-    }
-    try {
-        deleted.push(...(await deleteSecrets(req)));
-    } catch (e) {
-        e.message = `Failed to delete secrets of ${slug}: ${errMsg(e)}`;
-        errs.push(e);
-    }
-    try {
-        deleted.push(await deleteService(req));
-    } catch (e) {
-        e.message = `Failed to delete service ${slug}: ${errMsg(e)}`;
-        errs.push(e);
-    }
-    try {
-        deleted.push(...Object.values<K8sObject>(await deleteRbac(req) as any));
-    } catch (e) {
-        e.message = `Failed to delete RBAC resources for ${slug}: ${errMsg(e)}`;
-        errs.push(e);
+    const resourceDeleters = [
+        {
+            kind: "Ingress",
+            api: req.clients.ext,
+            lister: req.clients.ext.listNamespacedIngress,
+            deleter: req.clients.ext.deleteNamespacedIngress,
+        },
+        {
+            kind: "Deployment",
+            api: req.clients.apps,
+            lister: req.clients.apps.listNamespacedDeployment,
+            deleter: req.clients.apps.deleteNamespacedDeployment,
+        },
+        {
+            kind: "Secret",
+            api: req.clients.core,
+            lister: req.clients.core.listNamespacedSecret,
+            deleter: req.clients.core.deleteNamespacedSecret,
+        },
+        {
+            kind: "Service",
+            api: req.clients.core,
+            lister: req.clients.core.listNamespacedService,
+            deleter: req.clients.core.deleteNamespacedService,
+        },
+        {
+            kind: "ClusterRoleBinding",
+            api: req.clients.rbac,
+            lister: req.clients.rbac.listClusterRoleBinding,
+            deleter: req.clients.rbac.deleteClusterRoleBinding,
+        },
+        {
+            kind: "RoleBinding",
+            api: req.clients.rbac,
+            lister: req.clients.rbac.listNamespacedRoleBinding,
+            deleter: req.clients.rbac.deleteNamespacedRoleBinding,
+        },
+        {
+            kind: "ClusterRole",
+            api: req.clients.rbac,
+            lister: req.clients.rbac.listClusterRole,
+            deleter: req.clients.rbac.deleteClusterRole,
+        },
+        {
+            kind: "Role",
+            api: req.clients.rbac,
+            lister: req.clients.rbac.listNamespacedRole,
+            deleter: req.clients.rbac.deleteNamespacedRole,
+        },
+        {
+            kind: "ServiceAccount",
+            api: req.clients.core,
+            lister: req.clients.core.listNamespacedServiceAccount,
+            deleter: req.clients.core.deleteNamespacedServiceAccount,
+        },
+    ];
+    for (const rd of resourceDeleters) {
+        try {
+            const x = await deleteAppResources({ ...rd, req });
+            deleted.push(...x);
+        } catch (e) {
+            e.message = `Failed to delete ${rd.kind} for ${slug}: ${errMsg(e)}`;
+            errs.push(e);
+        }
     }
     if (errs.length > 0) {
         const msg = `Failed to delete application '${reqString(req)}': ${errs.map(e => e.message).join("; ")}`;
         logger.error(msg);
         throw new Error(msg);
     }
-    return deleted.filter(d => !!d);
-}
-
-/** Stringify filter for a Kubernetes request object. */
-export function reqFilter<T>(k: string, v: T): T | undefined {
-    if (k === "config" || k === "clients" || k === "secrets") {
-        return undefined;
-    }
-    return v;
-}
-
-/** Stringify a Kubernetes request object. */
-export function reqString(req: any): string {
-    return stringify(req, reqFilter, undefined, () => undefined);
+    return deleted;
 }

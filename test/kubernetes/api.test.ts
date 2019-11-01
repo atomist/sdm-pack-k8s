@@ -25,6 +25,10 @@ import {
 import { applySpec } from "../../lib/kubernetes/apply";
 import { deleteSpec } from "../../lib/kubernetes/delete";
 import { DefaultLogRetryOptions } from "../../lib/support/retry";
+import {
+    k8sAvailable,
+    rng,
+} from "../k8s";
 
 describe("kubernetes/api", () => {
 
@@ -322,13 +326,8 @@ describe("kubernetes/api", () => {
         this.timeout(5000);
 
         let defaultRetries: number;
-
         before(async function(): Promise<void> {
-            try {
-                // see if minikube is available and responding
-                await execPromise("kubectl", ["config", "use-context", "minikube"]);
-                await execPromise("kubectl", ["get", "--request-timeout=200ms", "pods"]);
-            } catch (e) {
+            if (!await k8sAvailable()) {
                 // tslint:disable-next-line:no-invalid-this
                 this.skip();
             }
@@ -346,7 +345,7 @@ describe("kubernetes/api", () => {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
-                    name: `sdm-pack-k8s-api-int-${Math.floor(Math.random() * 100000)}`,
+                    name: `sdm-pack-k8s-api-int-${rng()}`,
                     namespace: "default",
                 },
                 spec: {
@@ -366,7 +365,7 @@ describe("kubernetes/api", () => {
                 apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
-                    name: `sdm-pack-k8s-api-int-${Math.floor(Math.random() * 100000)}`,
+                    name: `sdm-pack-k8s-api-int-${rng()}`,
                     namespace: "default",
                 },
                 spec: {
@@ -442,7 +441,7 @@ describe("kubernetes/api", () => {
                 apiVersion: "applications/v1",
                 kind: "Deployment",
                 metadata: {
-                    name: `sdm-pack-k8s-api-int-${Math.floor(Math.random() * 100000)}`,
+                    name: `sdm-pack-k8s-api-int-${rng()}`,
                     namespace: "default",
                 },
                 spec: {

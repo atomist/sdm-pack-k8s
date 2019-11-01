@@ -206,8 +206,10 @@ async function resourceDeleted(resource: K8sObject, p: Project, fs: ProjectFileS
 
 /**
  * Search `fileSpecs` for a spec that matches `spec`.  To be
- * considered a match, the apiVersion, kind, name, and namespace,
- * which may be undefined, must match.
+ * considered a match, the kind, name, and namespace, which may be
+ * undefined, must match.  The apiVersion is not considered when
+ * matching because the same resource can appear under different API
+ * versions.
  *
  * @param spec Kubernetes object spec to match
  * @param fileSpecs Array of spec and file objects to search

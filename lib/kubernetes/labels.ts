@@ -39,12 +39,27 @@ export type MatchLabelInput = Pick<KubernetesResourceRequest, "name" | "workspac
 /**
  * Returns the subset of the default set of labels for that should be
  * used in a matchLabels to match a resource.
+ *
+ * @param req A Kubernetes request object containing at least the "name" and "workspaceId" properties
+ * @return Kubernetes object metadata labels object
  */
 export function matchLabels(req: MatchLabelInput): { [key: string]: string } {
     return {
         "app.kubernetes.io/name": req.name,
         "atomist.com/workspaceId": req.workspaceId,
     };
+}
+
+/**
+ * Provide label selector string suitable for passing to a Kubernetes
+ * API call for the provided `req` object.
+ *
+ * @param req A Kubernetes request object containing at least the "name" and "workspaceId" properties
+ * @return Kubernetes label selector string
+ */
+export function labelSelector(req: MatchLabelInput): string {
+    const matchers = matchLabels(req);
+    return Object.keys(matchers).map(l => `${l}=${matchers[l]}`).join(",");
 }
 
 export type KubernetesApplicationLabelInput = Pick<KubernetesResourceRequest, "name" | "sdmFulfiller" | "workspaceId">;

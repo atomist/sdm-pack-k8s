@@ -166,6 +166,59 @@ describe("kubernetes/roleBinding", () => {
             assert.deepStrictEqual(s, e);
         });
 
+        it("should allow overriding name but not namespace", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                sdmFulfiller: "EMI",
+                roleBindingSpec: {
+                    metadata: {
+                        annotation: {
+                            "music.com/genre": "Art Rock",
+                        },
+                        labels: {
+                            "emi.com/producer": "Kate Bush",
+                        },
+                        name: "wuthering-heights",
+                        namespace: "the-kick-inside",
+                    },
+                },
+            };
+            const s = await roleBindingTemplate(r);
+            const e = {
+                apiVersion: "rbac.authorization.k8s.io/v1",
+                kind: "RoleBinding",
+                metadata: {
+                    annotation: {
+                        "music.com/genre": "Art Rock",
+                    },
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                        "emi.com/producer": "Kate Bush",
+                    },
+                    name: "wuthering-heights",
+                    namespace: "hounds-of-love",
+                },
+                roleRef: {
+                    apiGroup: "rbac.authorization.k8s.io",
+                    kind: "Role",
+                    name: r.name,
+                },
+                subjects: [
+                    {
+                        kind: "ServiceAccount",
+                        name: r.name,
+                    },
+                ],
+            };
+            assert.deepStrictEqual(s, e);
+        });
+
         it("should create a role binding spec with provided service account", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",

@@ -32,7 +32,6 @@ import { metadataTemplate } from "./metadata";
 import {
     appName,
     KubernetesApplication,
-    KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
@@ -50,47 +49,28 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
     const slug = appName(req);
     const spec = await deploymentTemplate(req);
     try {
-        await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
+        await req.clients.apps.readNamespacedDeployment(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read deployment ${slug}, creating: ${errMsg(e)}`);
         logger.info(`Creating deployment ${slug} using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.apps.createNamespacedDeployment(req.ns, spec),
+        await logRetry(() => req.clients.apps.createNamespacedDeployment(spec.metadata.namespace, spec),
             `create deployment ${slug}`);
         return spec;
     }
     logger.info(`Updating deployment ${slug} using '${stringifyObject(spec)}'`);
-    await logRetry(() => req.clients.apps.patchNamespacedDeployment(req.name, req.ns, spec), `patch deployment ${slug}`);
+    await logRetry(() => req.clients.apps.patchNamespacedDeployment(spec.metadata.name, spec.metadata.namespace, spec),
+        `patch deployment ${slug}`);
     return spec;
-}
-
-/**
- * Delete a deployment if it exists.  If the resource does not exist,
- * do nothing.
- *
- * @param req Kuberenetes application delete request
- * @return deleted object or undefined if resource does not exist
- */
-export async function deleteDeployment(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Deployment | undefined> {
-    const slug = appName(req);
-    let dep: k8s.V1Deployment;
-    try {
-        const resp = await req.clients.apps.readNamespacedDeployment(req.name, req.ns);
-        dep = resp.body;
-    } catch (e) {
-        logger.debug(`Deployment ${slug} does not exist: ${errMsg(e)}`);
-        return undefined;
-    }
-    logger.info(`Deleting deployment ${slug}`);
-    const opts: k8s.V1DeleteOptions = { propagationPolicy: "Background" } as any;
-    await logRetry(() => req.clients.apps.deleteNamespacedDeployment(req.name, req.ns, undefined, opts),
-        `delete deployment ${slug}`);
-    return dep;
 }
 
 /**
  * Create deployment spec for a Kubernetes application.  If the
  * request has a `deploymentSpec`, it is merged into the default spec
  * created by this function using `lodash.merge(default, req.deploymentSpec)`.
+ *
+ * It is possible to override the deployment name using the
+ * [[KubernetesApplication.deploymentSpec]].  If you do this, make
+ * sure you know what you are doing.
  *
  * @param req Kubernetes application request
  * @return deployment resource specification
@@ -181,6 +161,7 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
     }
     if (req.deploymentSpec) {
         _.merge(d, req.deploymentSpec, { apiVersion, kind });
+        d.metadata.namespace = req.ns;
     }
     return d as k8s.V1Deployment;
 }

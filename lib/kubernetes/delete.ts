@@ -15,15 +15,23 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
+    isClusterResource,
     K8sDeleteResponse,
+    K8sListResponse,
     K8sObject,
     K8sObjectApi,
     specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
+import { labelSelector } from "./labels";
+import {
+    appName,
+    KubernetesDeleteResourceRequest,
+} from "./request";
 import { stringifyObject } from "./resource";
 
 /**
@@ -52,4 +60,126 @@ export async function deleteSpec(spec: K8sObject): Promise<K8sDeleteResponse | u
     }
     logger.info(`Deleting resource ${slug} using '${stringifyObject(spec)}'`);
     return logRetry(() => client.delete(spec), `delete resource ${slug}`);
+}
+
+/** Collection deleter for namespaced resources. */
+export type K8sNamespacedLister = (
+    namespace: string,
+    includeUninitialized?: boolean,
+    pretty?: string,
+    continu?: string,
+    fieldSelector?: string,
+    labelSelector?: string,
+    limit?: number,
+    resourceVersion?: string,
+    timeoutSeconds?: number,
+    watch?: boolean,
+    options?: any,
+) => Promise<K8sListResponse>;
+
+/** Collection deleter for cluster resources. */
+export type K8sClusterLister = (
+    includeUninitialized?: boolean,
+    pretty?: string,
+    continu?: string,
+    fieldSelector?: string,
+    labelSelector?: string,
+    limit?: number,
+    resourceVersion?: string,
+    timeoutSeconds?: number,
+    watch?: boolean,
+    options?: any,
+) => Promise<K8sListResponse>;
+
+/** Collection deleter for namespaced resources. */
+export type K8sNamespacedDeleter = (
+    name: string,
+    namespace: string,
+    pretty?: string,
+    body?: k8s.V1DeleteOptions,
+    dryRun?: string,
+    gracePeriodSeconds?: number,
+    orphanDependents?: boolean,
+    propagationPolicy?: string,
+    options?: any,
+) => Promise<K8sDeleteResponse>;
+
+/** Collection deleter for cluster resources. */
+export type K8sClusterDeleter = (
+    name: string,
+    pretty?: string,
+    body?: k8s.V1DeleteOptions,
+    dryRun?: string,
+    gracePeriodSeconds?: number,
+    orphanDependents?: boolean,
+    propagationPolicy?: string,
+    options?: any,
+) => Promise<K8sDeleteResponse>;
+
+/** Arguments for [[deleteAppResources]]. */
+export interface DeleteAppResourcesArg {
+    /** Resource kind, e.g., "Service". */
+    kind: string;
+    /** Delete request object. */
+    req: KubernetesDeleteResourceRequest;
+    /** API object to use as `this` for lister and deleter. */
+    api: k8s.CoreV1Api | k8s.AppsV1Api | k8s.ExtensionsV1beta1Api | k8s.RbacAuthorizationV1Api;
+    /** Resource collection deleting function. */
+    lister: K8sNamespacedLister | K8sClusterLister;
+    /** Resource collection deleting function. */
+    deleter: K8sNamespacedDeleter | K8sClusterDeleter;
+}
+
+/**
+ * Delete resources associated with application described by `arg.req`, if
+ * any exists.  If no matching resources exist, do nothing.  Return
+ * ann array of deleted resources, which may be empty.
+ *
+ * @param arg Specification of what and how to delete for what application
+ * @return Array of deleted resources
+ */
+export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<K8sObject[]> {
+    const slug = appName(arg.req);
+    const selector = labelSelector(arg.req);
+    const clusterResource = isClusterResource("list", arg.kind);
+    const toDelete: K8sObject[] = [];
+    try {
+        const args = [arg.req.ns, true, undefined, undefined, undefined, selector];
+        if (clusterResource) {
+            args.shift();
+        }
+        const listResp = await (arg.lister as any).apply(arg.api, args);
+        toDelete.push(...(listResp.body.items as K8sObject[]).map(r => {
+            r.kind = r.kind || arg.kind; // list response does not include kind
+            return r;
+        }));
+    } catch (e) {
+        e.message = `Failed to list ${arg.kind} for ${slug}: ${errMsg(e)}`;
+        logger.error(e.message);
+        throw e;
+    }
+    const deleted: K8sObject[] = [];
+    const errs: Error[] = [];
+    for (const resource of toDelete) {
+        const resourceSlug = clusterResource ? `${arg.kind}/${resource.metadata.name}` :
+            `${arg.kind}/${resource.metadata.namespace}/${resource.metadata.name}`;
+        logger.info(`Deleting ${resourceSlug} for ${slug}`);
+        try {
+            const args = [resource.metadata.name, resource.metadata.namespace, undefined, undefined, undefined, undefined, undefined, "Background"];
+            if (clusterResource) {
+                args.splice(1, 1);
+            }
+            await (arg.deleter as any).apply(arg.api, args);
+            deleted.push(resource);
+        } catch (e) {
+            e.message = `Failed to delete ${resourceSlug} for ${slug}: ${errMsg(e)}`;
+            errs.push(e);
+        }
+    }
+    if (errs.length > 0) {
+        const msg = `Failed to delete ${arg.kind} resources for ${slug}: ${errs.map(e => e.message).join("; ")}`;
+        logger.error(msg);
+        throw new Error(msg);
+    }
+    return deleted;
 }

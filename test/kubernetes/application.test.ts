@@ -14,101 +14,64 @@
  * limitations under the License.
  */
 
+import { execPromise } from "@atomist/sdm";
 import * as assert from "power-assert";
 import {
-    reqFilter,
-    reqString,
+    deleteApplication,
+    upsertApplication,
 } from "../../lib/kubernetes/application";
+import { DefaultLogRetryOptions } from "../../lib/support/retry";
+import {
+    k8sAvailable,
+    rng,
+} from "../k8s";
 
 describe("kubernetes/application", () => {
 
-    describe("reqFilter", () => {
+    describe("upsertApplication & deleteApplication", function(): void {
 
-        it("should return the value", () => {
-            const k = "Kat3Bu5h";
-            const v = "Cloudbusting.5";
-            const r = reqFilter(k, v);
-            assert(r === v);
+        // tslint:disable-next-line:no-invalid-this
+        this.timeout(5000);
+
+        let defaultRetries: number;
+        before(async function(): Promise<void> {
+            if (!await k8sAvailable()) {
+                // tslint:disable-next-line:no-invalid-this
+                this.skip();
+            }
+            defaultRetries = DefaultLogRetryOptions.retries;
+            DefaultLogRetryOptions.retries = 0;
+        });
+        after(() => {
+            if (defaultRetries) {
+                DefaultLogRetryOptions.retries = defaultRetries;
+            }
         });
 
-        it("should not return config", () => {
-            const k = "config";
-            const v = "Cloudbusting.5";
-            const r = reqFilter(k, v);
-            assert(r === undefined);
-        });
-
-        it("should not return clients", () => {
-            const k = "clients";
-            const v = "Cloudbusting.5";
-            const r = reqFilter(k, v);
-            assert(r === undefined);
-        });
-
-        it("should not return secrets", () => {
-            const k = "secrets";
-            const v = "Cloudbusting.5";
-            const r = reqFilter(k, v);
-            assert(r === undefined);
-        });
-
-    });
-
-    describe("reqString", () => {
-
-        it("should stringify an object", () => {
-            const r = {
-                name: "cloudbusting",
-                workspaceId: "KAT3BU5H",
+        it("should create and delete application resources", async () => {
+            const a = {
+                workspaceId: "T3STW04K5PC",
+                name: `app-test-${rng()}`,
+                ns: "default",
+                image: "nginx:1.17.5",
+                port: 80,
+                path: "/nginx",
             };
-            const s = reqString(r);
-            const e = `{"name":"cloudbusting","workspaceId":"KAT3BU5H"}`;
-            assert(s === e);
-        });
-
-        it("should safely stringify a circular object", () => {
-            const r: any = {
-                name: "cloudbusting",
-                workspaceId: "KAT3BU5H",
-            };
-            r.r = r;
-            const s = reqString(r);
-            const e = `{"name":"cloudbusting","workspaceId":"KAT3BU5H"}`;
-            assert(s === e);
-        });
-
-        it("should stringify an object without secrets", () => {
-            const r = {
-                name: "cloudbusting",
-                workspaceId: "KAT3BU5H",
-                secrets: [
-                    {
-                        apiVersion: "v1",
-                        kind: "Secret",
-                        type: "Opaque",
-                        metadata: {
-                            name: "pixies",
-                            labels: {
-                                "app.kubernetes.io/managed-by": "Ken Goes",
-                                "app.kubernetes.io/name": "pixies",
-                                "app.kubernetes.io/part-of": "pixies",
-                                "app.kubernetes.io/component": "secret",
-                                "atomist.com/workspaceId": "P1X135",
-                            },
-                        },
-                        data: {
-                            piano: "S2F0ZSBCdXNo",
-                            guitar: "QWxhbiBNdXJwaHk=",
-                            bass: "RGVsIFBhbG1lciwgTWFydGluIEdsb3ZlciwgRWJlcmhhcmQgV2ViZXI=",
-                            drums: "U3R1YXJ0IEVsbGlvdHQgJiBDaGFybGllIE1vcmdhbg==",
-                            strings: "VGhlIE1lZGljaSBTZXh0ZXQ=",
-                        },
-                    },
-                ],
-            };
-            const s = reqString(r);
-            const e = `{"name":"cloudbusting","workspaceId":"KAT3BU5H"}`;
-            assert(s === e);
+            const r = await upsertApplication(a, "@atomist/sdm-pack-k8s_test");
+            assert(r, "resources not created");
+            assert(r.length === 4);
+            const ks = ["services", "deployments", "ingresses"];
+            for (const k of ks) {
+                const s = await execPromise("kubectl", ["get", "-n", a.ns, k]);
+                assert(s.stdout.includes(a.name));
+            }
+            const d = await deleteApplication(a);
+            assert(d, "resources not deleted");
+            assert(d.length === 3);
+            for (const k of ks) {
+                const s = await execPromise("kubectl", ["get", "-n", a.ns, k]);
+                assert(!s.stdout.includes(a.name));
+            }
         });
 
     });

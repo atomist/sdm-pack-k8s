@@ -24,7 +24,6 @@ import { metadataTemplate } from "./metadata";
 import {
     appName,
     KubernetesApplication,
-    KubernetesDeleteResourceRequest,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
@@ -41,7 +40,7 @@ export async function upsertRole(req: KubernetesResourceRequest): Promise<k8s.V1
     if (req.roleSpec.kind === "ClusterRole") {
         const spec = await clusterRoleTemplate(req);
         try {
-            await req.clients.rbac.readClusterRole(req.name);
+            await req.clients.rbac.readClusterRole(spec.metadata.name);
         } catch (e) {
             logger.debug(`Failed to read cluster role ${slug}, creating: ${errMsg(e)}`);
             logger.info(`Creating cluster role ${slug} using '${stringifyObject(spec)}'`);
@@ -49,65 +48,34 @@ export async function upsertRole(req: KubernetesResourceRequest): Promise<k8s.V1
             return spec;
         }
         logger.info(`Cluster role ${slug} exists, patching using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.rbac.patchClusterRole(req.name, spec), `patch cluster role ${slug}`);
+        await logRetry(() => req.clients.rbac.patchClusterRole(spec.metadata.name, spec), `patch cluster role ${slug}`);
         return spec;
     } else {
         const spec = await roleTemplate(req);
         try {
-            await req.clients.rbac.readNamespacedRole(req.name, req.ns);
+            await req.clients.rbac.readNamespacedRole(spec.metadata.name, spec.metadata.namespace);
         } catch (e) {
             logger.debug(`Failed to read role ${slug}, creating: ${errMsg(e)}`);
             logger.info(`Creating role ${slug} using '${stringifyObject(spec)}'`);
-            await logRetry(() => req.clients.rbac.createNamespacedRole(req.ns, spec), `create role ${slug}`);
+            await logRetry(() => req.clients.rbac.createNamespacedRole(spec.metadata.namespace, spec), `create role ${slug}`);
             return spec;
         }
         logger.info(`Role ${slug} exists, patching using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.rbac.patchNamespacedRole(req.name, req.ns, spec), `patch role ${slug}`);
+        await logRetry(() => req.clients.rbac.patchNamespacedRole(spec.metadata.name, spec.metadata.namespace, spec),
+            `patch role ${slug}`);
         return spec;
     }
-}
-
-/**
- * Delete Kubernetes application role or cluster role.
- *
- * @param req Kuberenetes delete request
- * @return Deleted role or cluster role spec, or undefined if no (cluster) role exists
- */
-export async function deleteRole(req: KubernetesDeleteResourceRequest): Promise<k8s.V1Role | k8s.V1ClusterRole | undefined> {
-    const slug = appName(req);
-    let role: k8s.V1Role | k8s.V1ClusterRole;
-
-    try {
-        const resp = await req.clients.rbac.readNamespacedRole(req.name, req.ns);
-        role = resp.body;
-    } catch (e) {
-        logger.debug(`Role ${slug} does not exist: ${errMsg(e)}`);
-    }
-    if (role) {
-        logger.info(`Deleting role ${slug}`);
-        await logRetry(() => req.clients.rbac.deleteNamespacedRole(req.name, req.ns), `delete role ${slug}`);
-        return role;
-    }
-
-    try {
-        const resp = await req.clients.rbac.readClusterRole(req.name, req.ns);
-        role = resp.body;
-    } catch (e) {
-        logger.debug(`Cluster role ${slug} does not exist: ${errMsg(e)}`);
-    }
-    if (role) {
-        logger.info(`Deleting cluster role ${slug}`);
-        await logRetry(() => req.clients.rbac.deleteClusterRole(req.name, req.ns), `delete cluster role ${slug}`);
-        return role;
-    }
-
-    return undefined;
 }
 
 /**
  * Create role spec for a Kubernetes application.  The
  * `req.rbac.roleSpec` is merged into the spec created by this
  * function using `lodash.merge(default, req.rbac.roleSpec)`.
+ *
+ * It is possible to override the role name using the
+ * [[KubernetesApplication.roleSpec]].  If you do this, make sure you
+ * know what you are doing and also override it in the
+ * [[KubernetesApplication.roleBindingSpec]].
  *
  * @param req application request
  * @return role resource specification
@@ -126,6 +94,7 @@ export async function roleTemplate(req: KubernetesApplication & KubernetesSdm): 
         rules: [],
     };
     _.merge(r, req.roleSpec, { apiVersion, kind });
+    r.metadata.namespace = req.ns;
     return r as k8s.V1Role;
 }
 
@@ -133,6 +102,11 @@ export async function roleTemplate(req: KubernetesApplication & KubernetesSdm): 
  * Create role spec for a Kubernetes application.  The
  * `req.rbac.roleSpec` is merged into the spec created by this
  * function using `lodash.merge(default, req.rbac.roleSpec)`.
+ *
+ * It is possible to override the cluster role name using the
+ * [[KubernetesApplication.roleSpec]].  If you do this, make sure you
+ * know what you are doing and also override it in the
+ * [[KubernetesApplication.roleBindingSpec]].
  *
  * @param req application request
  * @return role resource specification

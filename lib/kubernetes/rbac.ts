@@ -14,26 +14,11 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import { errMsg } from "../support/error";
-import {
-    appName,
-    KubernetesDeleteResourceRequest,
-    KubernetesResourceRequest,
-} from "./request";
-import {
-    deleteRole,
-    upsertRole,
-} from "./role";
-import {
-    deleteRoleBinding,
-    upsertRoleBinding,
-} from "./roleBinding";
-import {
-    deleteServiceAccount,
-    upsertServiceAccount,
-} from "./serviceAccount";
+import { KubernetesResourceRequest } from "./request";
+import { upsertRole } from "./role";
+import { upsertRoleBinding } from "./roleBinding";
+import { upsertServiceAccount } from "./serviceAccount";
 
 /**
  * Package the RBAC resource specs.
@@ -73,41 +58,4 @@ export async function upsertRbac(req: KubernetesResourceRequest): Promise<RbacRe
     }
 
     return resources;
-}
-
-/**
- * Delete RBAC resources for this application if they exist.  If the
- * resource does not exist, do nothing.
- *
- * @param req Kuberenetes delete request
- * @return Kuberenetes RBAC resources object with deleted resources, some may be undefined
- */
-export async function deleteRbac(req: KubernetesDeleteResourceRequest): Promise<RbacResources> {
-    const slug = appName(req);
-    const deleted: RbacResources = {};
-    const errs: Error[] = [];
-    try {
-        deleted.roleBinding = await deleteRoleBinding(req);
-    } catch (e) {
-        e.message = `Failed to delete role binding: ${errMsg(e)}`;
-        errs.push(e);
-    }
-    try {
-        deleted.role = await deleteRole(req);
-    } catch (e) {
-        e.message = `Failed to delete role: ${errMsg(e)}`;
-        errs.push(e);
-    }
-    try {
-        deleted.serviceAccount = await deleteServiceAccount(req);
-    } catch (e) {
-        e.message = `Failed to delete service account: ${errMsg(e)}`;
-        errs.push(e);
-    }
-    if (errs.length > 0) {
-        const msg = `Failed to delete RBAC resource(s) for ${slug}': ${errs.map(e => e.message).join("; ")}`;
-        logger.error(msg);
-        throw new Error(msg);
-    }
-    return deleted;
 }

@@ -293,6 +293,114 @@ describe("kubernetes/deployment", () => {
             assert.deepStrictEqual(d, e);
         });
 
+        it("should allow overriding name but not namespace", async () => {
+            const r = {
+                workspaceId: "KAT3BU5H",
+                ns: "hounds-of-love",
+                name: "cloudbusting",
+                image: "gcr.io/kate-bush/hounds-of-love/cloudbusting:5.5.10",
+                imagePullSecret: "comfort",
+                port: 5510,
+                sdmFulfiller: "EMI",
+                deploymentSpec: {
+                    metadata: {
+                        name: "wuthering-heights",
+                        namespace: "the-kick-inside",
+                    },
+                },
+                replicas: 12,
+            };
+            const d = await deploymentTemplate(r);
+            const e = {
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    name: "wuthering-heights",
+                    namespace: "hounds-of-love",
+                    labels: {
+                        "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                        "app.kubernetes.io/name": r.name,
+                        "app.kubernetes.io/part-of": r.name,
+                        "atomist.com/workspaceId": r.workspaceId,
+                    },
+                },
+                spec: {
+                    replicas: 12,
+                    selector: {
+                        matchLabels: {
+                            "app.kubernetes.io/name": r.name,
+                            "atomist.com/workspaceId": r.workspaceId,
+                        },
+                    },
+                    template: {
+                        metadata: {
+                            name: r.name,
+                            labels: {
+                                "app.kubernetes.io/managed-by": r.sdmFulfiller,
+                                "app.kubernetes.io/name": r.name,
+                                "app.kubernetes.io/part-of": r.name,
+                                "atomist.com/workspaceId": r.workspaceId,
+                            },
+                            annotations: {
+                                "atomist.com/k8vent": `{"webhooks":["https://webhook.atomist.com/atomist/kube/teams/${r.workspaceId}"]}`,
+                            },
+                        },
+                        spec: {
+                            containers: [
+                                {
+                                    name: r.name,
+                                    image: r.image,
+                                    resources: {
+                                        limits: {
+                                            cpu: "1000m",
+                                            memory: "384Mi",
+                                        },
+                                        requests: {
+                                            cpu: "100m",
+                                            memory: "320Mi",
+                                        },
+                                    },
+                                    readinessProbe: {
+                                        httpGet: {
+                                            path: "/",
+                                            port: "http",
+                                        },
+                                        initialDelaySeconds: 30,
+                                    },
+                                    livenessProbe: {
+                                        httpGet: {
+                                            path: "/",
+                                            port: "http",
+                                        },
+                                        initialDelaySeconds: 30,
+                                    },
+                                    ports: [
+                                        {
+                                            name: "http",
+                                            containerPort: r.port,
+                                        },
+                                    ],
+                                },
+                            ],
+                            imagePullSecrets: [
+                                {
+                                    name: r.imagePullSecret,
+                                },
+                            ],
+                        },
+                    },
+                    strategy: {
+                        type: "RollingUpdate",
+                        rollingUpdate: {
+                            maxUnavailable: 0,
+                            maxSurge: 1,
+                        },
+                    },
+                },
+            };
+            assert.deepStrictEqual(d, e);
+        });
+
         it("should create a deployment spec with zero replicas", async () => {
             const r = {
                 workspaceId: "KAT3BU5H",
