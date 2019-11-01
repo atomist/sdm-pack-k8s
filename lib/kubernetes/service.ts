@@ -94,7 +94,7 @@ export async function serviceTemplate(req: KubernetesApplication & KubernetesSdm
                 {
                     name: "http",
                     port: req.port,
-                    targetPort: "http",
+                    targetPort: "http" as any as object,
                 },
             ],
             selector: matchers,

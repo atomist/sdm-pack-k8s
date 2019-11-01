@@ -109,8 +109,8 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
             strategy: {
                 type: "RollingUpdate",
                 rollingUpdate: {
-                    maxUnavailable: 0,
-                    maxSurge: 1,
+                    maxUnavailable: 0 as any as object,
+                    maxSurge: 1 as any as object,
                 },
             },
             template: {

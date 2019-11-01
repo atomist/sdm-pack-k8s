@@ -38,7 +38,7 @@ import { stringifyObject } from "./resource";
  * @param req Kuberenetes resource request
  * @return Kubernetes spec used to create/patch resource
  */
-export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s.V1beta1Ingress | undefined> {
+export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s.NetworkingV1beta1Ingress | undefined> {
     const slug = appName(req);
     if (!req.port) {
         logger.debug(`Port not provided, will not create ingress ${slug}`);
@@ -69,12 +69,12 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s
  * @param req ingress request
  * @return ingress HTTP path
  */
-function httpIngressPath(req: KubernetesApplication): k8s.V1beta1HTTPIngressPath {
-    const httpPath: k8s.V1beta1HTTPIngressPath = {
+function httpIngressPath(req: KubernetesApplication): k8s.NetworkingV1beta1HTTPIngressPath {
+    const httpPath: k8s.NetworkingV1beta1HTTPIngressPath = {
         path: req.path,
         backend: {
             serviceName: req.name,
-            servicePort: "http",
+            servicePort: "http" as any as object,
         },
     };
     return httpPath;
@@ -92,7 +92,7 @@ function httpIngressPath(req: KubernetesApplication): k8s.V1beta1HTTPIngressPath
  * @param req Kubernestes application
  * @return ingress spec with single rule
  */
-export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.V1beta1Ingress> {
+export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm): Promise<k8s.NetworkingV1beta1Ingress> {
     const labels = applicationLabels(req);
     const metadata = metadataTemplate({
         name: req.name,
@@ -100,7 +100,7 @@ export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm
         labels,
     });
     const httpPath = httpIngressPath(req);
-    const rule: k8s.V1beta1IngressRule = {
+    const rule: k8s.NetworkingV1beta1IngressRule = {
         http: {
             paths: [httpPath],
         },
@@ -111,7 +111,7 @@ export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm
     const apiVersion = "extensions/v1beta1";
     const kind = "Ingress";
     // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const i: DeepPartial<k8s.V1beta1Ingress> = {
+    const i: DeepPartial<k8s.NetworkingV1beta1Ingress> = {
         apiVersion,
         kind,
         metadata,
@@ -133,5 +133,5 @@ export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm
         _.merge(i, req.ingressSpec, { apiVersion, kind });
         i.metadata.namespace = req.ns;
     }
-    return i as k8s.V1beta1Ingress;
+    return i as k8s.NetworkingV1beta1Ingress;
 }

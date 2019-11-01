@@ -65,8 +65,8 @@ export async function deleteSpec(spec: K8sObject): Promise<K8sDeleteResponse | u
 /** Collection deleter for namespaced resources. */
 export type K8sNamespacedLister = (
     namespace: string,
-    includeUninitialized?: boolean,
     pretty?: string,
+    allowWatchBookmarks?: boolean,
     continu?: string,
     fieldSelector?: string,
     labelSelector?: string,
@@ -79,8 +79,8 @@ export type K8sNamespacedLister = (
 
 /** Collection deleter for cluster resources. */
 export type K8sClusterLister = (
-    includeUninitialized?: boolean,
     pretty?: string,
+    allowWatchBookmarks?: boolean,
     continu?: string,
     fieldSelector?: string,
     labelSelector?: string,
@@ -96,11 +96,11 @@ export type K8sNamespacedDeleter = (
     name: string,
     namespace: string,
     pretty?: string,
-    body?: k8s.V1DeleteOptions,
     dryRun?: string,
     gracePeriodSeconds?: number,
     orphanDependents?: boolean,
     propagationPolicy?: string,
+    body?: k8s.V1DeleteOptions,
     options?: any,
 ) => Promise<K8sDeleteResponse>;
 
@@ -108,11 +108,11 @@ export type K8sNamespacedDeleter = (
 export type K8sClusterDeleter = (
     name: string,
     pretty?: string,
-    body?: k8s.V1DeleteOptions,
     dryRun?: string,
     gracePeriodSeconds?: number,
     orphanDependents?: boolean,
     propagationPolicy?: string,
+    body?: k8s.V1DeleteOptions,
     options?: any,
 ) => Promise<K8sDeleteResponse>;
 
@@ -144,7 +144,7 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<K8
     const clusterResource = isClusterResource("list", arg.kind);
     const toDelete: K8sObject[] = [];
     try {
-        const args = [arg.req.ns, true, undefined, undefined, undefined, selector];
+        const args = [arg.req.ns, undefined, undefined, undefined, undefined, selector];
         if (clusterResource) {
             args.shift();
         }
@@ -165,7 +165,7 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<K8
             `${arg.kind}/${resource.metadata.namespace}/${resource.metadata.name}`;
         logger.info(`Deleting ${resourceSlug} for ${slug}`);
         try {
-            const args = [resource.metadata.name, resource.metadata.namespace, undefined, undefined, undefined, undefined, undefined, "Background"];
+            const args = [resource.metadata.name, resource.metadata.namespace, undefined, undefined, undefined, undefined, "Background"];
             if (clusterResource) {
                 args.splice(1, 1);
             }

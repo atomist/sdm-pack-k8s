@@ -220,7 +220,7 @@ export async function repoSpecsKubernetsApplication(p: Project, r: KubernetesDep
         await loadKubernetesSpec(p, "deployment") : undefined;
     const serviceSpec: DeepPartial<k8s.V1Service> = (r.dataSources.includes(KubernetesDeployDataSources.ServiceSpec)) ?
         await loadKubernetesSpec(p, "service") : undefined;
-    const ingressSpec: DeepPartial<k8s.V1beta1Ingress> = (r.dataSources.includes(KubernetesDeployDataSources.IngressSpec)) ?
+    const ingressSpec: DeepPartial<k8s.NetworkingV1beta1Ingress> = (r.dataSources.includes(KubernetesDeployDataSources.IngressSpec)) ?
         await loadKubernetesSpec(p, "ingress") : undefined;
     const roleSpec: DeepPartial<k8s.V1Role> = (r.dataSources.includes(KubernetesDeployDataSources.RoleSpec)) ?
         await loadKubernetesSpec(p, "role") : undefined;

@@ -91,7 +91,7 @@ export interface KubernetesApplication {
      * Partial ingress spec for this application that is overlaid on
      * top of the default ingress spec template.
      */
-    ingressSpec?: DeepPartial<k8s.V1beta1Ingress>;
+    ingressSpec?: DeepPartial<k8s.NetworkingV1beta1Ingress>;
     /**
      * Secrets to upsert prior to creating deployment.
      */

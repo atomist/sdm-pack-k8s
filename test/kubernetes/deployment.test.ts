@@ -58,10 +58,10 @@ describe("kubernetes/deployment", () => {
             assert(d.spec.template.spec.containers[0].ports[0].name === "http");
             assert(d.spec.template.spec.containers[0].ports[0].containerPort === r.port);
             assert(d.spec.template.spec.containers[0].readinessProbe.httpGet.path === "/");
-            assert(d.spec.template.spec.containers[0].readinessProbe.httpGet.port === "http");
+            assert(d.spec.template.spec.containers[0].readinessProbe.httpGet.port === "http" as any);
             assert(d.spec.template.spec.containers[0].readinessProbe.initialDelaySeconds === 30);
             assert(d.spec.template.spec.containers[0].livenessProbe.httpGet.path === "/");
-            assert(d.spec.template.spec.containers[0].livenessProbe.httpGet.port === "http");
+            assert(d.spec.template.spec.containers[0].livenessProbe.httpGet.port === "http" as any);
             assert(d.spec.template.spec.containers[0].livenessProbe.initialDelaySeconds === 30);
             assert(d.spec.template.spec.imagePullSecrets[0].name === r.imagePullSecret);
         });
