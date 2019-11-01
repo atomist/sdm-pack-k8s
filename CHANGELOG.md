@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 -   `encryptSecret` function supports `stringData` elements. [#80](https://github.com/atomist/sdm-pack-k8s/issues/80)
+-   Support overriding resource name in partial specs. [#81](https://github.com/atomist/sdm-pack-k8s/issues/81)
 
 ### Changed
 
