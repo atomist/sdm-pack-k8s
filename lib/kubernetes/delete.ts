@@ -144,12 +144,16 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<K8
     const clusterResource = isClusterResource("list", arg.kind);
     const toDelete: K8sObject[] = [];
     try {
-        const args = [arg.req.ns, undefined, undefined, undefined, undefined, selector];
+        let listResp: K8sListResponse;
+        const args: [string?, boolean?, string?, string?, string?] = [undefined, undefined, undefined, undefined, selector];
         if (clusterResource) {
-            args.shift();
+            const lister = arg.lister as K8sClusterLister;
+            listResp = await lister.apply(arg.api, args);
+        } else {
+            const lister = arg.lister as K8sNamespacedLister;
+            listResp = await lister.call(arg.api, arg.req.ns, ...args);
         }
-        const listResp = await (arg.lister as any).apply(arg.api, args);
-        toDelete.push(...(listResp.body.items as K8sObject[]).map(r => {
+        toDelete.push(...listResp.body.items.map(r => {
             r.kind = r.kind || arg.kind; // list response does not include kind
             return r;
         }));
@@ -165,11 +169,14 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<K8
             `${arg.kind}/${resource.metadata.namespace}/${resource.metadata.name}`;
         logger.info(`Deleting ${resourceSlug} for ${slug}`);
         try {
-            const args = [resource.metadata.name, resource.metadata.namespace, undefined, undefined, undefined, undefined, "Background"];
+            const args: [string?, string?, number?, boolean?, string?] = [undefined, undefined, undefined, undefined, "Background"];
             if (clusterResource) {
-                args.splice(1, 1);
+                const deleter = arg.deleter as K8sClusterDeleter;
+                await deleter.call(arg.api, resource.metadata.name, ...args);
+            } else {
+                const deleter = arg.deleter as K8sNamespacedDeleter;
+                await deleter.call(arg.api, resource.metadata.name, resource.metadata.namespace, ...args);
             }
-            await (arg.deleter as any).apply(arg.api, args);
             deleted.push(resource);
         } catch (e) {
             e.message = `Failed to delete ${resourceSlug} for ${slug}: ${errMsg(e)}`;
