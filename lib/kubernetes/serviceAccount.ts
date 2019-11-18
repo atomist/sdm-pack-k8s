@@ -28,7 +28,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
  * Create or patch service account.
@@ -43,12 +43,12 @@ export async function upsertServiceAccount(req: KubernetesResourceRequest): Prom
         await req.clients.core.readNamespacedServiceAccount(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read service account ${slug}, creating: ${errMsg(e)}`);
-        logger.info(`Creating service account ${slug} using '${stringifyObject(spec)}'`);
+        logger.info(`Creating service account ${slug} using '${logObject(spec)}'`);
         await logRetry(() => req.clients.core.createNamespacedServiceAccount(spec.metadata.namespace, spec),
             `create service account ${slug}`);
         return spec;
     }
-    logger.info(`Service account ${slug} exists, patching using '${stringifyObject(spec)}'`);
+    logger.info(`Service account ${slug} exists, patching using '${logObject(spec)}'`);
     await logRetry(() => req.clients.core.patchNamespacedServiceAccount(spec.metadata.name, spec.metadata.namespace, spec),
         `patch service account ${slug}`);
     return spec;

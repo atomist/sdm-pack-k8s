@@ -35,7 +35,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
  * Create or update a deployment for a Kubernetes application.  Any
@@ -52,12 +52,12 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
         await req.clients.apps.readNamespacedDeployment(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read deployment ${slug}, creating: ${errMsg(e)}`);
-        logger.info(`Creating deployment ${slug} using '${stringifyObject(spec)}'`);
+        logger.info(`Creating deployment ${slug} using '${logObject(spec)}'`);
         await logRetry(() => req.clients.apps.createNamespacedDeployment(spec.metadata.namespace, spec),
             `create deployment ${slug}`);
         return spec;
     }
-    logger.info(`Updating deployment ${slug} using '${stringifyObject(spec)}'`);
+    logger.info(`Updating deployment ${slug} using '${logObject(spec)}'`);
     await logRetry(() => req.clients.apps.patchNamespacedDeployment(spec.metadata.name, spec.metadata.namespace, spec),
         `patch deployment ${slug}`);
     return spec;

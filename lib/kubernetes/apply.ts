@@ -24,11 +24,12 @@ import {
     specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
- * Create or update a Kubernetes resource.  This implmentation uses
- * get, patch, and create, but will likely switch to [server-side
+ * Create or replace a Kubernetes resource using the provided spec.
+ * This implmentation uses read, patch, and create, but may switch to
+ * [server-side
  * apply](https://github.com/kubernetes/enhancements/issues/555) when
  * it is available.
  *
@@ -50,9 +51,9 @@ export async function applySpec(spec: K8sObject): Promise<K8sObjectResponse> {
         await client.read(spec);
     } catch (e) {
         logger.debug(`Failed to read resource ${slug}: ${errMsg(e)}`);
-        logger.info(`Creating resource ${slug} using '${stringifyObject(spec)}'`);
+        logger.info(`Creating resource ${slug} using '${logObject(spec)}'`);
         return logRetry(() => client.create(spec), `create resource ${slug}`);
     }
-    logger.info(`Patching resource ${slug} using '${stringifyObject(spec)}'`);
+    logger.info(`Patching resource ${slug} using '${logObject(spec)}'`);
     return logRetry(() => client.patch(spec), `patch resource ${slug}`);
 }

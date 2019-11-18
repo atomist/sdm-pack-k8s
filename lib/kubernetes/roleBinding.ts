@@ -28,7 +28,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
  * Create or patch role or cluster rolebinding.
@@ -44,12 +44,12 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
             await req.clients.rbac.readClusterRoleBinding(spec.metadata.name);
         } catch (e) {
             logger.debug(`Failed to read cluster role binding ${slug}, creating: ${errMsg(e)}`);
-            logger.info(`Creating cluster role binding ${slug} using '${stringifyObject(spec)}'`);
+            logger.info(`Creating cluster role binding ${slug} using '${logObject(spec)}'`);
             await logRetry(() => req.clients.rbac.createClusterRoleBinding(spec),
                 `create cluster role binding ${slug}`);
             return spec;
         }
-        logger.info(`Cluster role binding ${slug} exists, patching using '${stringifyObject(spec)}'`);
+        logger.info(`Cluster role binding ${slug} exists, patching using '${logObject(spec)}'`);
         await logRetry(() => req.clients.rbac.patchClusterRoleBinding(spec.metadata.name, spec),
             `patch cluster role binding ${slug}`);
         return spec;
@@ -59,12 +59,12 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
             await req.clients.rbac.readNamespacedRoleBinding(spec.metadata.name, spec.metadata.namespace);
         } catch (e) {
             logger.debug(`Failed to read role binding ${slug}, creating: ${errMsg(e)}`);
-            logger.info(`Creating role binding ${slug} using '${stringifyObject(spec)}'`);
+            logger.info(`Creating role binding ${slug} using '${logObject(spec)}'`);
             await logRetry(() => req.clients.rbac.createNamespacedRoleBinding(spec.metadata.namespace, spec),
                 `create role binding ${slug}`);
             return spec;
         }
-        logger.info(`Role binding ${slug} exists, patching using '${stringifyObject(spec)}'`);
+        logger.info(`Role binding ${slug} exists, patching using '${logObject(spec)}'`);
         await logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(spec.metadata.name, spec.metadata.namespace, spec),
             `patch role binding ${slug}`);
         return spec;

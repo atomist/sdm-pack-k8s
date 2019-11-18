@@ -105,9 +105,9 @@ export function maskString(raw: string): string {
         return "******";
     } else if (l < 16) {
         return "*".repeat(raw.length);
-    } else if (l < 100) {
+    } else if (l < 50) {
         return raw.charAt(0) + "*".repeat(raw.length - 2) + raw.charAt(raw.length - 1);
     } else {
-        return raw.charAt(0) + "*".repeat(99) + "...";
+        return raw.charAt(0) + "*".repeat(45) + raw.charAt(46) + "...";
     }
 }

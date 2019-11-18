@@ -26,7 +26,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 export const defaultNamespace = "default";
 
@@ -44,11 +44,11 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<k
         logger.debug(`Namespace ${slug} exists`);
     } catch (e) {
         logger.debug(`Failed to get namespace ${slug}, creating: ${errMsg(e)}`);
-        logger.info(`Creating namespace ${slug} using '${stringifyObject(spec)}'`);
+        logger.info(`Creating namespace ${slug} using '${logObject(spec)}'`);
         await logRetry(() => req.clients.core.createNamespace(spec), `create namespace ${slug}`);
         return spec;
     }
-    logger.info(`Namespace ${slug} exists, patching using '${stringifyObject(spec)}'`);
+    logger.info(`Namespace ${slug} exists, patching using '${logObject(spec)}'`);
     try {
         await logRetry(() => req.clients.core.patchNamespace(spec.metadata.name, spec), `patch namespace ${slug}`);
     } catch (e) {

@@ -31,7 +31,7 @@ import {
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
  * If `req.port` is truthy, create a service if it does not exist and
@@ -52,11 +52,11 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<k8s
         await req.clients.core.readNamespacedService(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
-        logger.info(`Creating service ${slug} using '${stringifyObject(spec)}'`);
+        logger.info(`Creating service ${slug} using '${logObject(spec)}'`);
         await logRetry(() => req.clients.core.createNamespacedService(spec.metadata.namespace, spec), `create service ${slug}`);
         return spec;
     }
-    logger.info(`Service ${slug} exists, patching using '${stringifyObject(spec)}'`);
+    logger.info(`Service ${slug} exists, patching using '${logObject(spec)}'`);
     await logRetry(() => req.clients.core.patchNamespacedService(spec.metadata.name, spec.metadata.namespace, spec),
         `patch service ${slug}`);
     return spec;
