@@ -192,16 +192,36 @@ async function resourceUpserted(resource: K8sObject, p: Project, fs: ProjectFile
 }
 
 /**
- * Persist the deletion of a resource to the sync repo project.
+ * Safely persist the deletion of a resource to the sync repo project.
+ * If `fs` is `undefined`, do nothing.
  *
  * @param resource Kubernetes resource that was upserted
  * @param p Sync repo project
- * @param fs File and spec object that matches resource, may be undefined
+ * @param fs File and spec object that matches resource, may be `undefined`
  */
 async function resourceDeleted(resource: K8sObject, p: Project, fs: ProjectFileSpec): Promise<void> {
     if (fs) {
         await p.deleteFile(fs.file.path);
     }
+}
+
+/**
+ * Determine if two Kubernetes resource specifications represent the
+ * same object.  When determining if they are the same, only the kind,
+ * name, and namespace, which may be `undefined`, must match.  The
+ * apiVersion is not considered when matching because the same
+ * resource can appear under different API versions.  Other object
+ * properties are not considered.
+ *
+ * @param a First Kubernetes object spec to match
+ * @param b Second Kubernetes object spec to match
+ * @return `true` if specs match, `false` otherwise
+ */
+export function sameObject(a: K8sObject, b: K8sObject): boolean {
+    return a && b && a.metadata && b.metadata &&
+        a.kind === b.kind &&
+        a.metadata.name === b.metadata.name &&
+        a.metadata.namespace === b.metadata.namespace;
 }
 
 /**
@@ -216,9 +236,7 @@ async function resourceDeleted(resource: K8sObject, p: Project, fs: ProjectFileS
  * @return First file and spec object to match spec or `undefined` if no match is found
  */
 export function matchSpec(spec: K8sObject, fileSpecs: ProjectFileSpec[]): ProjectFileSpec | undefined {
-    return fileSpecs.find(fs => spec.kind === fs.spec.kind &&
-        spec.metadata.name === fs.spec.metadata.name &&
-        spec.metadata.namespace === fs.spec.metadata.namespace);
+    return fileSpecs.find(fs => sameObject(spec, fs.spec));
 }
 
 /**

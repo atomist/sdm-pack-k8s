@@ -326,9 +326,10 @@ spec:
         });
 
         it("should parse empty YAML and return nothing", async () => {
-            const c = "";
-            const s = parseKubernetesSpecs(c);
-            assert.deepStrictEqual(s, []);
+            [undefined, "", "    ", "\n"].forEach(c => {
+                const s = parseKubernetesSpecs(c);
+                assert.deepStrictEqual(s, []);
+            });
         });
 
         it("should filter out non-specs", async () => {

@@ -100,7 +100,7 @@ export function k8sObject(spec: K8sObject): K8sObject {
  */
 export function stringifyObject(spec: K8sObject): string {
     if (spec.kind === "Secret") {
-        const safeSpec: DeepPartial<k8s.V1Secret> = _.merge({}, spec);
+        const safeSpec: DeepPartial<k8s.V1Secret> = _.cloneDeep(spec);
         if (safeSpec.data) {
             for (const k of Object.keys(safeSpec.data)) {
                 safeSpec.data[k] = maskString(safeSpec.data[k]);

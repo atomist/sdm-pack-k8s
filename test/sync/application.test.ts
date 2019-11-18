@@ -27,11 +27,84 @@ import { KubernetesSyncOptions } from "../../lib/config";
 import {
     matchSpec,
     ProjectFileSpec,
+    sameObject,
     syncResources,
 } from "../../lib/sync/application";
 import { k8sSpecGlob } from "../../lib/sync/diff";
 
 describe("sync/application", () => {
+
+    describe("sameObject", () => {
+
+        it("should return true for equivalent objects", () => {
+            [
+                [
+                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                ],
+                [
+                    { kind: "ClusterRole", metadata: { name: "emmylou" } },
+                    { kind: "ClusterRole", metadata: { name: "emmylou" } },
+                ],
+            ].forEach(oo => {
+                assert(sameObject(oo[0], oo[1]));
+                assert(sameObject(oo[1], oo[0]));
+            });
+        });
+
+        it("should return false for non-equivalent objects", () => {
+            [
+                [
+                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                    { kind: "Service", metadata: { name: "bettylou", namespace: "harris" } },
+                ],
+                [
+                    { kind: "ClusterRole", metadata: { name: "emmylou" } },
+                    { kind: "ClusterRole", metadata: { name: "bettylou" } },
+                ],
+                [
+                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                    { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                ],
+                [
+                    { kind: "ClusterRoleBinding", metadata: { name: "emmylou" } },
+                    { kind: "ClusterRole", metadata: { name: "emmylou" } },
+                ],
+                [
+                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                    { kind: "ClusterRole", metadata: { name: "emmylou" } },
+                ],
+            ].forEach(oo => {
+                assert(!sameObject(oo[0], oo[1]));
+                assert(!sameObject(oo[1], oo[0]));
+            });
+        });
+
+        it("should return false for invalid objects", () => {
+            [
+                [
+                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                    undefined,
+                ],
+                [
+                    { kind: "ClusterRole", metadata: { name: "emmylou" } },
+                    { kind: "ClusterRole" },
+                ],
+                [
+                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                    { metadata: { name: "emmylou", namespace: "harris" } },
+                ],
+                [
+                    { kind: "ClusterRole", metadata: { name: "emmylou" } },
+                    { kind: "ClusterRole", metadata: {} },
+                ],
+            ].forEach(oo => {
+                assert(!sameObject(oo[0], oo[1]));
+                assert(!sameObject(oo[1], oo[0]));
+            });
+        });
+
+    });
 
     describe("matchSpec", () => {
 
