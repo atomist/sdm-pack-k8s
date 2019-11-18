@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -   Use policy/v1beta1 API for PodSecurityPolicy. [afc06d7](https://github.com/atomist/sdm-pack-k8s/commit/afc06d77e4f40f8899cb9e2bdc34ec84230ae82d)
 -   Do not terminate app deployment if namespace patching fails. [#79](https://github.com/atomist/sdm-pack-k8s/issues/79)
 
+### Fixed
+
+-   Fix multi-document YAML support in sync. [14bd761](https://github.com/atomist/sdm-pack-k8s/commit/14bd761864414e1bc7a0c452d4719366a8704c64)
+
 ## [1.10.2](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...1.10.2) - 2019-09-27
 
 ### Changed
