@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -   Do not supply defaults in resource spec templates. [713120e](https://github.com/atomist/sdm-pack-k8s/commit/713120ece4163c9693c8a5c2fed322ae7162d78b)
 -   Use policy/v1beta1 API for PodSecurityPolicy. [afc06d7](https://github.com/atomist/sdm-pack-k8s/commit/afc06d77e4f40f8899cb9e2bdc34ec84230ae82d)
 -   Do not terminate app deployment if namespace patching fails. [#79](https://github.com/atomist/sdm-pack-k8s/issues/79)
+-   Shorten k8s object spec strings when logged. [52f16bb](https://github.com/atomist/sdm-pack-k8s/commit/52f16bb1722ec7771fe54cae66005497bb0d2428)
 
 ### Fixed
 
