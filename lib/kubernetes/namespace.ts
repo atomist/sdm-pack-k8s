@@ -21,6 +21,7 @@ import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     KubernetesApplication,
     KubernetesResourceRequest,
@@ -50,7 +51,8 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<k
     }
     logger.info(`Namespace ${slug} exists, patching using '${logObject(spec)}'`);
     try {
-        await logRetry(() => req.clients.core.patchNamespace(spec.metadata.name, spec), `patch namespace ${slug}`);
+        await logRetry(() => req.clients.core.patchNamespace(spec.metadata.name, spec,
+            undefined, undefined, undefined, undefined, patchHeaders()), `patch namespace ${slug}`);
     } catch (e) {
         logger.warn(`Failed to patch existing namespace ${slug}, ignoring: ${errMsg(e)}`);
     }

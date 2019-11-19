@@ -22,6 +22,7 @@ import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
@@ -58,8 +59,8 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s
         return spec;
     }
     logger.info(`Ingress ${slug} exists, patching using '${logObject(spec)}'`);
-    await logRetry(() => req.clients.ext.patchNamespacedIngress(spec.metadata.name, spec.metadata.namespace, spec),
-        `patch ingress ${slug}`);
+    await logRetry(() => req.clients.ext.patchNamespacedIngress(spec.metadata.name, spec.metadata.namespace, spec,
+        undefined, undefined, undefined, undefined, patchHeaders()), `patch ingress ${slug}`);
     return spec;
 }
 

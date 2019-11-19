@@ -25,6 +25,7 @@ import {
     matchLabels,
 } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
@@ -57,8 +58,8 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<k8s
         return spec;
     }
     logger.info(`Service ${slug} exists, patching using '${logObject(spec)}'`);
-    await logRetry(() => req.clients.core.patchNamespacedService(spec.metadata.name, spec.metadata.namespace, spec),
-        `patch service ${slug}`);
+    await logRetry(() => req.clients.core.patchNamespacedService(spec.metadata.name, spec.metadata.namespace, spec,
+        undefined, undefined, undefined, undefined, patchHeaders()), `patch service ${slug}`);
     return spec;
 }
 

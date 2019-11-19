@@ -22,6 +22,7 @@ import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
@@ -49,8 +50,8 @@ export async function upsertServiceAccount(req: KubernetesResourceRequest): Prom
         return spec;
     }
     logger.info(`Service account ${slug} exists, patching using '${logObject(spec)}'`);
-    await logRetry(() => req.clients.core.patchNamespacedServiceAccount(spec.metadata.name, spec.metadata.namespace, spec),
-        `patch service account ${slug}`);
+    await logRetry(() => req.clients.core.patchNamespacedServiceAccount(spec.metadata.name, spec.metadata.namespace, spec,
+        undefined, undefined, undefined, undefined, patchHeaders()), `patch service account ${slug}`);
     return spec;
 }
 

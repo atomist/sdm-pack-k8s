@@ -14,74 +14,7 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import * as stringify from "json-stringify-safe";
-import { errMsg } from "../support/error";
-
-/* tslint:disable */
-// see https://github.com/kubernetes-client/javascript/issues/19
-async function patchWithHeaders(api: any, patcher: any, args: any[]) {
-    const oldDefaultHeaders = api.defaultHeaders;
-    api.defaultHeaders = {
-        ...api.defaultHeaders,
-        "Content-Type": "application/strategic-merge-patch+json",
-    };
-    logger.debug(`Set defaultHeaders: ${stringify(api.defaultHeaders)}`);
-    let returnValue: any;
-    try {
-        returnValue = await patcher.apply(api, args);
-    } catch (e) {
-        logger.error(`Failed to patch: ${errMsg(e)}`);
-        api.defaultHeaders = oldDefaultHeaders;
-        throw e;
-    }
-    api.defaultHeaders = oldDefaultHeaders;
-    return returnValue;
-}
-
-class CoreV1ApiPatch extends k8s.CoreV1Api {
-    patchNamespace(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespace, args);
-    }
-    patchNamespacedSecret(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedSecret, args);
-    }
-    patchNamespacedService(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedService, args);
-    }
-    patchNamespacedServiceAccount(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedServiceAccount, args);
-    }
-}
-
-class AppsV1ApiPatch extends k8s.AppsV1Api {
-    patchNamespacedDeployment(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedDeployment, args);
-    }
-}
-
-class ExtensionsV1beta1ApiPatch extends k8s.ExtensionsV1beta1Api {
-    patchNamespacedIngress(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedIngress, args);
-    }
-}
-
-class RbacAuthorizationV1ApiPatch extends k8s.RbacAuthorizationV1Api {
-    patchClusterRole(...args: any[]) {
-        return patchWithHeaders(this, super.patchClusterRole, args);
-    }
-    patchNamespacedRole(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedRole, args);
-    }
-    patchClusterRoleBinding(...args: any[]) {
-        return patchWithHeaders(this, super.patchClusterRoleBinding, args);
-    }
-    patchNamespacedRoleBinding(...args: any[]) {
-        return patchWithHeaders(this, super.patchNamespacedRoleBinding, args);
-    }
-}
-/* tslint:enable */
 
 /**
  * Kubernetes API clients used to create/update/delete application
@@ -102,13 +35,9 @@ export interface KubernetesClients {
  * Create the KubernetesClients structure.
  */
 export function makeApiClients(kc: k8s.KubeConfig): KubernetesClients {
-    // const core = kc.makeApiClient(k8s.CoreV1Api);
-    // const apps = kc.makeApiClient(k8s.AppsV1Api);
-    // const rbac = kc.makeApiClient(k8s.RbacAuthorizationV1Api);
-    // const ext = kc.makeApiClient(k8s.ExtensionsV1beta1Api);
-    const core = kc.makeApiClient(CoreV1ApiPatch);
-    const apps = kc.makeApiClient(AppsV1ApiPatch);
-    const rbac = kc.makeApiClient(RbacAuthorizationV1ApiPatch);
-    const ext = kc.makeApiClient(ExtensionsV1beta1ApiPatch);
+    const core = kc.makeApiClient(k8s.CoreV1Api);
+    const apps = kc.makeApiClient(k8s.AppsV1Api);
+    const rbac = kc.makeApiClient(k8s.RbacAuthorizationV1Api);
+    const ext = kc.makeApiClient(k8s.ExtensionsV1beta1Api);
     return { core, apps, rbac, ext };
 }

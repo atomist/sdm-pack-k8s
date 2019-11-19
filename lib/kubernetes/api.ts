@@ -22,6 +22,7 @@ import * as request from "request";
 import { DeepPartial } from "ts-essentials";
 import { requestError } from "../support/error";
 import { defaultNamespace } from "./namespace";
+import { patchHeaders } from "./patch";
 
 /** Response from methods that operate on an resource. */
 export interface K8sObjectResponse {
@@ -89,7 +90,10 @@ export class K8sObjectApi extends k8s.ApisApi {
         const requestOptions = this.baseRequestOptions("PATCH");
         requestOptions.uri += specUriPath(spec, "patch");
         requestOptions.body = spec;
-        requestOptions.headers["Content-Type"] = "application/strategic-merge-patch+json";
+        requestOptions.headers = {
+            ...requestOptions.headers,
+            ...patchHeaders(),
+        };
         return this.requestPromise(requestOptions) as any as K8sObjectResponse;
     }
 

@@ -26,6 +26,7 @@ import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
@@ -62,8 +63,8 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<k8s
             return spec;
         }
         logger.info(`Secret ${secretName} exists, patching using '${logObject(spec)}'`);
-        await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, spec.metadata.namespace, spec),
-            `patch secret ${secretName} for ${slug}`);
+        await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, spec.metadata.namespace, spec,
+            undefined, undefined, undefined, undefined, patchHeaders()), `patch secret ${secretName} for ${slug}`);
         return spec;
     }));
 }

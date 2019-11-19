@@ -29,6 +29,7 @@ import {
     matchLabels,
 } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
@@ -58,8 +59,8 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
         return spec;
     }
     logger.info(`Updating deployment ${slug} using '${logObject(spec)}'`);
-    await logRetry(() => req.clients.apps.patchNamespacedDeployment(spec.metadata.name, spec.metadata.namespace, spec),
-        `patch deployment ${slug}`);
+    await logRetry(() => req.clients.apps.patchNamespacedDeployment(spec.metadata.name, spec.metadata.namespace, spec,
+        undefined, undefined, undefined, undefined, patchHeaders()), `patch deployment ${slug}`);
     return spec;
 }
 

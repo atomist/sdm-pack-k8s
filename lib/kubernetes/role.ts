@@ -21,6 +21,7 @@ import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
@@ -48,7 +49,8 @@ export async function upsertRole(req: KubernetesResourceRequest): Promise<k8s.V1
             return spec;
         }
         logger.info(`Cluster role ${slug} exists, patching using '${logObject(spec)}'`);
-        await logRetry(() => req.clients.rbac.patchClusterRole(spec.metadata.name, spec), `patch cluster role ${slug}`);
+        await logRetry(() => req.clients.rbac.patchClusterRole(spec.metadata.name, spec,
+            undefined, undefined, undefined, undefined, patchHeaders()), `patch cluster role ${slug}`);
         return spec;
     } else {
         const spec = await roleTemplate(req);
@@ -61,8 +63,8 @@ export async function upsertRole(req: KubernetesResourceRequest): Promise<k8s.V1
             return spec;
         }
         logger.info(`Role ${slug} exists, patching using '${logObject(spec)}'`);
-        await logRetry(() => req.clients.rbac.patchNamespacedRole(spec.metadata.name, spec.metadata.namespace, spec),
-            `patch role ${slug}`);
+        await logRetry(() => req.clients.rbac.patchNamespacedRole(spec.metadata.name, spec.metadata.namespace, spec,
+            undefined, undefined, undefined, undefined, patchHeaders()), `patch role ${slug}`);
         return spec;
     }
 }
