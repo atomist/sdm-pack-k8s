@@ -22,7 +22,6 @@ import {
     isClusterResource,
     K8sDeleteResponse,
     K8sListResponse,
-    K8sObject,
     K8sObjectApi,
     specUriPath,
 } from "./api";
@@ -41,7 +40,7 @@ import { logObject } from "./resource";
  * @param spec Kuberenetes spec of resource to delete
  * @return DeleteResponse if object existed and was deleted, undefined if it did not exist
  */
-export async function deleteSpec(spec: K8sObject): Promise<K8sDeleteResponse | undefined> {
+export async function deleteSpec(spec: k8s.KubernetesObject): Promise<K8sDeleteResponse | undefined> {
     const slug = specUriPath(spec, "read");
     let client: K8sObjectApi;
     try {
@@ -138,11 +137,11 @@ export interface DeleteAppResourcesArg {
  * @param arg Specification of what and how to delete for what application
  * @return Array of deleted resources
  */
-export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<K8sObject[]> {
+export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8s.KubernetesObject[]> {
     const slug = appName(arg.req);
     const selector = labelSelector(arg.req);
     const clusterResource = isClusterResource("list", arg.kind);
-    const toDelete: K8sObject[] = [];
+    const toDelete: k8s.KubernetesObject[] = [];
     try {
         let listResp: K8sListResponse;
         const args: [string?, boolean?, string?, string?, string?] = [undefined, undefined, undefined, undefined, selector];
@@ -162,7 +161,7 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<K8
         logger.error(e.message);
         throw e;
     }
-    const deleted: K8sObject[] = [];
+    const deleted: k8s.KubernetesObject[] = [];
     const errs: Error[] = [];
     for (const resource of toDelete) {
         const resourceSlug = clusterResource ? `${arg.kind}/${resource.metadata.name}` :

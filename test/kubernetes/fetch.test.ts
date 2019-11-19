@@ -17,8 +17,6 @@
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import * as assert from "power-assert";
-import { DeepPartial } from "ts-essentials";
-import { K8sObject } from "../../lib/kubernetes/api";
 import {
     cleanKubernetesSpec,
     clusterResourceKinds,
@@ -1005,14 +1003,14 @@ describe("kubernetes/fetch", () => {
     describe("selectKubernetesResources", () => {
 
         it("should do nothing successfully", () => {
-            const r: K8sObject[] = [];
+            const r: k8s.KubernetesObject[] = [];
             const s: KubernetesResourceSelector[] = [];
             const o = selectKubernetesResources(r, s);
             assert.deepStrictEqual(o, []);
         });
 
         it("should return everything if no selectors", () => {
-            const r: K8sObject[] = [
+            const r = [
                 { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks" } },
                 { kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else" } },
                 { kind: "DaemonSet", metadata: { name: "sunny-afternoon", namespace: "face2face" } },
@@ -1035,7 +1033,7 @@ describe("kubernetes/fetch", () => {
         });
 
         it("should filter resources using defaults", () => {
-            const r: any[] = [
+            const r = [
                 { apiVersion: "v1", kind: "Namespace", metadata: { name: "default" } },
                 { apiVersion: "v1", kind: "Namespace", metadata: { name: "kube-system" } },
                 { apiVersion: "v1", kind: "Namespace", metadata: { name: "kinda-kinks" } },
@@ -1097,7 +1095,7 @@ describe("kubernetes/fetch", () => {
                 label: "Pye",
                 website: "https://thekinks.info/",
             };
-            const r: K8sObject[] = [
+            const r = [
                 { apiVersion: "v1", kind: "Secret", metadata: { name: "you-really-got-me", namespace: "kinks", labels } },
                 { kind: "Deployment", metadata: { name: "waterloo-sunset", namespace: "something-else", labels } },
                 { kind: "Deployment", metadata: { name: "waterloo-sunset-mono", namespace: "something-else", labels } },
@@ -1111,7 +1109,7 @@ describe("kubernetes/fetch", () => {
                 { kind: "ServiceAccount", metadata: { name: "have-you-seen-her-face", namespace: "younger-than-yesterday" } },
                 { kind: "ClusterRole", metadata: { name: "the-kinks-are-the-village-green-preservation-society", labels } },
             ];
-            const labelSelector: DeepPartial<k8s.V1LabelSelector> = {
+            const labelSelector: k8s.V1LabelSelector = {
                 matchExpressions: [
                     { key: "rhythmGuitar", operator: "Exists" },
                     { key: "label", operator: "In", values: ["Pye", "Reprise", "RCA", "Arista"] },
@@ -1200,7 +1198,7 @@ describe("kubernetes/fetch", () => {
     describe("selectorMatch", () => {
 
         it("should match when no name/label selectors", () => {
-            const r: K8sObject = {
+            const r = {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
@@ -1216,7 +1214,7 @@ describe("kubernetes/fetch", () => {
         });
 
         it("should match on name selector", () => {
-            const r: K8sObject = {
+            const r = {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
@@ -1233,7 +1231,7 @@ describe("kubernetes/fetch", () => {
         });
 
         it("should match on namespace selector", () => {
-            const r: K8sObject = {
+            const r = {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {
@@ -1250,7 +1248,7 @@ describe("kubernetes/fetch", () => {
         });
 
         it("should match on matchLabels selector", () => {
-            const r: K8sObject = {
+            const r = {
                 apiVersion: "v1",
                 kind: "Service",
                 metadata: {

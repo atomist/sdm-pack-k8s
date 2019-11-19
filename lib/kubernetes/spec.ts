@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as stableStringify from "json-stable-stringify";
-import { K8sObject } from "./api";
 import { encryptSecret } from "./secret";
 
 /**
@@ -30,7 +30,7 @@ import { encryptSecret } from "./secret";
  * @param resource Kubernetes resource spec
  * @return Base file name for resource spec
  */
-export function kubernetesSpecFileBasename(resource: K8sObject): string {
+export function kubernetesSpecFileBasename(resource: k8s.KubernetesObject): string {
     let prefix: string;
     switch (resource.kind) {
         case "Namespace":
@@ -109,7 +109,7 @@ export interface KubernetesSpecStringifyOptions {
  * @param options Options for serializing the resource spec
  * @return Stable string representation of the resource spec
  */
-export async function kubernetesSpecStringify(spec: K8sObject, options: KubernetesSpecStringifyOptions = {}): Promise<string> {
+export async function kubernetesSpecStringify(spec: k8s.KubernetesObject, options: KubernetesSpecStringifyOptions = {}): Promise<string> {
     let resource = spec;
     if (resource.kind === "Secret" && options.secretKey) {
         resource = await encryptSecret(resource, options.secretKey);
@@ -124,7 +124,7 @@ export async function kubernetesSpecStringify(spec: K8sObject, options: Kubernet
 /**
  * Parses content of string as Kubernetes JSON or YAML specs.  It
  * parses the file as YAML, since JSON is valid YAML, and returns an
- * array of [[K8sObject]]s, since a YAML file can contain multiple
+ * array of [[k8s.KubernetesObject]]s, since a YAML file can contain multiple
  * documents.  It validates that each document parsed looks something
  * like a Kubernetes spec.  If it does not, it is filtered out of the
  * returned specs.
@@ -132,12 +132,12 @@ export async function kubernetesSpecStringify(spec: K8sObject, options: Kubernet
  * @param specString String representation of Kubernetes spec(s)
  * @return Parsed and filtered Kubernetes spec objects
  */
-export function parseKubernetesSpecs(specString: string): K8sObject[] {
+export function parseKubernetesSpecs(specString: string): k8s.KubernetesObject[] {
     if (!specString) {
         return [];
     }
     try {
-        const specs: K8sObject[] = yaml.safeLoadAll(specString);
+        const specs: k8s.KubernetesObject[] = yaml.safeLoadAll(specString);
         return specs.filter(s => s && s.apiVersion && s.kind && s.metadata && s.metadata.name);
     } catch (e) {
         e.spec = specString;

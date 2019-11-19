@@ -15,10 +15,10 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
-    K8sObject,
     K8sObjectApi,
     K8sObjectResponse,
     specUriPath,
@@ -36,7 +36,7 @@ import { logObject } from "./resource";
  * @param spec Kuberenetes resource spec sufficient to identify and create the resource
  * @return response from the Kubernetes API.
  */
-export async function applySpec(spec: K8sObject): Promise<K8sObjectResponse> {
+export async function applySpec(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
     const slug = specUriPath(spec, "read");
     let client: K8sObjectApi;
     try {

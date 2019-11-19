@@ -20,9 +20,9 @@ import {
     logger,
 } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
+import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";
-import { K8sObject } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { deleteSpec } from "../kubernetes/delete";
 import { decryptSecret } from "../kubernetes/secret";
@@ -38,7 +38,7 @@ import { PushDiff } from "./diff";
 export async function changeResource(p: GitProject, change: PushDiff): Promise<void> {
     const beforeContents = await previousSpecVersion(p.baseDir, change.path, change.sha);
     const beforeSpecs = parseKubernetesSpecs(beforeContents);
-    let specs: K8sObject[];
+    let specs: k8s.KubernetesObject[];
     if (change.change !== "delete") {
         const specFile = await p.getFile(change.path);
         if (!specFile) {
@@ -82,7 +82,7 @@ export interface SyncChanges {
     /** "apply" or "delete" */
     change: "apply" | "delete";
     /** Spec to apply/delete. */
-    spec: K8sObject;
+    spec: k8s.KubernetesObject;
 }
 
 /**
@@ -97,7 +97,12 @@ export interface SyncChanges {
  * @param change The type of change
  * @return Array containing the type of change for each spec
  */
-export function calculateChanges(before: K8sObject[], after: K8sObject[] | undefined, change: "apply" | "delete"): SyncChanges[] {
+export function calculateChanges(
+    before: k8s.KubernetesObject[],
+    after: k8s.KubernetesObject[] | undefined,
+    change: "apply" | "delete",
+): SyncChanges[] {
+
     if (change === "delete") {
         return (before || []).map(spec => ({ change, spec }));
     }

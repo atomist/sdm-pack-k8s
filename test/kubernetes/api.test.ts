@@ -15,10 +15,10 @@
  */
 
 import { execPromise } from "@atomist/sdm";
+import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
 import {
     isClusterResource,
-    K8sObject,
     specUriPath,
     uriOpts,
 } from "../../lib/kubernetes/api";
@@ -250,7 +250,7 @@ describe("kubernetes/api", () => {
             ];
             /* tslint:enable:max-line-length */
             a.forEach(k => {
-                const o: K8sObject = {
+                const o: k8s.KubernetesObject = {
                     apiVersion: k.apiVersion,
                     kind: k.kind,
                     metadata: {
@@ -284,7 +284,7 @@ describe("kubernetes/api", () => {
             ];
             /* tslint:enable:max-line-length */
             a.forEach(k => {
-                const o: K8sObject = {
+                const o: k8s.KubernetesObject = {
                     apiVersion: k.apiVersion,
                     kind: k.kind,
                 };

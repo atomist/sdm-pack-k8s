@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
@@ -70,11 +69,10 @@ export async function namespaceTemplate(req: KubernetesApplication & KubernetesS
     const retain = ["atomist.com/workspaceId", "app.kubernetes.io/managed-by"];
     const labels = Object.assign({}, ...Object.keys(allLabels).filter(k => retain.includes(k)).map(k => ({ [k]: allLabels[k] })));
     const metadata = metadataTemplate({ labels, name: req.ns });
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const ns: DeepPartial<k8s.V1Namespace> = {
+    const ns: k8s.V1Namespace = {
         apiVersion: "v1",
         kind: "Namespace",
         metadata,
     };
-    return ns as k8s.V1Namespace;
+    return ns;
 }

@@ -21,8 +21,8 @@ import {
 } from "@atomist/automation-client";
 import * as acglobals from "@atomist/automation-client/lib/globals";
 import { fakeContext } from "@atomist/sdm";
+import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
-import { K8sObject } from "../../lib/kubernetes/api";
 import * as apply from "../../lib/kubernetes/apply";
 import {
     kubernetesSync,
@@ -128,11 +128,11 @@ describe("sync/sync", () => {
 
         let originalApplySpec: any;
         let originalAutomationClient: any;
-        let specs: K8sObject[];
+        let specs: k8s.KubernetesObject[];
         before(() => {
             originalApplySpec = Object.getOwnPropertyDescriptor(apply, "applySpec");
             Object.defineProperty(apply, "applySpec", {
-                value: async (s: K8sObject) => {
+                value: async (s: k8s.KubernetesObject) => {
                     specs.push(s);
                     return {
                         body: s,
@@ -305,11 +305,11 @@ describe("sync/sync", () => {
     describe("repoSync apply failure", () => {
 
         let originalApplySpec: any;
-        let specs: K8sObject[];
+        let specs: k8s.KubernetesObject[];
         before(() => {
             originalApplySpec = Object.getOwnPropertyDescriptor(apply, "applySpec");
             Object.defineProperty(apply, "applySpec", {
-                value: async (s: K8sObject) => {
+                value: async (s: k8s.KubernetesObject) => {
                     if (s.apiVersion === "apps/v1" && s.kind === "Deployment" && s.metadata.name === "stop") {
                         throw new Error("applySpec failure");
                     }

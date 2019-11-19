@@ -17,7 +17,6 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
@@ -111,8 +110,7 @@ export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm
     }
     const apiVersion = "extensions/v1beta1";
     const kind = "Ingress";
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const i: DeepPartial<k8s.NetworkingV1beta1Ingress> = {
+    const i: k8s.NetworkingV1beta1Ingress = {
         apiVersion,
         kind,
         metadata,
@@ -134,5 +132,5 @@ export async function ingressTemplate(req: KubernetesApplication & KubernetesSdm
         _.merge(i, req.ingressSpec, { apiVersion, kind });
         i.metadata.namespace = req.ns;
     }
-    return i as k8s.NetworkingV1beta1Ingress;
+    return i;
 }

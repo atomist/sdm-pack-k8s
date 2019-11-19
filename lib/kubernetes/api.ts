@@ -19,7 +19,6 @@ import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as stringify from "json-stringify-safe";
 import * as request from "request";
-import { DeepPartial } from "ts-essentials";
 import { requestError } from "../support/error";
 import { defaultNamespace } from "./namespace";
 import { patchHeaders } from "./patch";
@@ -42,8 +41,12 @@ export interface K8sDeleteResponse {
     response: http.IncomingMessage;
 }
 
-// avoid https://github.com/kubernetes-client/javascript/issues/52
-export type K8sObject = DeepPartial<k8s.KubernetesObject>;
+/**
+ * Since https://github.com/kubernetes-client/javascript/issues/52
+ * is fixed, this is no longer necessary.
+ * @deprecated use k8s.KubernetesObject
+ */
+export type K8sObject = k8s.KubernetesObject;
 
 /**
  * Dynamically construct Kubernetes API request URIs so client does
@@ -57,7 +60,7 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Read any Kubernetes resource.
      */
-    public async create(spec: K8sObject): Promise<K8sObjectResponse> {
+    public async create(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("POST");
         requestOptions.uri += specUriPath(spec, "create");
         requestOptions.body = spec;
@@ -67,7 +70,7 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Delete any Kubernetes resource.
      */
-    public async delete(spec: K8sObject, body: any = this.defaultDeleteBody): Promise<K8sDeleteResponse> {
+    public async delete(spec: k8s.KubernetesObject, body: any = this.defaultDeleteBody): Promise<K8sDeleteResponse> {
         const requestOptions = this.baseRequestOptions("DELETE");
         requestOptions.uri += specUriPath(spec, "delete");
         requestOptions.body = body;
@@ -77,7 +80,7 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * List any Kubernetes resource.
      */
-    public async list(spec: K8sObject): Promise<K8sListResponse> {
+    public async list(spec: k8s.KubernetesObject): Promise<K8sListResponse> {
         const requestOptions = this.baseRequestOptions();
         requestOptions.uri += specUriPath(spec, "list");
         return this.requestPromise(requestOptions) as any as K8sListResponse;
@@ -86,7 +89,7 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Patch any Kubernetes resource.
      */
-    public async patch(spec: K8sObject): Promise<K8sObjectResponse> {
+    public async patch(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("PATCH");
         requestOptions.uri += specUriPath(spec, "patch");
         requestOptions.body = spec;
@@ -100,7 +103,7 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Read any Kubernetes resource.
      */
-    public async read(spec: K8sObject): Promise<K8sObjectResponse> {
+    public async read(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions();
         requestOptions.uri += specUriPath(spec, "read");
         return this.requestPromise(requestOptions) as any as K8sObjectResponse;
@@ -109,7 +112,7 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Replace any Kubernetes resource.
      */
-    public async replace(spec: K8sObject): Promise<K8sObjectResponse> {
+    public async replace(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("PUT");
         requestOptions.uri += specUriPath(spec, "replace");
         requestOptions.body = spec;
@@ -236,7 +239,7 @@ export function isClusterResource(action: K8sApiAction, kind: string): boolean {
  * @param appendName if `true`, append name to path
  * @return tail of resource-specific URI
  */
-export function specUriPath(spec: K8sObject, action: K8sApiAction): string {
+export function specUriPath(spec: k8s.KubernetesObject, action: K8sApiAction): string {
     if (!spec.kind) {
         throw new Error(`Spec does not contain kind: ${stringify(spec)}`);
     }

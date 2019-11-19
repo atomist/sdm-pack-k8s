@@ -15,8 +15,6 @@
  */
 
 import * as k8s from "@kubernetes/client-node";
-import { DeepPartial } from "ts-essentials";
-import { K8sObject } from "./api";
 import { KubernetesResourceRequest } from "./request";
 
 /**
@@ -114,7 +112,7 @@ export function applicationLabels(req: ApplicationLabelInput): { [key: string]: 
  * @param selector Kubernetes label selector
  * @return Return `true` if it is a match, `false` otherwise
  */
-export function labelMatch(spec: K8sObject, selector?: DeepPartial<k8s.V1LabelSelector>): boolean {
+export function labelMatch(spec: k8s.KubernetesObject, selector?: k8s.V1LabelSelector): boolean {
     if (!selector) {
         return true;
     }

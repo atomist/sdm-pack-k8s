@@ -17,9 +17,7 @@
 import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
 import { maskString } from "../support/error";
-import { K8sObject } from "./api";
 import { appMetadata } from "./metadata";
 import { KubernetesDelete } from "./request";
 
@@ -34,8 +32,8 @@ import { KubernetesDelete } from "./request";
  * @param kind kind of object to return
  * @return proper Kubernetes resource object
  */
-export function appObject(app: KubernetesDelete, kind: string): K8sObject {
-    const ko: K8sObject = {
+export function appObject(app: KubernetesDelete, kind: string): k8s.KubernetesObject {
+    const ko: k8s.KubernetesObject = {
         apiVersion: "v1",
         kind,
         metadata: appMetadata(app),
@@ -74,8 +72,8 @@ export function appObject(app: KubernetesDelete, kind: string): K8sObject {
  * @param spec Kubernetes spec to convert
  * @return Minimal Kubernetes object
  */
-export function k8sObject(spec: K8sObject): K8sObject {
-    const ko: K8sObject = {
+export function k8sObject(spec: k8s.KubernetesObject): k8s.KubernetesObject {
+    const ko: k8s.KubernetesObject = {
         apiVersion: spec.apiVersion,
         kind: spec.kind,
         metadata: {
@@ -99,9 +97,9 @@ export function k8sObject(spec: K8sObject): K8sObject {
  * @param spec Kubernetes spec to stringify
  * @return String representation of spec with sensitive information removed
  */
-export function logObject(spec: K8sObject): string {
+export function logObject(spec: k8s.KubernetesObject): string {
     if (spec.kind === "Secret") {
-        const safeSpec: DeepPartial<k8s.V1Secret> = _.cloneDeep(spec);
+        const safeSpec: k8s.V1Secret = _.cloneDeep(spec);
         if (safeSpec.data) {
             for (const k of Object.keys(safeSpec.data)) {
                 safeSpec.data[k] = maskString(safeSpec.data[k]);
@@ -113,7 +111,7 @@ export function logObject(spec: K8sObject): string {
     }
 }
 
-function truncatedSpecString(spec: K8sObject): string {
+function truncatedSpecString(spec: k8s.KubernetesObject): string {
     const specString = stringify(spec);
     if (specString.length > 200) {
         return specString.substring(0, 196) + "...}";

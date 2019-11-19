@@ -16,7 +16,6 @@
 
 import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
-import { DeepPartial } from "ts-essentials";
 import {
     applicationLabels,
     labelMatch,
@@ -368,7 +367,7 @@ describe("kubernetes/labels", () => {
         });
 
         it("should match when matchLabels and matchExpressions match", () => {
-            const ss: Array<DeepPartial<k8s.V1LabelSelector>> = [
+            const ss: k8s.V1LabelSelector[] = [
                 {
                     matchLabels: {
                         album: "Younger Than Yesterday",
@@ -414,7 +413,7 @@ describe("kubernetes/labels", () => {
         });
 
         it("should not match when matchLabels and/or matchExpressions do not match", () => {
-            const ss: Array<DeepPartial<k8s.V1LabelSelector>> = [
+            const ss: k8s.V1LabelSelector[] = [
                 {
                     matchLabels: {
                         album: "Younger Than Yesterday",
@@ -452,7 +451,7 @@ describe("kubernetes/labels", () => {
         });
 
         it("should throw an error when match expression operator invalid", () => {
-            assert.throws(() => labelMatch(r, { matchExpressions: [{ operator: "==" }] }),
+            assert.throws(() => labelMatch(r, { matchExpressions: [{ key: "manager", operator: "==" }] }),
                 /Unsupported match expression operator: /);
         });
 
