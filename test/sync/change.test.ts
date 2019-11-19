@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+import { SpawnSyncOptions } from "child_process";
 import * as assert from "power-assert";
 import {
     calculateChanges,
+    Execer, previousSpecVersion,
 } from "../../lib/sync/change";
 
 describe("sync/change", () => {
@@ -85,6 +87,19 @@ describe("sync/change", () => {
             assert.deepStrictEqual(c, e);
         });
 
+    });
+
+    describe("previousSpecVersion", () => {
+
+        it("git show throws on delete", async () => {
+
+            const exec: Execer = (cmd: string, args: string[], opts: SpawnSyncOptions) => {
+                throw new Error("git show failure");
+            };
+
+            const fileContents = await previousSpecVersion("", "", "", exec);
+            assert.equal(fileContents, "");
+        });
     });
 
 });
