@@ -92,22 +92,31 @@ export function k8sObject(spec: K8sObject): K8sObject {
 
 /**
  * Safely stringify a Kubernetes resource spec, removing any sensitive
- * data.  The string returned is a compact representation, not pretty
- * printed.
+ * data, suitable for logging.  The string returned is a compact
+ * representation, not pretty printed, and if it is long, it may be
+ * truncated.
  *
  * @param spec Kubernetes spec to stringify
  * @return String representation of spec with sensitive information removed
  */
-export function stringifyObject(spec: K8sObject): string {
+export function logObject(spec: K8sObject): string {
     if (spec.kind === "Secret") {
-        const safeSpec: DeepPartial<k8s.V1Secret> = _.merge({}, spec);
+        const safeSpec: DeepPartial<k8s.V1Secret> = _.cloneDeep(spec);
         if (safeSpec.data) {
             for (const k of Object.keys(safeSpec.data)) {
                 safeSpec.data[k] = maskString(safeSpec.data[k]);
             }
         }
-        return stringify(safeSpec);
+        return truncatedSpecString(safeSpec);
     } else {
-        return stringify(spec);
+        return truncatedSpecString(spec);
     }
+}
+
+function truncatedSpecString(spec: K8sObject): string {
+    const specString = stringify(spec);
+    if (specString.length > 200) {
+        return specString.substring(0, 196) + "...}";
+    }
+    return specString;
 }

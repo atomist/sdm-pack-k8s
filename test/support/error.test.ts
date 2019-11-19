@@ -372,9 +372,9 @@ describe("support/error", () => {
         });
 
         it("should truncate a long string", () => {
-            const t = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+{}|:<>?`-=[]\;',./abcdefghijklmnopqrstuvwxyz012345";
+            const t = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+{}|:<>?`-=[]\;',./";
             const m = maskString(t);
-            const e = "a***************************************************************************************************...";
+            const e = "a*********************************************K...";
             assert(m === e);
         });
 

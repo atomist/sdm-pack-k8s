@@ -25,13 +25,14 @@ import {
     matchLabels,
 } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
  * If `req.port` is truthy, create a service if it does not exist and
@@ -52,13 +53,13 @@ export async function upsertService(req: KubernetesResourceRequest): Promise<k8s
         await req.clients.core.readNamespacedService(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read service ${slug}, creating: ${errMsg(e)}`);
-        logger.info(`Creating service ${slug} using '${stringifyObject(spec)}'`);
+        logger.info(`Creating service ${slug} using '${logObject(spec)}'`);
         await logRetry(() => req.clients.core.createNamespacedService(spec.metadata.namespace, spec), `create service ${slug}`);
         return spec;
     }
-    logger.info(`Service ${slug} exists, patching using '${stringifyObject(spec)}'`);
-    await logRetry(() => req.clients.core.patchNamespacedService(spec.metadata.name, spec.metadata.namespace, spec),
-        `patch service ${slug}`);
+    logger.info(`Service ${slug} exists, patching using '${logObject(spec)}'`);
+    await logRetry(() => req.clients.core.patchNamespacedService(spec.metadata.name, spec.metadata.namespace, spec,
+        undefined, undefined, undefined, undefined, patchHeaders()), `patch service ${slug}`);
     return spec;
 }
 

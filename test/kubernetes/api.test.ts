@@ -400,12 +400,18 @@ describe("kubernetes/api", () => {
             assert(s0.stdout.includes(s.metadata.name));
             const d0 = await execPromise("kubectl", ["get", "-n", d.metadata.namespace, "deployments"]);
             assert(d0.stdout.includes(d.metadata.name));
+            await applySpec(s);
+            await applySpec(d);
+            const s1 = await execPromise("kubectl", ["get", "-n", s.metadata.namespace, "services"]);
+            assert(s1.stdout.includes(s.metadata.name));
+            const d1 = await execPromise("kubectl", ["get", "-n", d.metadata.namespace, "deployments"]);
+            assert(d1.stdout.includes(d.metadata.name));
             await deleteSpec(d);
             await deleteSpec(s);
-            const d1 = await execPromise("kubectl", ["get", "-n", d.metadata.namespace, "deployments"]);
-            assert(!d1.stdout.includes(d.metadata.name));
-            const s1 = await execPromise("kubectl", ["get", "-n", d.metadata.namespace, "services"]);
-            assert(!s1.stdout.includes(s.metadata.name));
+            const dl = await execPromise("kubectl", ["get", "-n", d.metadata.namespace, "deployments"]);
+            assert(!dl.stdout.includes(d.metadata.name));
+            const sl = await execPromise("kubectl", ["get", "-n", d.metadata.namespace, "services"]);
+            assert(!sl.stdout.includes(s.metadata.name));
         });
 
         it("should throw a proper error", async () => {

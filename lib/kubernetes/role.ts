@@ -21,13 +21,14 @@ import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
  * Create or patch role or cluster role.
@@ -43,12 +44,13 @@ export async function upsertRole(req: KubernetesResourceRequest): Promise<k8s.V1
             await req.clients.rbac.readClusterRole(spec.metadata.name);
         } catch (e) {
             logger.debug(`Failed to read cluster role ${slug}, creating: ${errMsg(e)}`);
-            logger.info(`Creating cluster role ${slug} using '${stringifyObject(spec)}'`);
+            logger.info(`Creating cluster role ${slug} using '${logObject(spec)}'`);
             await logRetry(() => req.clients.rbac.createClusterRole(spec), `create cluster role ${slug}`);
             return spec;
         }
-        logger.info(`Cluster role ${slug} exists, patching using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.rbac.patchClusterRole(spec.metadata.name, spec), `patch cluster role ${slug}`);
+        logger.info(`Cluster role ${slug} exists, patching using '${logObject(spec)}'`);
+        await logRetry(() => req.clients.rbac.patchClusterRole(spec.metadata.name, spec,
+            undefined, undefined, undefined, undefined, patchHeaders()), `patch cluster role ${slug}`);
         return spec;
     } else {
         const spec = await roleTemplate(req);
@@ -56,13 +58,13 @@ export async function upsertRole(req: KubernetesResourceRequest): Promise<k8s.V1
             await req.clients.rbac.readNamespacedRole(spec.metadata.name, spec.metadata.namespace);
         } catch (e) {
             logger.debug(`Failed to read role ${slug}, creating: ${errMsg(e)}`);
-            logger.info(`Creating role ${slug} using '${stringifyObject(spec)}'`);
+            logger.info(`Creating role ${slug} using '${logObject(spec)}'`);
             await logRetry(() => req.clients.rbac.createNamespacedRole(spec.metadata.namespace, spec), `create role ${slug}`);
             return spec;
         }
-        logger.info(`Role ${slug} exists, patching using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.rbac.patchNamespacedRole(spec.metadata.name, spec.metadata.namespace, spec),
-            `patch role ${slug}`);
+        logger.info(`Role ${slug} exists, patching using '${logObject(spec)}'`);
+        await logRetry(() => req.clients.rbac.patchNamespacedRole(spec.metadata.name, spec.metadata.namespace, spec,
+            undefined, undefined, undefined, undefined, patchHeaders()), `patch role ${slug}`);
         return spec;
     }
 }

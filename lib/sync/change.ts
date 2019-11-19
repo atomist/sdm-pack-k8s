@@ -22,52 +22,92 @@ import {
 import { execPromise } from "@atomist/sdm";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";
-import { parseKubernetesSpecString } from "../deploy/spec";
 import { K8sObject } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { deleteSpec } from "../kubernetes/delete";
 import { decryptSecret } from "../kubernetes/secret";
+import { parseKubernetesSpecs } from "../kubernetes/spec";
+import { sameObject } from "./application";
 import { PushDiff } from "./diff";
 
 /**
- * Delete/apply resource spec change.
+ * Delete/apply resources in change.  The spec file provided by the
+ * change.path may contain multiple specs.  The requested change is
+ * applied to each.
  */
 export async function changeResource(p: GitProject, change: PushDiff): Promise<void> {
-    let specContents: string;
-    if (change.change === "delete") {
-        try {
-            const showResult = await execPromise("git", ["show", `${change.sha}~1:${change.path}`], { cwd: p.baseDir });
-            specContents = showResult.stdout;
-        } catch (e) {
-            e.message = `Failed to git show '${change.path}' from ${change.sha}~1: ${e.message}`;
-            logger.error(e.message);
-            throw e;
-        }
-    } else {
+    const beforeContents = await previousSpecVersion(p.baseDir, change.path, change.sha);
+    const beforeSpecs = parseKubernetesSpecs(beforeContents);
+    let specs: K8sObject[];
+    if (change.change !== "delete") {
         const specFile = await p.getFile(change.path);
         if (!specFile) {
             throw new Error(`Resource spec file '${change.path}' does not exist in project`);
         }
-        specContents = await specFile.getContent();
+        const specContents = await specFile.getContent();
+        specs = parseKubernetesSpecs(specContents);
     }
+    const changes = calculateChanges(beforeSpecs, specs, change.change);
+    const syncOpts = configurationValue<Partial<KubernetesSyncOptions>>("sdm.k8s.options.sync", {});
 
-    let spec: K8sObject;
+    for (const specChange of changes) {
+        const changer = (specChange.change === "delete") ? deleteSpec : applySpec;
+        _.set(specChange.spec, "metadata.annotations['atomist.com/sync-sha']", change.sha);
+
+        if (specChange.change !== "delete" && specChange.spec.kind === "Secret" && syncOpts.secretKey) {
+            specChange.spec = await decryptSecret(specChange.spec, syncOpts.secretKey);
+        }
+        await changer(specChange.spec);
+    }
+}
+
+/**
+ * Use the Git CLI to fetch the previous version of the spec.
+ *
+ * @param baseDir Project repository base directory
+ * @param specPath Path to spec file relative to `baseDir`
+ */
+export async function previousSpecVersion(baseDir: string, specPath: string, sha: string): Promise<string> {
     try {
-        spec = await parseKubernetesSpecString(specContents, change.path);
-        _.set(spec, "metadata.annotations['atomist.com/sync-sha']", change.sha);
+        const showResult = await execPromise("git", ["show", `${sha}~1:${specPath}`], { cwd: baseDir });
+        return showResult.stdout;
     } catch (e) {
-        e.message = `Failed to parse spec '${specContents}': ${e.message}`;
-        logger.error(e.message);
-        throw e;
+        logger.debug(`Failed to git show '${specPath}' from ${sha.substring(0, 7)}~1, returning empty string: ${e.message}`);
+        return "";
     }
+}
 
-    if (change.change !== "delete" && spec.kind === "Secret") {
-        const syncOpts = configurationValue<Partial<KubernetesSyncOptions>>("sdm.k8s.options.sync", {});
-        if (syncOpts.secretKey) {
-            spec = await decryptSecret(spec, syncOpts.secretKey);
+/** Return type from [[calculateChanges]]. */
+export interface SyncChanges {
+    /** "apply" or "delete" */
+    change: "apply" | "delete";
+    /** Spec to apply/delete. */
+    spec: K8sObject;
+}
+
+/**
+ * Inspect before and after specs to determine actions.  If the action
+ * is "delete", return delete actions for all specs in `before`.  If
+ * the action is "apply", add apply actions for all specs in `after`
+ * and delete actions for all specs in `before` that are not in
+ * `after`.
+ *
+ * @param before The specs before the change
+ * @param after The specs after the change
+ * @param change The type of change
+ * @return Array containing the type of change for each spec
+ */
+export function calculateChanges(before: K8sObject[], after: K8sObject[] | undefined, change: "apply" | "delete"): SyncChanges[] {
+    if (change === "delete") {
+        return (before || []).map(spec => ({ change, spec }));
+    }
+    const changes: SyncChanges[] = (after || []).map(spec => ({ change, spec }));
+    if (before && before.length > 0) {
+        for (const spec of before) {
+            if (!after.some(a => sameObject(a, spec))) {
+                changes.push({ change: "delete", spec });
+            }
         }
     }
-
-    const changer = (change.change === "delete") ? deleteSpec : applySpec;
-    await changer(spec);
+    return changes;
 }

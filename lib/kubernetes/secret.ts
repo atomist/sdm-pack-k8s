@@ -26,13 +26,14 @@ import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
  * Create application secrets if they do not exist.  If a secret in
@@ -56,14 +57,14 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<k8s
             await req.clients.core.readNamespacedSecret(secret.metadata.name, spec.metadata.namespace);
         } catch (e) {
             logger.debug(`Failed to read secret ${secretName}, creating: ${errMsg(e)}`);
-            logger.info(`Creating secret ${slug} using '${stringifyObject(spec)}'`);
+            logger.info(`Creating secret ${slug} using '${logObject(spec)}'`);
             await logRetry(() => req.clients.core.createNamespacedSecret(spec.metadata.namespace, spec),
                 `create secret ${secretName} for ${slug}`);
             return spec;
         }
-        logger.info(`Secret ${secretName} exists, patching using '${stringifyObject(spec)}'`);
-        await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, spec.metadata.namespace, spec),
-            `patch secret ${secretName} for ${slug}`);
+        logger.info(`Secret ${secretName} exists, patching using '${logObject(spec)}'`);
+        await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, spec.metadata.namespace, spec,
+            undefined, undefined, undefined, undefined, patchHeaders()), `patch secret ${secretName} for ${slug}`);
         return spec;
     }));
 }

@@ -133,6 +133,20 @@ export async function kubernetesSpecStringify(spec: K8sObject, options: Kubernet
  * @return Parsed and filtered Kubernetes spec objects
  */
 export function parseKubernetesSpecs(specString: string): K8sObject[] {
-    const specs: K8sObject[] = yaml.safeLoadAll(specString);
-    return specs.filter(s => s && s.apiVersion && s.kind && s.metadata && s.metadata.name);
+    if (!specString) {
+        return [];
+    }
+    try {
+        const specs: K8sObject[] = yaml.safeLoadAll(specString);
+        return specs.filter(s => s && s.apiVersion && s.kind && s.metadata && s.metadata.name);
+    } catch (e) {
+        e.spec = specString;
+        e.message = `Failed to parse Kubernetes spec '${specSnippet(specString)}': ${e.message}`;
+        throw e;
+    }
+}
+
+/** Return beginning snippet from spec string. */
+function specSnippet(spec: string): string {
+    return (spec.length > 100) ? spec.substring(0, 97) + "..." : spec;
 }

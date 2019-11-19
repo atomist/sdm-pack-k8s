@@ -22,13 +22,14 @@ import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
 import { metadataTemplate } from "./metadata";
+import { patchHeaders } from "./patch";
 import {
     appName,
     KubernetesApplication,
     KubernetesResourceRequest,
     KubernetesSdm,
 } from "./request";
-import { stringifyObject } from "./resource";
+import { logObject } from "./resource";
 
 /**
  * If `req.port` and `req.path` are truthy, create or patch an ingress
@@ -53,13 +54,13 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s
         await req.clients.ext.readNamespacedIngress(spec.metadata.name, spec.metadata.namespace);
     } catch (e) {
         logger.debug(`Failed to read ingress ${slug}, creating: ${errMsg(e)}`);
-        logger.info(`Creating ingress ${slug} using '${stringifyObject(spec)}'`);
+        logger.info(`Creating ingress ${slug} using '${logObject(spec)}'`);
         await logRetry(() => req.clients.ext.createNamespacedIngress(spec.metadata.namespace, spec), `create ingress ${slug}`);
         return spec;
     }
-    logger.info(`Ingress ${slug} exists, patching using '${stringifyObject(spec)}'`);
-    await logRetry(() => req.clients.ext.patchNamespacedIngress(spec.metadata.name, spec.metadata.namespace, spec),
-        `patch ingress ${slug}`);
+    logger.info(`Ingress ${slug} exists, patching using '${logObject(spec)}'`);
+    await logRetry(() => req.clients.ext.patchNamespacedIngress(spec.metadata.name, spec.metadata.namespace, spec,
+        undefined, undefined, undefined, undefined, patchHeaders()), `patch ingress ${slug}`);
     return spec;
 }
 
