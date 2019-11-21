@@ -35,18 +35,22 @@ import {
 import { logObject } from "./resource";
 
 /**
+ * Decorator to facilitate testing
+ */
+export type KubeConfigLoader = () => k8s.KubeConfig;
+
+/**
  * Delete a resource if it exists.  If the resource does not exist,
  * do nothing.
  *
  * @param spec Kuberenetes spec of resource to delete
  * @return DeleteResponse if object existed and was deleted, undefined if it did not exist
  */
-export async function deleteSpec(spec: K8sObject): Promise<K8sDeleteResponse | undefined> {
+export async function deleteSpec(spec: K8sObject, kcl: KubeConfigLoader = loadKubeConfig): Promise<K8sDeleteResponse | undefined> {
     const slug = specUriPath(spec, "read");
     let client: K8sObjectApi;
     try {
-        const kc = loadKubeConfig();
-        client = kc.makeApiClient(K8sObjectApi);
+        client = kcl().makeApiClient(K8sObjectApi);
     } catch (e) {
         e.message = `Failed to create Kubernetes client: ${errMsg(e)}`;
         logger.error(e.message);

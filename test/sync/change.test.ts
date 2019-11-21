@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-import { SpawnSyncOptions } from "child_process";
+import {
+    GitProject,
+    InMemoryProject,
+} from "@atomist/automation-client";
+import * as sdm from "@atomist/sdm";
 import * as assert from "power-assert";
 import {
     calculateChanges,
-    Execer, previousSpecVersion,
+    changeResource,
+    previousSpecVersion,
 } from "../../lib/sync/change";
+import { PushDiff } from "../../lib/sync/diff";
 
 describe("sync/change", () => {
 
@@ -91,15 +97,43 @@ describe("sync/change", () => {
 
     describe("previousSpecVersion", () => {
 
+        let originalExecPromise: any;
+        before(() => {
+            originalExecPromise = Object.getOwnPropertyDescriptor(sdm, "execPromise");
+            Object.defineProperty(sdm, "execPromise", {
+                value: async () => {
+                    throw new Error("git show failure");
+                },
+            });
+        });
+
+        after(() => {
+            Object.defineProperty(sdm, "execPromise", originalExecPromise);
+        });
+
         it("git show throws on delete", async () => {
-
-            const exec: Execer = (cmd: string, args: string[], opts: SpawnSyncOptions) => {
-                throw new Error("git show failure");
-            };
-
-            const fileContents = await previousSpecVersion("", "", "", exec);
+            const fileContents = await previousSpecVersion("", "", "");
             assert.equal(fileContents, "");
         });
     });
 
+    describe("changeResources", () => {
+
+        it("resource file does not exist", async () => {
+            const project: GitProject = InMemoryProject.of() as any;
+            const change: PushDiff = {
+                change: "apply",
+                path: "fake.path",
+                sha: "fake.sha",
+
+            };
+
+            try {
+                await changeResource(project, change);
+                assert.fail("should not", "get here");
+            } catch (e) {
+                assert.equal(e.message, "Resource spec file 'fake.path' does not exist in project");
+            }
+        });
+    });
 });
