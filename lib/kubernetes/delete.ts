@@ -143,19 +143,25 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8
     const clusterResource = isClusterResource("list", arg.kind);
     const toDelete: k8s.KubernetesObject[] = [];
     try {
-        let listResp: K8sListResponse;
-        const args: [string?, boolean?, string?, string?, string?] = [undefined, undefined, undefined, undefined, selector];
-        if (clusterResource) {
-            const lister = arg.lister as K8sClusterLister;
-            listResp = await lister.apply(arg.api, args);
-        } else {
-            const lister = arg.lister as K8sNamespacedLister;
-            listResp = await lister.call(arg.api, arg.req.ns, ...args);
-        }
-        toDelete.push(...listResp.body.items.map(r => {
-            r.kind = r.kind || arg.kind; // list response does not include kind
-            return r;
-        }));
+        const limit = 500;
+        let continu: string;
+        do {
+            let listResp: K8sListResponse;
+            const args: [string?, boolean?, string?, string?, string?, number?] =
+                [undefined, undefined, continu, undefined, selector, limit];
+            if (clusterResource) {
+                const lister = arg.lister as K8sClusterLister;
+                listResp = await lister.apply(arg.api, args);
+            } else {
+                const lister = arg.lister as K8sNamespacedLister;
+                listResp = await lister.call(arg.api, arg.req.ns, ...args);
+            }
+            toDelete.push(...listResp.body.items.map(r => {
+                r.kind = r.kind || arg.kind; // list response does not include kind
+                return r;
+            }));
+            continu = listResp.body.metadata._continue;
+        } while (!!continu);
     } catch (e) {
         e.message = `Failed to list ${arg.kind} for ${slug}: ${errMsg(e)}`;
         logger.error(e.message);
@@ -168,7 +174,8 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8
             `${arg.kind}/${resource.metadata.namespace}/${resource.metadata.name}`;
         logger.info(`Deleting ${resourceSlug} for ${slug}`);
         try {
-            const args: [string?, string?, number?, boolean?, string?] = [undefined, undefined, undefined, undefined, "Background"];
+            const args: [string?, string?, number?, boolean?, string?] =
+                [undefined, undefined, undefined, undefined, "Background"];
             if (clusterResource) {
                 const deleter = arg.deleter as K8sClusterDeleter;
                 await deleter.call(arg.api, resource.metadata.name, ...args);
