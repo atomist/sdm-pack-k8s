@@ -19,7 +19,6 @@ import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
-    isClusterResource,
     K8sDeleteResponse,
     K8sListResponse,
     K8sObjectApi,
@@ -116,9 +115,11 @@ export type K8sClusterDeleter = (
 ) => Promise<K8sDeleteResponse>;
 
 /** Arguments for [[deleteAppResources]]. */
-export interface DeleteAppResourcesArg {
+export interface DeleteAppResourcesArgBase {
     /** Resource kind, e.g., "Service". */
     kind: string;
+    /** Whether resource is cluster or namespace scoped. */
+    namespaced: boolean;
     /** Delete request object. */
     req: KubernetesDeleteResourceRequest;
     /** API object to use as `this` for lister and deleter. */
@@ -128,6 +129,17 @@ export interface DeleteAppResourcesArg {
     /** Resource collection deleting function. */
     deleter: K8sNamespacedDeleter | K8sClusterDeleter;
 }
+export interface DeleteAppResourcesArgNamespaced extends DeleteAppResourcesArgBase {
+    namespaced: true;
+    lister: K8sNamespacedLister;
+    deleter: K8sNamespacedDeleter;
+}
+export interface DeleteAppResourcesArgCluster extends DeleteAppResourcesArgBase {
+    namespaced: false;
+    lister: K8sClusterLister;
+    deleter: K8sClusterDeleter;
+}
+export type DeleteAppResourcesArg = DeleteAppResourcesArgNamespaced | DeleteAppResourcesArgCluster;
 
 /**
  * Delete resources associated with application described by `arg.req`, if
@@ -140,7 +152,6 @@ export interface DeleteAppResourcesArg {
 export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8s.KubernetesObject[]> {
     const slug = appName(arg.req);
     const selector = labelSelector(arg.req);
-    const clusterResource = isClusterResource("list", arg.kind);
     const toDelete: k8s.KubernetesObject[] = [];
     try {
         const limit = 500;
@@ -149,12 +160,10 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8
             let listResp: K8sListResponse;
             const args: [string?, boolean?, string?, string?, string?, number?] =
                 [undefined, undefined, continu, undefined, selector, limit];
-            if (clusterResource) {
-                const lister = arg.lister as K8sClusterLister;
-                listResp = await lister.apply(arg.api, args);
-            } else {
-                const lister = arg.lister as K8sNamespacedLister;
-                listResp = await lister.call(arg.api, arg.req.ns, ...args);
+            if (arg.namespaced) {
+                listResp = await arg.lister.call(arg.api, arg.req.ns, ...args);
+            } else if (arg.namespaced === false) {
+                listResp = await arg.lister.apply(arg.api, args);
             }
             toDelete.push(...listResp.body.items.map(r => {
                 r.kind = r.kind || arg.kind; // list response does not include kind
@@ -170,18 +179,16 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8
     const deleted: k8s.KubernetesObject[] = [];
     const errs: Error[] = [];
     for (const resource of toDelete) {
-        const resourceSlug = clusterResource ? `${arg.kind}/${resource.metadata.name}` :
-            `${arg.kind}/${resource.metadata.namespace}/${resource.metadata.name}`;
+        const resourceSlug = arg.namespaced ? `${arg.kind}/${resource.metadata.namespace}/${resource.metadata.name}` :
+            `${arg.kind}/${resource.metadata.name}`;
         logger.info(`Deleting ${resourceSlug} for ${slug}`);
         try {
             const args: [string?, string?, number?, boolean?, string?] =
                 [undefined, undefined, undefined, undefined, "Background"];
-            if (clusterResource) {
-                const deleter = arg.deleter as K8sClusterDeleter;
-                await deleter.call(arg.api, resource.metadata.name, ...args);
-            } else {
-                const deleter = arg.deleter as K8sNamespacedDeleter;
-                await deleter.call(arg.api, resource.metadata.name, resource.metadata.namespace, ...args);
+            if (arg.namespaced) {
+                await arg.deleter.call(arg.api, resource.metadata.name, resource.metadata.namespace, ...args);
+            } else if (arg.namespaced === false) {
+                await arg.deleter.call(arg.api, resource.metadata.name, ...args);
             }
             deleted.push(resource);
         } catch (e) {

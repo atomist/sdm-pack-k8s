@@ -26,6 +26,8 @@ import {
 import { loadKubeConfig } from "../../lib/kubernetes/config";
 import {
     deleteAppResources,
+    DeleteAppResourcesArgCluster,
+    DeleteAppResourcesArgNamespaced,
     deleteSpec,
 } from "../../lib/kubernetes/delete";
 import { DefaultLogRetryOptions } from "../../lib/support/retry";
@@ -113,14 +115,16 @@ describe("kubernetes/delete", function(): void {
             assert(sr0.stdout.includes(na));
             assert(sr0.stdout.includes(nn));
             const req = { ...a, clients };
-            const sd = {
+            const sd: Omit<DeleteAppResourcesArgNamespaced, "req"> = {
                 kind: "Service",
+                namespaced: true,
                 api: req.clients.core,
                 lister: req.clients.core.listNamespacedService,
                 deleter: req.clients.core.deleteNamespacedService,
             };
-            const rd = {
+            const rd: Omit<DeleteAppResourcesArgCluster, "req"> = {
                 kind: "ClusterRole",
+                namespaced: false,
                 api: req.clients.rbac,
                 lister: req.clients.rbac.listClusterRole,
                 deleter: req.clients.rbac.deleteClusterRole,
