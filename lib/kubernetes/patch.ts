@@ -22,12 +22,18 @@ export interface K8sHeaders {
 }
 
 /**
- * Provide Content-Type header for patch operations.
+ * Provide Content-Type header for patch operations.  Valid values for
+ * the Content-Type header when using PATCH are
+ * "application/json-patch+json", "application/merge-patch+json", and
+ * "application/strategic-merge-patch+json".  See
+ * https://kubernetes.io/docs/tasks/run-application/update-api-object-kubectl-patch/
+ * for details.
  */
 export function patchHeaders(): K8sHeaders {
     return {
         headers: {
-            "Content-Type": "application/strategic-merge-patch+json",
+            // "Content-Type": "application/strategic-merge-patch+json",
+            "Content-Type": "application/merge-patch+json",
         },
     };
 }
