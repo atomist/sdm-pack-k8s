@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 -   Fix multi-document YAML support in sync. [14bd761](https://github.com/atomist/sdm-pack-k8s/commit/14bd761864414e1bc7a0c452d4719366a8704c64)
+-   Dynamic API does not support cluster-scoped custom resource definitions. [#82](https://github.com/atomist/sdm-pack-k8s/issues/82)
 
 ## [1.10.2](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...1.10.2) - 2019-09-27
 
