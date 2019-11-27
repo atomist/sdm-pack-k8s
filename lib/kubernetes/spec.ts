@@ -17,6 +17,7 @@
 import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as stableStringify from "json-stable-stringify";
+import * as stringify from "json-stringify-safe";
 import { encryptSecret } from "./secret";
 
 /**
@@ -141,12 +142,33 @@ export function parseKubernetesSpecs(specString: string): k8s.KubernetesObject[]
         return specs.filter(s => s && s.apiVersion && s.kind && s.metadata && s.metadata.name);
     } catch (e) {
         e.spec = specString;
-        e.message = `Failed to parse Kubernetes spec '${specSnippet(specString)}': ${e.message}`;
+        e.message = `Failed to parse Kubernetes spec '${specStringSnippet(specString)}': ${e.message}`;
         throw e;
     }
 }
 
+/** Return unique string for spec. */
+export function specSlug(spec: k8s.KubernetesObject): string {
+    const parts: string[] = [spec.apiVersion];
+    if (spec.metadata && spec.metadata.namespace) {
+        parts.push(spec.metadata.namespace);
+    }
+    const plural = spec.kind.toLowerCase().replace(/s$/, "se").replace(/y$/, "ie") + "s";
+    parts.push(plural, spec.metadata.name);
+    return parts.join("/");
+}
+
+/** Convert spec to string and shorten it if necessary. */
+export function specSnippet(spec: k8s.KubernetesObject): string {
+    return specStringSnippet(stringify(spec));
+}
+
 /** Return beginning snippet from spec string. */
-function specSnippet(spec: string): string {
-    return (spec.length > 100) ? spec.substring(0, 97) + "..." : spec;
+export function specStringSnippet(spec: string): string {
+    const max = 200;
+    if (spec.length > max) {
+        return spec.substring(0, max - 4) + "...}";
+    } else {
+        return spec;
+    }
 }

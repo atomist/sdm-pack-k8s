@@ -22,7 +22,6 @@ import {
     K8sDeleteResponse,
     K8sListResponse,
     K8sObjectApi,
-    specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
 import { labelSelector } from "./labels";
@@ -31,6 +30,7 @@ import {
     KubernetesDeleteResourceRequest,
 } from "./request";
 import { logObject } from "./resource";
+import { specSlug } from "./spec";
 
 /**
  * Delete a resource if it exists.  If the resource does not exist,
@@ -40,7 +40,7 @@ import { logObject } from "./resource";
  * @return DeleteResponse if object existed and was deleted, undefined if it did not exist
  */
 export async function deleteSpec(spec: k8s.KubernetesObject): Promise<K8sDeleteResponse | undefined> {
-    const slug = specUriPath(spec, "read");
+    const slug = specSlug(spec);
     let client: K8sObjectApi;
     try {
         const kc = loadKubeConfig();

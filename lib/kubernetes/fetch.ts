@@ -18,10 +18,7 @@ import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import { errMsg } from "../support/error";
-import {
-    isClusterResource,
-    K8sObjectApi,
-} from "./api";
+import { K8sObjectApi } from "./api";
 import {
     KubernetesClients,
     makeApiClients,
@@ -182,7 +179,7 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
     }
 
     const selectors = populateResourceSelectorDefaults(options.selectors);
-    const clusterResources = clusterResourceKinds(selectors);
+    const clusterResources = await clusterResourceKinds(selectors, client);
     const specs: k8s.KubernetesObject[] = [];
 
     for (const apiKind of clusterResources) {
@@ -209,7 +206,7 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
     for (const nsObj of namespaces) {
         specs.push(cleanKubernetesSpec(nsObj, { apiVersion: "v1", kind: "Namespace" }));
         const ns = nsObj.metadata.name;
-        const apiKinds = namespaceResourceKinds(ns, selectors);
+        const apiKinds = await namespaceResourceKinds(ns, selectors, client);
         for (const apiKind of apiKinds) {
             try {
                 const obj = apiObject(apiKind, ns);
@@ -248,23 +245,6 @@ export function populateResourceSelectorDefaults(selectors: KubernetesResourceSe
 }
 
 /**
- * Determine all Kuberenetes cluster, i.e., not namespaced, resources
- * that we should query based on all the selectors and return an array
- * with each Kubernetes cluster resource type appearing no more than
- * once.  Note that uniqueness of a Kubernetes resource type is
- * determined solely by the `kind` property, `apiVersion` is not
- * considered since the same resource can be found with the same kind
- * and different API versions.
- *
- * @param selectors All the resource selectors
- * @return A deduplicated array of Kubernetes cluster resource kinds among the inclusion rules
- */
-export function clusterResourceKinds(selectors: KubernetesResourceSelector[]): KubernetesResourceKind[] {
-    const included = includedResourceKinds(selectors);
-    return included.filter(ak => isClusterResource("list", ak.kind));
-}
-
-/**
  * Determine all Kuberenetes resources that we should query based on
  * all the selectors and return an array with each Kubernetes resource
  * type appearing no more than once.  Note that uniqueness of a
@@ -283,18 +263,52 @@ export function includedResourceKinds(selectors: KubernetesResourceSelector[]): 
 }
 
 /**
+ * Determine all Kuberenetes cluster, i.e., not namespaced, resources
+ * that we should query based on all the selectors and return an array
+ * with each Kubernetes cluster resource type appearing no more than
+ * once.  Note that uniqueness of a Kubernetes resource type is
+ * determined solely by the `kind` property, `apiVersion` is not
+ * considered since the same resource can be found with the same kind
+ * and different API versions.
+ *
+ * @param selectors All the resource selectors
+ * @return A deduplicated array of Kubernetes cluster resource kinds among the inclusion rules
+ */
+export async function clusterResourceKinds(selectors: KubernetesResourceSelector[], client: K8sObjectApi): Promise<KubernetesResourceKind[]> {
+    const included = includedResourceKinds(selectors);
+    const apiKinds: KubernetesResourceKind[] = [];
+    for (const apiKind of included) {
+        const resource = await client.resource(apiKind.apiVersion, apiKind.kind);
+        if (resource && !resource.namespaced) {
+            apiKinds.push(apiKind);
+        }
+    }
+    return apiKinds;
+}
+
+/**
  * For the provided set of selectors, return a deduplicated array of
- * resource kinds, using the same logic as [[includedResourceKinds]].
+ * resource kinds that match the provided namespace.
  *
  * @param ns Namespace to check
  * @param selectors Selectors to evaluate
  * @return A deduplicated array of Kubernetes resource kinds among the inclusion rules for namespace `ns`
  */
-export function namespaceResourceKinds(ns: string, selectors: KubernetesResourceSelector[]): KubernetesResourceKind[] {
+export async function namespaceResourceKinds(
+    ns: string,
+    selectors: KubernetesResourceSelector[],
+    client: K8sObjectApi,
+): Promise<KubernetesResourceKind[]> {
+
     const apiKinds: KubernetesResourceKind[] = [];
     for (const selector of selectors.filter(s => s.action === "include")) {
         if (nameMatch(ns, selector.namespace)) {
-            apiKinds.push(...selector.kinds.filter(ak => !isClusterResource("list", ak.kind)));
+            for (const apiKind of selector.kinds) {
+                const resource = await client.resource(apiKind.apiVersion, apiKind.kind);
+                if (resource && resource.namespaced) {
+                    apiKinds.push(apiKind);
+                }
+            }
         }
     }
     return _.uniqBy(apiKinds, "kind");

@@ -29,10 +29,12 @@ import {
 } from "@atomist/sdm";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";
-import { specUriPath } from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { decryptSecret } from "../kubernetes/secret";
-import { parseKubernetesSpecs } from "../kubernetes/spec";
+import {
+    parseKubernetesSpecs,
+    specSlug,
+} from "../kubernetes/spec";
 import { errMsg } from "../support/error";
 import { cleanName } from "../support/name";
 import { defaultCloneOptions } from "./clone";
@@ -141,8 +143,8 @@ function syncApply(opts: KubernetesSyncOptions): (p: GitProject) => Promise<void
                         }
                         await applySpec(spec);
                     } catch (e) {
-                        const specSlug = specUriPath(spec, "read");
-                        e.message = `Failed to apply spec '${specSlug}' from '${specFile.path}': ${errMsg(e)}`;
+                        const slug = specSlug(spec);
+                        e.message = `Failed to apply spec '${slug}' from '${specFile.path}': ${errMsg(e)}`;
                         logger.error(e.message);
                         errors.push(e);
                     }

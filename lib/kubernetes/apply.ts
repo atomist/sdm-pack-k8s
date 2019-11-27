@@ -21,10 +21,10 @@ import { logRetry } from "../support/retry";
 import {
     K8sObjectApi,
     K8sObjectResponse,
-    specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
 import { logObject } from "./resource";
+import { specSlug } from "./spec";
 
 /**
  * Create or replace a Kubernetes resource using the provided spec.
@@ -37,7 +37,7 @@ import { logObject } from "./resource";
  * @return response from the Kubernetes API.
  */
 export async function applySpec(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
-    const slug = specUriPath(spec, "read");
+    const slug = specSlug(spec);
     let client: K8sObjectApi;
     try {
         const kc = loadKubeConfig();

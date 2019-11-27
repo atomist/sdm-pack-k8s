@@ -15,11 +15,11 @@
  */
 
 import * as k8s from "@kubernetes/client-node";
-import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import { maskString } from "../support/error";
 import { appMetadata } from "./metadata";
 import { KubernetesDelete } from "./request";
+import { specSnippet } from "./spec";
 
 /**
  * Create KubernetesObject from KubernetesApplication and kind.  This
@@ -105,16 +105,8 @@ export function logObject(spec: k8s.KubernetesObject): string {
                 safeSpec.data[k] = maskString(safeSpec.data[k]);
             }
         }
-        return truncatedSpecString(safeSpec);
+        return specSnippet(safeSpec);
     } else {
-        return truncatedSpecString(spec);
+        return specSnippet(spec);
     }
-}
-
-function truncatedSpecString(spec: k8s.KubernetesObject): string {
-    const specString = stringify(spec);
-    if (specString.length > 200) {
-        return specString.substring(0, 196) + "...}";
-    }
-    return specString;
 }

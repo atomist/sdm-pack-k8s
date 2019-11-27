@@ -327,7 +327,7 @@ describe("sync/sync", () => {
         it("should handle applySpec failure", async () => {
             const r: GitProject = InMemoryProject.of(
                 { path: "README.md", content: "# Joe Henry\n## Scar\n" },
-                { path: "d.json", content: `{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"stop"}}` },
+                { path: "d.json", content: `{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"stop","namespace":"jlh"}}` },
                 { path: "60_jlh_stop_service.json", content: `{"apiVersion":"v1","kind":"Service","metadata":{"name":"stop","namespace":"jlh"}}` },
                 { path: "index.ts", content: "#! /usr/bin/env node\n" },
                 { path: "assets/kubectl/60-d-service.json", content: `{"metadata":{"annotations":{}}}` },
@@ -371,7 +371,7 @@ describe("sync/sync", () => {
             const v = await repoSync(cli);
             assert(v.code === 1);
             const eMessage = "Failed to sync repo reprise/JoeHenry: There were errors during repo sync: Failed to apply " +
-                "spec 'apis/apps/v1/namespaces/default/deployments/stop' from 'd.json': applySpec failure";
+                "spec 'apps/v1/jlh/deployments/stop' from 'd.json': applySpec failure";
             assert(v.message === eMessage);
             const eSpecs = [
                 { apiVersion: "apps/v1", kind: "DaemonSet", metadata: { name: "ornette" } },

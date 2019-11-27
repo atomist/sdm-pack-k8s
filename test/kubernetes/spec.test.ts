@@ -19,7 +19,12 @@ import {
     kubernetesSpecFileBasename,
     kubernetesSpecStringify,
     parseKubernetesSpecs,
+    specSlug,
+    specSnippet,
+    specStringSnippet,
 } from "../../lib/kubernetes/spec";
+
+/* tslint:disable:max-file-line-count */
 
 describe("kubernetes/spec", () => {
 
@@ -461,6 +466,126 @@ metadata:
                 },
             ];
             assert.deepStrictEqual(s, e);
+        });
+
+    });
+
+    describe("specSlug", () => {
+
+        it("should return a namespaced slug", () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Service",
+                metadata: {
+                    name: "mermaid",
+                    namespace: "avenue",
+                },
+            };
+            const l = specSlug(s);
+            const e = "v1/avenue/services/mermaid";
+            assert(l === e);
+        });
+
+        it("should return pluralize properly", () => {
+            const s = {
+                apiVersion: "networking.k8s.io/v1beta1",
+                kind: "Ingress",
+                metadata: {
+                    name: "mermaid",
+                    namespace: "avenue",
+                },
+            };
+            const l = specSlug(s);
+            const e = "networking.k8s.io/v1beta1/avenue/ingresses/mermaid";
+            assert(l === e);
+        });
+
+        it("should return a cluster slug", () => {
+            const s = {
+                apiVersion: "policy/v1beta1",
+                kind: "PodSecurityPolicy",
+                metadata: {
+                    name: "mermaid",
+                },
+            };
+            const l = specSlug(s);
+            const e = "policy/v1beta1/podsecuritypolicies/mermaid";
+            assert(l === e);
+        });
+
+    });
+
+    describe("specSnippet", () => {
+
+        it("should return the full string", () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Service",
+                metadata: {
+                    name: "mermaid",
+                    namespace: "avenue",
+                },
+            };
+            const l = specSnippet(s);
+            const e = `{"apiVersion":"v1","kind":"Service","metadata":{"name":"mermaid","namespace":"avenue"}}`;
+            assert(l === e);
+        });
+
+        it("should truncate the spec string", () => {
+            const s = {
+                apiVersion: "v1",
+                kind: "Service",
+                metadata: {
+                    labels: {
+                        component: "apiserver",
+                        provider: "kubernetes",
+                    },
+                    name: "kubernetes",
+                    namespace: "default",
+                    resourceVersion: "37",
+                    selfLink: "/api/v1/namespaces/default/services/kubernetes",
+                    uid: "e68c82ed-111d-11ea-980a-080027477353",
+                },
+                spec: {
+                    clusterIP: "10.96.0.1",
+                    ports: [
+                        {
+                            name: "https",
+                            port: 443,
+                            protocol: "TCP",
+                            targetPort: 8443,
+                        },
+                    ],
+                    sessionAffinity: "None",
+                    type: "ClusterIP",
+                },
+                status: {
+                    loadBalancer: {},
+                },
+            };
+            const l = specSnippet(s);
+            // tslint:disable-next-line:max-line-length
+            const e = `{"apiVersion":"v1","kind":"Service","metadata":{"labels":{"component":"apiserver","provider":"kubernetes"},"name":"kubernetes","namespace":"default","resourceVersion":"37","selfLink":"/api/v1/name...}`;
+            assert(l === e);
+        });
+
+    });
+
+    describe("specSnippet", () => {
+
+        it("should return the full string", () => {
+            const s = `{"apiVersion":"v1","kind":"Service","metadata":{"name":"mermaid","namespace":"avenue"}}`;
+            const l = specStringSnippet(s);
+            assert(l === s);
+        });
+
+        it("should truncate the string", () => {
+            /* tslint:disable:max-line-length */
+            const s = `{"apiVersion":"v1","kind":"Service","metadata":{"labels":{"component":"apiserver","provider":"kubernetes"},"name":"kubernetes","namespace":"default","resourceVersion":"37","selfLink":"/api/v1/nameces/default/services/kubernetes","uid":"e68c82ed-111d-11ea-980a-080027477353"},"spec":{"clusterIP":"10.96.0.1","ports":[{"name":"https","port":443,"protocol":"TCP","targetPort":8443}],"sessionAffinity":"None","type":"ClusterIP"},"status":{"loadBalancer":{}}}`;
+            const l = specStringSnippet(s);
+            const e = `{"apiVersion":"v1","kind":"Service","metadata":{"labels":{"component":"apiserver","provider":"kubernetes"},"name":"kubernetes","namespace":"default","resourceVersion":"37","selfLink":"/api/v1/name...}`;
+            /* tslint:enable:max-line-length */
+            assert(l === e);
         });
 
     });
