@@ -17,9 +17,7 @@
 import {
     configurationValue,
     GitProject,
-    logger,
 } from "@atomist/automation-client";
-import { execPromise } from "@atomist/sdm";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";
 import { K8sObject } from "../kubernetes/api";
@@ -31,13 +29,14 @@ import { decryptSecret } from "../kubernetes/secret";
 import { parseKubernetesSpecs } from "../kubernetes/spec";
 import { sameObject } from "./application";
 import { PushDiff } from "./diff";
+import { previousSpecVersion } from "./previousSpecVersion";
 
 /**
  * Delete/apply resources in change.  The spec file provided by the
  * change.path may contain multiple specs.  The requested change is
  * applied to each.
  */
-export async function changeResource(p: GitProject, change: PushDiff): Promise<void> {
+export async function changeResource(this: any, p: GitProject, change: PushDiff): Promise<void> {
     const beforeContents = await previousSpecVersion(p.baseDir, change.path, change.sha);
     const beforeSpecs = parseKubernetesSpecs(beforeContents);
     let specs: K8sObject[];
@@ -60,22 +59,6 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
             specChange.spec = await decryptSecret(specChange.spec, syncOpts.secretKey);
         }
         await changer(specChange.spec);
-    }
-}
-
-/**
- * Use the Git CLI to fetch the previous version of the spec.
- *
- * @param baseDir Project repository base directory
- * @param specPath Path to spec file relative to `baseDir`
- */
-export async function previousSpecVersion(baseDir: string, specPath: string, sha: string): Promise<string> {
-    try {
-        const showResult = await execPromise("git", ["show", `${sha}~1:${specPath}`], { cwd: baseDir });
-        return showResult.stdout;
-    } catch (e) {
-        logger.debug(`Failed to git show '${specPath}' from ${sha.substring(0, 7)}~1, returning empty string: ${e.message}`);
-        return "";
     }
 }
 

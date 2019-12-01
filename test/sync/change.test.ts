@@ -19,13 +19,15 @@ import {
     InMemoryProject,
 } from "@atomist/automation-client";
 import * as sdm from "@atomist/sdm";
+import * as yaml from "js-yaml";
 import * as assert from "power-assert";
+import * as api from "../../lib/kubernetes/api";
 import {
     calculateChanges,
     changeResource,
-    previousSpecVersion,
 } from "../../lib/sync/change";
 import { PushDiff } from "../../lib/sync/diff";
+import * as prv from "../../lib/sync/previousSpecVersion";
 
 describe("sync/change", () => {
 
@@ -112,28 +114,94 @@ describe("sync/change", () => {
         });
 
         it("git show throws on delete", async () => {
-            const fileContents = await previousSpecVersion("", "", "");
+            const fileContents = await prv.previousSpecVersion("", "", "");
             assert.equal(fileContents, "");
         });
     });
 
     describe("changeResources", () => {
 
+        const resource = {
+            apiVersion: "v1",
+            kind: "Secret",
+            type: "Opaque",
+            metadata: {
+                name: "mysecret",
+            },
+            data: {
+                username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+            },
+        };
+
         it("resource file does not exist", async () => {
             const project: GitProject = InMemoryProject.of() as any;
-            const change: PushDiff = {
+            const diff: PushDiff = {
                 change: "apply",
                 path: "fake.path",
                 sha: "fake.sha",
-
             };
 
             try {
-                await changeResource(project, change);
+                await changeResource(project, diff);
                 assert.fail("should not", "get here");
             } catch (e) {
                 assert.equal(e.message, "Resource spec file 'fake.path' does not exist in project");
             }
+        });
+
+        describe("delete changes",  () => {
+
+            let origClientDelete: any;
+            let origClientRead: any;
+            let origPreviousSpecVersion: any;
+            before(() => {
+                origClientDelete = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "delete");
+                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                    value: async (spec: api.K8sObject, body: any) => {
+                        return Promise.resolve();
+                    },
+                });
+
+                origClientRead = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "read");
+                Object.defineProperty(api.K8sObjectApi.prototype, "read", {
+                    value: async (spec: api.K8sObject) => {
+                        return Promise.resolve();
+                    },
+                });
+
+                origPreviousSpecVersion = Object.getOwnPropertyDescriptor(prv, "previousSpecVersion");
+                Object.defineProperty(prv, "previousSpecVersion", {
+                    value: (baseDir: string, specPath: string, sha: string) => {
+                        return yaml.safeDump(resource);
+                    },
+                });
+            });
+
+            after(() => {
+                Object.defineProperty(api.K8sObjectApi.prototype, "delete", origClientDelete);
+                Object.defineProperty(api.K8sObjectApi.prototype, "read", origClientRead);
+                Object.defineProperty(prv, "previousSpecVersion", origPreviousSpecVersion);
+            });
+
+            it("test", async () => {
+                const project: GitProject = InMemoryProject.of() as any;
+                const diff: PushDiff = {
+                    change: "delete",
+                    path: "fake.path",
+                    sha: "fake.sha",
+                };
+
+                await changeResource(project, diff);
+            });
+        });
+
+        describe("apply changes", () => {
+            it("test", async () => { });
+        });
+
+        describe("parseKubernetesSpecs fails to parse", () => {
+            it("test", async () => { });
         });
     });
 });
