@@ -20,9 +20,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -   Shorten k8s object spec strings when logged. [52f16bb](https://github.com/atomist/sdm-pack-k8s/commit/52f16bb1722ec7771fe54cae66005497bb0d2428)
 -   Remove patch header patch. [bd9aedd](https://github.com/atomist/sdm-pack-k8s/commit/bd9aedd5865607fc95ee5d839718b721a90ccfcc)
 
+### Deprecated
+
+-   Remove unneeded uses of DeepPartial. [11b84dd](https://github.com/atomist/sdm-pack-k8s/commit/11b84dd6267db50d00cba4122af307da5c8ca28a)
+
 ### Fixed
 
 -   Fix multi-document YAML support in sync. [14bd761](https://github.com/atomist/sdm-pack-k8s/commit/14bd761864414e1bc7a0c452d4719366a8704c64)
+-   Dynamic API does not support cluster-scoped custom resource definitions. [#82](https://github.com/atomist/sdm-pack-k8s/issues/82)
 
 ## [1.10.2](https://github.com/atomist/sdm-pack-k8s/compare/1.10.1...1.10.2) - 2019-09-27
 

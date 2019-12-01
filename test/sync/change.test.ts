@@ -19,6 +19,7 @@ import {
     InMemoryProject,
 } from "@atomist/automation-client";
 import * as sdm from "@atomist/sdm";
+import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as assert from "power-assert";
 import * as api from "../../lib/kubernetes/api";
@@ -159,14 +160,14 @@ describe("sync/change", () => {
             before(() => {
                 origClientDelete = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "delete");
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
-                    value: async (spec: api.K8sObject, body: any) => {
+                    value: async (spec: k8s.KubernetesObject, body: any) => {
                         return Promise.resolve();
                     },
                 });
 
                 origClientRead = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "read");
                 Object.defineProperty(api.K8sObjectApi.prototype, "read", {
-                    value: async (spec: api.K8sObject) => {
+                    value: async (spec: k8s.KubernetesObject) => {
                         return Promise.resolve();
                     },
                 });
@@ -206,14 +207,14 @@ describe("sync/change", () => {
 
                 origClientPatch = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "patch");
                 Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
-                    value: async (spec: api.K8sObject) => {
+                    value: async (spec: k8s.KubernetesObject) => {
                         return Promise.resolve();
                     },
                 });
 
                 origClientRead = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "read");
                 Object.defineProperty(api.K8sObjectApi.prototype, "read", {
-                    value: async (spec: api.K8sObject) => {
+                    value: async (spec: k8s.KubernetesObject) => {
                         return Promise.resolve();
                     },
                 });

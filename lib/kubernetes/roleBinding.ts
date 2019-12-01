@@ -17,7 +17,6 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
@@ -94,8 +93,7 @@ export async function roleBindingTemplate(req: KubernetesApplication & Kubernete
     });
     const apiVersion = "rbac.authorization.k8s.io/v1";
     const kind = "RoleBinding";
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const rb: DeepPartial<k8s.V1RoleBinding> = {
+    const rb: k8s.V1RoleBinding = {
         apiVersion,
         kind,
         metadata,
@@ -118,7 +116,7 @@ export async function roleBindingTemplate(req: KubernetesApplication & Kubernete
         _.merge(rb, req.roleBindingSpec, { apiVersion, kind });
         rb.metadata.namespace = req.ns;
     }
-    return rb as k8s.V1RoleBinding;
+    return rb;
 }
 
 /**
@@ -142,8 +140,7 @@ export async function clusterRoleBindingTemplate(req: KubernetesApplication & Ku
     });
     const apiVersion = "rbac.authorization.k8s.io/v1";
     const kind = "ClusterRoleBinding";
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const rb: DeepPartial<k8s.V1ClusterRoleBinding> = {
+    const rb: k8s.V1ClusterRoleBinding = {
         apiVersion,
         kind,
         metadata,
@@ -166,5 +163,5 @@ export async function clusterRoleBindingTemplate(req: KubernetesApplication & Ku
     if (req.roleBindingSpec) {
         _.merge(rb, req.roleBindingSpec, { apiVersion, kind });
     }
-    return rb as k8s.V1ClusterRoleBinding;
+    return rb;
 }

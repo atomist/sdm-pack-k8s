@@ -17,13 +17,8 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
-import {
-    isClusterResource,
-    K8sObject,
-    K8sObjectApi,
-} from "./api";
+import { K8sObjectApi } from "./api";
 import {
     KubernetesClients,
     makeApiClients,
@@ -77,13 +72,13 @@ export interface KubernetesResourceSelector {
      * matching the selectors are considered a match.  If not
      * provided, the resource labels are not considered when matching.
      */
-    labelSelector?: DeepPartial<k8s.V1LabelSelector>;
+    labelSelector?: k8s.V1LabelSelector;
     /**
      * If provided, resources will be considered a match if their
      * filter function returns `true`.  If not provided, this property
      * has no effect on matching.
      */
-    filter?: (r: K8sObject) => boolean;
+    filter?: (r: k8s.KubernetesObject) => boolean;
 }
 
 /**
@@ -170,7 +165,7 @@ export const defaultKubernetesFetchOptions: KubernetesFetchOptions = {
  * @param options Kubernetes fetch options
  * @return Kubernetes resources matching the fetch options
  */
-export async function kubernetesFetch(options: KubernetesFetchOptions = defaultKubernetesFetchOptions): Promise<K8sObject[]> {
+export async function kubernetesFetch(options: KubernetesFetchOptions = defaultKubernetesFetchOptions): Promise<k8s.KubernetesObject[]> {
     let client: K8sObjectApi;
     let clients: KubernetesClients;
     try {
@@ -184,8 +179,8 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
     }
 
     const selectors = populateResourceSelectorDefaults(options.selectors);
-    const clusterResources = clusterResourceKinds(selectors);
-    const specs: K8sObject[] = [];
+    const clusterResources = await clusterResourceKinds(selectors, client);
+    const specs: k8s.KubernetesObject[] = [];
 
     for (const apiKind of clusterResources) {
         try {
@@ -211,7 +206,7 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
     for (const nsObj of namespaces) {
         specs.push(cleanKubernetesSpec(nsObj, { apiVersion: "v1", kind: "Namespace" }));
         const ns = nsObj.metadata.name;
-        const apiKinds = namespaceResourceKinds(ns, selectors);
+        const apiKinds = await namespaceResourceKinds(ns, selectors, client);
         for (const apiKind of apiKinds) {
             try {
                 const obj = apiObject(apiKind, ns);
@@ -250,23 +245,6 @@ export function populateResourceSelectorDefaults(selectors: KubernetesResourceSe
 }
 
 /**
- * Determine all Kuberenetes cluster, i.e., not namespaced, resources
- * that we should query based on all the selectors and return an array
- * with each Kubernetes cluster resource type appearing no more than
- * once.  Note that uniqueness of a Kubernetes resource type is
- * determined solely by the `kind` property, `apiVersion` is not
- * considered since the same resource can be found with the same kind
- * and different API versions.
- *
- * @param selectors All the resource selectors
- * @return A deduplicated array of Kubernetes cluster resource kinds among the inclusion rules
- */
-export function clusterResourceKinds(selectors: KubernetesResourceSelector[]): KubernetesResourceKind[] {
-    const included = includedResourceKinds(selectors);
-    return included.filter(ak => isClusterResource("list", ak.kind));
-}
-
-/**
  * Determine all Kuberenetes resources that we should query based on
  * all the selectors and return an array with each Kubernetes resource
  * type appearing no more than once.  Note that uniqueness of a
@@ -285,18 +263,52 @@ export function includedResourceKinds(selectors: KubernetesResourceSelector[]): 
 }
 
 /**
+ * Determine all Kuberenetes cluster, i.e., not namespaced, resources
+ * that we should query based on all the selectors and return an array
+ * with each Kubernetes cluster resource type appearing no more than
+ * once.  Note that uniqueness of a Kubernetes resource type is
+ * determined solely by the `kind` property, `apiVersion` is not
+ * considered since the same resource can be found with the same kind
+ * and different API versions.
+ *
+ * @param selectors All the resource selectors
+ * @return A deduplicated array of Kubernetes cluster resource kinds among the inclusion rules
+ */
+export async function clusterResourceKinds(selectors: KubernetesResourceSelector[], client: K8sObjectApi): Promise<KubernetesResourceKind[]> {
+    const included = includedResourceKinds(selectors);
+    const apiKinds: KubernetesResourceKind[] = [];
+    for (const apiKind of included) {
+        const resource = await client.resource(apiKind.apiVersion, apiKind.kind);
+        if (resource && !resource.namespaced) {
+            apiKinds.push(apiKind);
+        }
+    }
+    return apiKinds;
+}
+
+/**
  * For the provided set of selectors, return a deduplicated array of
- * resource kinds, using the same logic as [[includedResourceKinds]].
+ * resource kinds that match the provided namespace.
  *
  * @param ns Namespace to check
  * @param selectors Selectors to evaluate
  * @return A deduplicated array of Kubernetes resource kinds among the inclusion rules for namespace `ns`
  */
-export function namespaceResourceKinds(ns: string, selectors: KubernetesResourceSelector[]): KubernetesResourceKind[] {
+export async function namespaceResourceKinds(
+    ns: string,
+    selectors: KubernetesResourceSelector[],
+    client: K8sObjectApi,
+): Promise<KubernetesResourceKind[]> {
+
     const apiKinds: KubernetesResourceKind[] = [];
     for (const selector of selectors.filter(s => s.action === "include")) {
         if (nameMatch(ns, selector.namespace)) {
-            apiKinds.push(...selector.kinds.filter(ak => !isClusterResource("list", ak.kind)));
+            for (const apiKind of selector.kinds) {
+                const resource = await client.resource(apiKind.apiVersion, apiKind.kind);
+                if (resource && resource.namespaced) {
+                    apiKinds.push(apiKind);
+                }
+            }
         }
     }
     return _.uniqBy(apiKinds, "kind");
@@ -305,8 +317,8 @@ export function namespaceResourceKinds(ns: string, selectors: KubernetesResource
 /**
  * Construct Kubernetes resource object for use with client API.
  */
-function apiObject(apiKind: KubernetesResourceKind, ns?: string): K8sObject {
-    const ko: K8sObject = {
+function apiObject(apiKind: KubernetesResourceKind, ns?: string): k8s.KubernetesObject {
+    const ko: k8s.KubernetesObject = {
         apiVersion: apiKind.apiVersion,
         kind: apiKind.kind,
     };
@@ -326,7 +338,7 @@ function apiObject(apiKind: KubernetesResourceKind, ns?: string): K8sObject {
  * @param obj Kubernetes spec to clean
  * @return Kubernetes spec with status-like properties removed
  */
-export function cleanKubernetesSpec(obj: k8s.KubernetesObject, apiKind: KubernetesResourceKind): K8sObject {
+export function cleanKubernetesSpec(obj: k8s.KubernetesObject, apiKind: KubernetesResourceKind): k8s.KubernetesObject {
     if (!obj) {
         return obj;
     }
@@ -366,12 +378,12 @@ export function cleanKubernetesSpec(obj: k8s.KubernetesObject, apiKind: Kubernet
  * @param selectors Filtering rules
  * @return Filtered array of Kubernetes resources
  */
-export function selectKubernetesResources(specs: K8sObject[], selectors: KubernetesResourceSelector[]): K8sObject[] {
+export function selectKubernetesResources(specs: k8s.KubernetesObject[], selectors: KubernetesResourceSelector[]): k8s.KubernetesObject[] {
     const uniqueSpecs = _.uniqBy(specs, kubernetesResourceIdentity);
     if (!selectors || selectors.length < 1) {
         return uniqueSpecs;
     }
-    const filteredSpecs: K8sObject[] = [];
+    const filteredSpecs: k8s.KubernetesObject[] = [];
     for (const spec of uniqueSpecs) {
         for (const selector of selectors) {
             const action = selectorMatch(spec, selector);
@@ -395,7 +407,7 @@ export function selectKubernetesResources(specs: K8sObject[], selectors: Kuberne
  * @param obj Kubernetes resource
  * @return Stripped down resource for unique identification
  */
-export function kubernetesResourceIdentity(obj: K8sObject): string {
+export function kubernetesResourceIdentity(obj: k8s.KubernetesObject): string {
     return `${obj.kind}|` + (obj.metadata.namespace ? `${obj.metadata.namespace}|` : "") + obj.metadata.name;
 }
 
@@ -408,7 +420,7 @@ export function kubernetesResourceIdentity(obj: K8sObject): string {
  * @param selector Selector to use for checking
  * @return Selector action if there is a match, `undefined` otherwise
  */
-export function selectorMatch(spec: K8sObject, selector: KubernetesResourceSelector): "include" | "exclude" | undefined {
+export function selectorMatch(spec: k8s.KubernetesObject, selector: KubernetesResourceSelector): "include" | "exclude" | undefined {
     if (!nameMatch(spec.metadata.name, selector.name)) {
         return undefined;
     }
@@ -437,7 +449,7 @@ export function selectorMatch(spec: K8sObject, selector: KubernetesResourceSelec
  * @param kinds Kubernetes resource selector `kinds` property to use for checking
  * @return Return `true` if it is a match, `false` otherwise
  */
-export function kindMatch(spec: K8sObject, kinds: KubernetesResourceKind[]): boolean {
+export function kindMatch(spec: k8s.KubernetesObject, kinds: KubernetesResourceKind[]): boolean {
     if (!kinds || kinds.length < 1) {
         return true;
     }
@@ -454,7 +466,7 @@ export function kindMatch(spec: K8sObject, kinds: KubernetesResourceKind[]): boo
  * @param kinds Kubernetes resource selector `kinds` property to use for checking
  * @return Return `true` if it is a match, `false` otherwise
  */
-export function filterMatch(spec: K8sObject, filter: (r: K8sObject) => boolean): boolean {
+export function filterMatch(spec: k8s.KubernetesObject, filter: (r: k8s.KubernetesObject) => boolean): boolean {
     if (!filter) {
         return true;
     }

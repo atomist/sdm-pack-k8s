@@ -24,7 +24,7 @@ import {
     ProgressLog,
     SdmGoalEvent,
 } from "@atomist/sdm";
-import { K8sObject } from "../kubernetes/api";
+import * as k8s from "@kubernetes/client-node";
 import { upsertApplication } from "../kubernetes/application";
 import {
     isKubernetesApplication,
@@ -65,7 +65,7 @@ export async function deployApplication(goalEvent: SdmGoalEvent, context: Handle
     appId = deployAppId(goalEvent, context, app);
 
     llog(`Deploying ${appId} to Kubernetes`, logger.info, log);
-    let resources: K8sObject[];
+    let resources: k8s.KubernetesObject[];
     try {
         resources = await upsertApplication(app, goalEvent.fulfillment.name);
     } catch (e) {

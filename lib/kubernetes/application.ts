@@ -17,10 +17,13 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
-import { K8sObject } from "./api";
 import { makeApiClients } from "./clients";
 import { loadKubeConfig } from "./config";
-import { deleteAppResources } from "./delete";
+import {
+    deleteAppResources,
+    DeleteAppResourcesArgCluster,
+    DeleteAppResourcesArgNamespaced,
+} from "./delete";
 import { upsertDeployment } from "./deployment";
 import { upsertIngress } from "./ingress";
 import { upsertNamespace } from "./namespace";
@@ -41,7 +44,7 @@ import { upsertService } from "./service";
  * @param sdmFulfiller Registered name of the SDM fulfilling the deployment goal.
  * @return Array of resource specs upserted
  */
-export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<K8sObject[]> {
+export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<k8s.KubernetesObject[]> {
     let config: k8s.KubeConfig;
     try {
         config = loadKubeConfig();
@@ -54,9 +57,9 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
     const req = { ...app, sdmFulfiller, clients };
 
     try {
-        const k8sResources: K8sObject[] = [];
+        const k8sResources: k8s.KubernetesObject[] = [];
         k8sResources.push(await upsertNamespace(req));
-        k8sResources.push(...Object.values<K8sObject>(await upsertRbac(req) as any));
+        k8sResources.push(...Object.values<k8s.KubernetesObject>(await upsertRbac(req) as any));
         k8sResources.push(await upsertService(req));
         k8sResources.push(...(await upsertSecrets(req)));
         k8sResources.push(await upsertDeployment(req));
@@ -77,7 +80,7 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
  *
  * @param req Delete application request object
  */
-export async function deleteApplication(del: KubernetesDelete): Promise<K8sObject[]> {
+export async function deleteApplication(del: KubernetesDelete): Promise<k8s.KubernetesObject[]> {
     const slug = `${del.ns}/${del.name}`;
     let config: k8s.KubeConfig;
     try {
@@ -90,59 +93,68 @@ export async function deleteApplication(del: KubernetesDelete): Promise<K8sObjec
     const clients = makeApiClients(config);
     const req = { ...del, clients };
 
-    const deleted: K8sObject[] = [];
+    const deleted: k8s.KubernetesObject[] = [];
     const errs: Error[] = [];
-    const resourceDeleters = [
+    const resourceDeleters: Array<Omit<DeleteAppResourcesArgCluster, "req"> | Omit<DeleteAppResourcesArgNamespaced, "req">> = [
         {
             kind: "Ingress",
+            namespaced: true,
             api: req.clients.ext,
             lister: req.clients.ext.listNamespacedIngress,
             deleter: req.clients.ext.deleteNamespacedIngress,
         },
         {
             kind: "Deployment",
+            namespaced: true,
             api: req.clients.apps,
             lister: req.clients.apps.listNamespacedDeployment,
             deleter: req.clients.apps.deleteNamespacedDeployment,
         },
         {
             kind: "Secret",
+            namespaced: true,
             api: req.clients.core,
             lister: req.clients.core.listNamespacedSecret,
             deleter: req.clients.core.deleteNamespacedSecret,
         },
         {
             kind: "Service",
+            namespaced: true,
             api: req.clients.core,
             lister: req.clients.core.listNamespacedService,
             deleter: req.clients.core.deleteNamespacedService,
         },
         {
             kind: "ClusterRoleBinding",
+            namespaced: false,
             api: req.clients.rbac,
             lister: req.clients.rbac.listClusterRoleBinding,
             deleter: req.clients.rbac.deleteClusterRoleBinding,
         },
         {
             kind: "RoleBinding",
+            namespaced: true,
             api: req.clients.rbac,
             lister: req.clients.rbac.listNamespacedRoleBinding,
             deleter: req.clients.rbac.deleteNamespacedRoleBinding,
         },
         {
             kind: "ClusterRole",
+            namespaced: false,
             api: req.clients.rbac,
             lister: req.clients.rbac.listClusterRole,
             deleter: req.clients.rbac.deleteClusterRole,
         },
         {
             kind: "Role",
+            namespaced: true,
             api: req.clients.rbac,
             lister: req.clients.rbac.listNamespacedRole,
             deleter: req.clients.rbac.deleteNamespacedRole,
         },
         {
             kind: "ServiceAccount",
+            namespaced: true,
             api: req.clients.core,
             lister: req.clients.core.listNamespacedServiceAccount,
             deleter: req.clients.core.deleteNamespacedServiceAccount,

@@ -17,7 +17,6 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import { applicationLabels } from "./labels";
@@ -78,8 +77,7 @@ export async function serviceAccountTemplate(req: KubernetesApplication & Kubern
     });
     const apiVersion = "v1";
     const kind = "ServiceAccount";
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const sa: DeepPartial<k8s.V1ServiceAccount> = {
+    const sa: k8s.V1ServiceAccount = {
         apiVersion,
         kind,
         metadata,
@@ -88,5 +86,5 @@ export async function serviceAccountTemplate(req: KubernetesApplication & Kubern
         _.merge(sa, req.serviceAccountSpec, { apiVersion, kind });
         sa.metadata.namespace = req.ns;
     }
-    return sa as k8s.V1ServiceAccount;
+    return sa;
 }

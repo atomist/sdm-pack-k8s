@@ -17,12 +17,11 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
-import * as stringify from "json-stringify-safe";
 import * as request from "request";
-import { DeepPartial } from "ts-essentials";
 import { requestError } from "../support/error";
 import { defaultNamespace } from "./namespace";
 import { patchHeaders } from "./patch";
+import { logObject } from "./resource";
 
 /** Response from methods that operate on an resource. */
 export interface K8sObjectResponse {
@@ -42,8 +41,24 @@ export interface K8sDeleteResponse {
     response: http.IncomingMessage;
 }
 
-// avoid https://github.com/kubernetes-client/javascript/issues/52
-export type K8sObject = DeepPartial<k8s.KubernetesObject>;
+/** Response from list API method. */
+export interface K8sApiResponse {
+    body: k8s.V1APIResourceList;
+    response: http.IncomingMessage;
+}
+
+/** Union type of all response types. */
+type K8sRequestResponse = K8sObjectResponse | K8sDeleteResponse | K8sListResponse | K8sApiResponse;
+
+/** Kubernetes API verbs. */
+export type K8sApiAction = "create" | "delete" | "list" | "patch" | "read" | "replace";
+
+/**
+ * Since https://github.com/kubernetes-client/javascript/issues/52
+ * is fixed, this is no longer necessary.
+ * @deprecated use k8s.KubernetesObject
+ */
+export type K8sObject = k8s.KubernetesObject;
 
 /**
  * Dynamically construct Kubernetes API request URIs so client does
@@ -57,63 +72,128 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Read any Kubernetes resource.
      */
-    public async create(spec: K8sObject): Promise<K8sObjectResponse> {
+    public async create(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("POST");
-        requestOptions.uri += specUriPath(spec, "create");
+        requestOptions.uri += await this.specUriPath(spec, "create");
         requestOptions.body = spec;
-        return this.requestPromise(requestOptions) as any as K8sObjectResponse;
+        return this.requestPromise(requestOptions) as unknown as K8sObjectResponse;
     }
 
     /**
      * Delete any Kubernetes resource.
      */
-    public async delete(spec: K8sObject, body: any = this.defaultDeleteBody): Promise<K8sDeleteResponse> {
+    public async delete(spec: k8s.KubernetesObject, body: any = this.defaultDeleteBody): Promise<K8sDeleteResponse> {
         const requestOptions = this.baseRequestOptions("DELETE");
-        requestOptions.uri += specUriPath(spec, "delete");
+        requestOptions.uri += await this.specUriPath(spec, "delete");
         requestOptions.body = body;
-        return this.requestPromise(requestOptions) as any as K8sDeleteResponse;
+        return this.requestPromise(requestOptions) as unknown as K8sDeleteResponse;
     }
 
     /**
      * List any Kubernetes resource.
      */
-    public async list(spec: K8sObject): Promise<K8sListResponse> {
+    public async list(spec: k8s.KubernetesObject): Promise<K8sListResponse> {
         const requestOptions = this.baseRequestOptions();
-        requestOptions.uri += specUriPath(spec, "list");
-        return this.requestPromise(requestOptions) as any as K8sListResponse;
+        requestOptions.uri += await this.specUriPath(spec, "list");
+        return this.requestPromise(requestOptions) as unknown as K8sListResponse;
     }
 
     /**
      * Patch any Kubernetes resource.
      */
-    public async patch(spec: K8sObject): Promise<K8sObjectResponse> {
+    public async patch(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("PATCH");
-        requestOptions.uri += specUriPath(spec, "patch");
+        requestOptions.uri += await this.specUriPath(spec, "patch");
         requestOptions.body = spec;
         requestOptions.headers = {
             ...requestOptions.headers,
             ...patchHeaders(),
         };
-        return this.requestPromise(requestOptions) as any as K8sObjectResponse;
+        return this.requestPromise(requestOptions) as unknown as K8sObjectResponse;
     }
 
     /**
      * Read any Kubernetes resource.
      */
-    public async read(spec: K8sObject): Promise<K8sObjectResponse> {
+    public async read(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions();
-        requestOptions.uri += specUriPath(spec, "read");
-        return this.requestPromise(requestOptions) as any as K8sObjectResponse;
+        requestOptions.uri += await this.specUriPath(spec, "read");
+        return this.requestPromise(requestOptions) as unknown as K8sObjectResponse;
     }
 
     /**
      * Replace any Kubernetes resource.
      */
-    public async replace(spec: K8sObject): Promise<K8sObjectResponse> {
+    public async replace(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
         const requestOptions = this.baseRequestOptions("PUT");
-        requestOptions.uri += specUriPath(spec, "replace");
+        requestOptions.uri += await this.specUriPath(spec, "replace");
         requestOptions.body = spec;
-        return this.requestPromise(requestOptions) as any as K8sObjectResponse;
+        return this.requestPromise(requestOptions) as unknown as K8sObjectResponse;
+    }
+
+    /**
+     * Get metadata from Kubernetes API for resources described by
+     * `kind` and `apiVersion`.  If it is unable to find the resource
+     * `kind` under the provided `apiVersion` or an error occurs,
+     * `undefined` is returned.
+     */
+    public async resource(apiVersion: string, kind: string): Promise<k8s.V1APIResource | undefined> {
+        try {
+            const requestOptions = this.baseRequestOptions();
+            const prefix = (apiVersion.includes("/")) ? "apis" : "api";
+            requestOptions.uri += [prefix, apiVersion].join("/");
+            const getApiResponse = await this.requestPromise(requestOptions);
+            const apiResourceList = getApiResponse.body as unknown as k8s.V1APIResourceList;
+            return apiResourceList.resources.find(r => r.kind === kind);
+        } catch (e) {
+            logger.error(`Failed to fetch resource metadata for ${apiVersion}/${kind}: ${e.message}`);
+            return undefined;
+        }
+    }
+
+    /**
+     * Use spec information to construct resource URI path.  If any
+     * required information in not provided, an Error is thrown.  If an
+     * `apiVersion` is not provided, "v1" is used.  If a `metadata.namespace`
+     * is not provided for a request that requires one, "default" is used.
+     *
+     * @param spec resource metadata
+     * @param appendName if `true`, append name to path
+     * @return tail of resource-specific URI
+     */
+    public async specUriPath(spec: k8s.KubernetesObject, action: K8sApiAction): Promise<string> {
+        if (!spec.kind) {
+            throw new Error(`Spec does not contain kind: ${logObject(spec)}`);
+        }
+        if (!spec.apiVersion) {
+            spec.apiVersion = "v1";
+            logger.info(`Spec does not contain apiVersion, using "${spec.apiVersion}"`);
+        }
+        if (!spec.metadata) {
+            spec.metadata = {};
+        }
+        const resource = await this.resource(spec.apiVersion, spec.kind);
+        if (!resource) {
+            throw new Error(`Unrecognized API version and kind: ${spec.apiVersion} ${spec.kind}`);
+        }
+        const namespaceRequired = action !== "list" || resource.namespaced;
+        if (namespaceRequired && !spec.metadata.namespace) {
+            spec.metadata.namespace = defaultNamespace;
+        }
+        const prefix = (spec.apiVersion.includes("/")) ? "apis" : "api";
+        const parts = [prefix, spec.apiVersion];
+        if (resource.namespaced && spec.metadata.namespace) {
+            parts.push("namespaces", spec.metadata.namespace);
+        }
+        parts.push(resource.name);
+        const appendName = !(action === "create" || action === "list");
+        if (appendName) {
+            if (!spec.metadata.name) {
+                throw new Error(`Spec does not contain name: ${logObject(spec)}`);
+            }
+            parts.push(spec.metadata.name);
+        }
+        return parts.join("/").toLowerCase();
     }
 
     /**
@@ -122,7 +202,7 @@ export class K8sObjectApi extends k8s.ApisApi {
     private baseRequestOptions(method: string = "GET"): request.UriOptions & request.CoreOptions {
         const localVarPath = this.basePath + "/";
         const queryParameters = {};
-        const localHeaders = (method === "PATCH") ? { "Content-Type": "application/strategic-merge-patch+json" } : {};
+        const localHeaders = (method === "PATCH") ? patchHeaders().headers : {};
         const headerParams = Object.assign({}, this.defaultHeaders, localHeaders);
         const requestOptions = {
             method,
@@ -140,7 +220,7 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Wrap request in a Promise.  Largely copied from @kubernetes/client-node/dist/api.js.
      */
-    private requestPromise(requestOptions: request.UriOptions & request.CoreOptions): Promise<K8sObjectResponse | K8sDeleteResponse> {
+    private requestPromise(requestOptions: request.UriOptions & request.CoreOptions): Promise<K8sRequestResponse> {
         return new Promise((resolve, reject) => {
             request(requestOptions, (error, response, body) => {
                 if (error) {
@@ -156,113 +236,4 @@ export class K8sObjectApi extends k8s.ApisApi {
         });
     }
 
-}
-
-/** Options for creating a Kubernetes resource API path from a spec. */
-export interface SpecUriPathOptions {
-    /** If true, append resource name to URL path. */
-    appendName?: boolean;
-    /** If true, ensure path contains a namespace. */
-    namespaceRequired?: boolean;
-}
-
-export type K8sApiAction = "create" | "delete" | "list" | "patch" | "read" | "replace";
-
-/**
- * Generate proper [[SpecUriPathOptions]] from API action and resource kind.
- *
- * @param action API HTTP action
- * @param kind Kubernetes resource kind
- * @return Kubernetes API URI path generation options
- */
-export function uriOpts(action: K8sApiAction, kind: string): SpecUriPathOptions {
-    const appendName = (action === "create" || action === "list") ? false : true;
-    const namespaceRequired = !(action === "list" || isClusterResource(action, kind));
-    return { appendName, namespaceRequired };
-}
-
-export function isClusterResource(action: K8sApiAction, kind: string): boolean {
-    const clusterResources = [
-        "APIService",
-        "AuditSink",
-        "CertificateSigningRequest",
-        "ClusterCustomObject",
-        "ClusterRole",
-        "ClusterRoleBinding",
-        "CustomResourceDefinition",
-        "InitializerConfiguration",
-        "MutatingWebhookConfiguration",
-        "Namespace",
-        "Node",
-        "PersistentVolume",
-        "PodSecurityPolicy",
-        "PriorityClass",
-        "SelfSubjectAccessReview",
-        "SelfSubjectRulesReview",
-        "StorageClass",
-        "SubjectAccessReview",
-        "TokenReview",
-        "ValidatingWebhookConfiguration",
-        "VolumeAttachment",
-    ];
-    const clusterStatuses = [
-        "APIServiceStatus",
-        "CertificateSigningRequestStatus",
-        "CustomResourceDefinitionStatus",
-        "NamespaceStatus",
-        "NodeStatus",
-        "PersistentVolumeStatus",
-        "VolumeAttachmentStatus",
-    ];
-    if (clusterResources.includes(kind)) {
-        return true;
-    } else if (action === "patch" || action === "replace") {
-        return clusterStatuses.includes(kind);
-    } else if (action === "read") {
-        return [...clusterStatuses, "ComponentStatus"].includes(kind);
-    } else if (action === "list" && kind === "ComponentStatus") {
-        return true;
-    }
-    return false;
-}
-
-/**
- * Use spec information to construct resource URI path.  If any
- * required information in not provided, an Error is thrown.  If an
- * `apiVersion` is not provided, "v1" is used.  If a `metadata.namespace`
- * is not provided for a request that requires one, "default" is used.
- *
- * @param spec resource metadata
- * @param appendName if `true`, append name to path
- * @return tail of resource-specific URI
- */
-export function specUriPath(spec: K8sObject, action: K8sApiAction): string {
-    if (!spec.kind) {
-        throw new Error(`Spec does not contain kind: ${stringify(spec)}`);
-    }
-    if (!spec.apiVersion) {
-        spec.apiVersion = "v1";
-        logger.info(`Spec does not contain apiVersion, using "${spec.apiVersion}"`);
-    }
-    if (!spec.metadata) {
-        spec.metadata = {};
-    }
-    const opts = uriOpts(action, spec.kind);
-    if (opts.namespaceRequired && !spec.metadata.namespace) {
-        spec.metadata.namespace = defaultNamespace;
-    }
-    const plural = spec.kind.toLowerCase().replace(/s$/, "se").replace(/y$/, "ie") + "s";
-    const prefix = (spec.apiVersion.includes("/")) ? "apis" : "api";
-    const parts = [prefix, spec.apiVersion];
-    if (spec.metadata.namespace) {
-        parts.push("namespaces", spec.metadata.namespace);
-    }
-    parts.push(plural);
-    if (opts.appendName) {
-        if (!spec.metadata.name) {
-            throw new Error(`Spec does not contain name: ${stringify(spec)}`);
-        }
-        parts.push(spec.metadata.name);
-    }
-    return parts.join("/").toLowerCase();
 }

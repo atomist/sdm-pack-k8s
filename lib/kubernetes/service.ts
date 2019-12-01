@@ -17,7 +17,6 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
@@ -85,8 +84,7 @@ export async function serviceTemplate(req: KubernetesApplication & KubernetesSdm
     });
     const apiVersion = "v1";
     const kind = "Service";
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const s: DeepPartial<k8s.V1Service> = {
+    const s: k8s.V1Service = {
         apiVersion,
         kind,
         metadata,
@@ -106,5 +104,5 @@ export async function serviceTemplate(req: KubernetesApplication & KubernetesSdm
         _.merge(s, req.serviceSpec, { apiVersion, kind });
         s.metadata.namespace = req.ns;
     }
-    return s as k8s.V1Service;
+    return s;
 }

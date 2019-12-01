@@ -19,9 +19,9 @@ import {
     Project,
     ProjectFile,
 } from "@atomist/automation-client";
+import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as path from "path";
-import { K8sObject } from "../kubernetes/api";
 
 /**
  * Read and parse either JSON or YAML file with basename `base` under
@@ -32,7 +32,7 @@ import { K8sObject } from "../kubernetes/api";
  * for, it does _not_ overlay/merge the parsed values.  It stops after
  * the first successfully parsed file.
  */
-export async function loadKubernetesSpec(p: Project, base: string): Promise<K8sObject | undefined> {
+export async function loadKubernetesSpec(p: Project, base: string): Promise<k8s.KubernetesObject | undefined> {
     for (const ext of ["json", "yaml", "yml"]) {
         const specFile = `${base}.${ext}`;
         const specPath = path.join(".atomist", "kubernetes", specFile);
@@ -55,7 +55,7 @@ export async function loadKubernetesSpec(p: Project, base: string): Promise<K8sO
  * @param specPath Path of spec file to load
  * @return Parsed object if the spec was successfully read and parsed, undefined otherwise
  */
-export async function parseKubernetesSpec(p: Project, specPath: string): Promise<K8sObject | undefined> {
+export async function parseKubernetesSpec(p: Project, specPath: string): Promise<k8s.KubernetesObject | undefined> {
     try {
         const specFile = await p.getFile(specPath);
         if (!specFile) {
@@ -78,7 +78,7 @@ export async function parseKubernetesSpec(p: Project, specPath: string): Promise
  * @param specFile File object of spec file to load
  * @return Parsed object of the spec
  */
-export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<K8sObject> {
+export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<k8s.KubernetesObject> {
     const specString = await specFile.getContent();
     return parseKubernetesSpecString(specString, specFile.path);
 }
@@ -91,7 +91,7 @@ export async function parseKubernetesSpecFile(specFile: ProjectFile): Promise<K8
  * @param specPath File path of Kubernetes spec file
  * @return Parsed object of the spec
  */
-export async function parseKubernetesSpecString(specString: string, specPath: string): Promise<K8sObject> {
-    const spec: K8sObject = yaml.safeLoad(specString);
+export async function parseKubernetesSpecString(specString: string, specPath: string): Promise<k8s.KubernetesObject> {
+    const spec: k8s.KubernetesObject = yaml.safeLoad(specString);
     return spec;
 }

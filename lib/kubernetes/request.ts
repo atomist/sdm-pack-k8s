@@ -95,7 +95,7 @@ export interface KubernetesApplication {
     /**
      * Secrets to upsert prior to creating deployment.
      */
-    secrets?: Array<DeepPartial<k8s.V1Secret>>;
+    secrets?: k8s.V1Secret[];
     /**
      * Partial role to create for binding to service account.  If
      * provided, this partial spec is overlaid onto the default role

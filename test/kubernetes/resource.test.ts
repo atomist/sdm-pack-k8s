@@ -16,7 +16,6 @@
 
 import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
-import { DeepPartial } from "ts-essentials";
 import { KubernetesDelete } from "../../lib/kubernetes/request";
 import {
     appObject,
@@ -180,7 +179,7 @@ describe("kubernetes/resource", () => {
     describe("k8sObject", () => {
 
         it("should return a minimal object from a service account", () => {
-            const d: DeepPartial<k8s.V1ServiceAccount> = {
+            const d: k8s.V1ServiceAccount = {
                 apiVersion: "v1",
                 kind: "ServiceAccount",
                 metadata: {
@@ -197,7 +196,7 @@ describe("kubernetes/resource", () => {
         });
 
         it("should return a minimal object from a deployment", () => {
-            const d: DeepPartial<k8s.V1Deployment> = {
+            const d: k8s.V1Deployment = {
                 apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
@@ -209,11 +208,13 @@ describe("kubernetes/resource", () => {
                     namespace: "rihanna",
                 },
                 spec: {
+                    selector: {},
                     template: {
                         spec: {
                             containers: [
                                 {
                                     image: "umbrella:4.36",
+                                    name: "umbrella",
                                 },
                             ],
                         },
@@ -259,7 +260,7 @@ describe("kubernetes/resource", () => {
         });
 
         it("should stringify and truncate a deployment", () => {
-            const d: DeepPartial<k8s.V1Deployment> = {
+            const d: k8s.V1Deployment = {
                 apiVersion: "apps/v1",
                 kind: "Deployment",
                 metadata: {
@@ -271,11 +272,13 @@ describe("kubernetes/resource", () => {
                     namespace: "rihanna",
                 },
                 spec: {
+                    selector: {},
                     template: {
                         spec: {
                             containers: [
                                 {
                                     image: "umbrella:4.36",
+                                    name: "umbrella",
                                 },
                             ],
                         },
@@ -289,7 +292,7 @@ describe("kubernetes/resource", () => {
         });
 
         it("should remove data values from a secret", () => {
-            const d: DeepPartial<k8s.V1Secret> = {
+            const d: k8s.V1Secret = {
                 apiVersion: "v1",
                 data: {
                     One: "VW1icmVsbGEgKGZlYXQuIEpheS1aKQ==",

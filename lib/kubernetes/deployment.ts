@@ -21,7 +21,6 @@ import {
 import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
-import { DeepPartial } from "ts-essentials";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
@@ -99,8 +98,7 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
     } as any;
     const apiVersion = "apps/v1";
     const kind = "Deployment";
-    // avoid https://github.com/kubernetes-client/javascript/issues/52
-    const d: DeepPartial<k8s.V1Deployment> = {
+    const d: k8s.V1Deployment = {
         apiVersion,
         kind,
         metadata,
@@ -164,5 +162,5 @@ export async function deploymentTemplate(req: KubernetesApplication & Kubernetes
         _.merge(d, req.deploymentSpec, { apiVersion, kind });
         d.metadata.namespace = req.ns;
     }
-    return d as k8s.V1Deployment;
+    return d;
 }

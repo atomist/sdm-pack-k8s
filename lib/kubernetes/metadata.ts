@@ -15,19 +15,16 @@
  */
 
 import * as k8s from "@kubernetes/client-node";
-import { DeepPartial } from "ts-essentials";
 import { matchLabels } from "./labels";
 import { KubernetesDelete } from "./request";
 
 /**
- * Workaround for all properties erroneously being required in
- * TypeScript class definitions
- * https://github.com/kubernetes-client/javascript/issues/52 when in
- * reality everything is optional in the metadata, even, somehow, the
- * name.
+ * Use to be a workaround for
+ * https://github.com/kubernetes-client/javascript/issues/52 , now
+ * it is a no-op.
  */
-export function metadataTemplate(partial: DeepPartial<k8s.V1ObjectMeta> = {}): k8s.V1ObjectMeta {
-    return partial as k8s.V1ObjectMeta;
+export function metadataTemplate(partial: k8s.V1ObjectMeta = {}): k8s.V1ObjectMeta {
+    return partial;
 }
 
 /**
@@ -52,7 +49,7 @@ export interface AppMetadataOptions {
  * @return valid Kubernetes resource metadata
  */
 export function appMetadata(app: KubernetesDelete, opts: AppMetadataOptions = {}): k8s.V1ObjectMeta {
-    const md: DeepPartial<k8s.V1ObjectMeta> = {
+    const md: k8s.V1ObjectMeta = {
         labels: matchLabels(app),
     };
     if (opts.ns === "cluster") {

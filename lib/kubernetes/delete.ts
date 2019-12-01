@@ -19,12 +19,9 @@ import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
 import {
-    isClusterResource,
     K8sDeleteResponse,
     K8sListResponse,
-    K8sObject,
     K8sObjectApi,
-    specUriPath,
 } from "./api";
 import { loadKubeConfig } from "./config";
 import { labelSelector } from "./labels";
@@ -33,11 +30,7 @@ import {
     KubernetesDeleteResourceRequest,
 } from "./request";
 import { logObject } from "./resource";
-
-/**
- * Decorator to facilitate testing
- */
-export type KubeConfigLoader = () => k8s.KubeConfig;
+import { specSlug } from "./spec";
 
 /**
  * Delete a resource if it exists.  If the resource does not exist,
@@ -46,11 +39,12 @@ export type KubeConfigLoader = () => k8s.KubeConfig;
  * @param spec Kuberenetes spec of resource to delete
  * @return DeleteResponse if object existed and was deleted, undefined if it did not exist
  */
-export async function deleteSpec(spec: K8sObject, kcl: KubeConfigLoader = loadKubeConfig): Promise<K8sDeleteResponse | undefined> {
-    const slug = specUriPath(spec, "read");
+export async function deleteSpec(spec: k8s.KubernetesObject): Promise<K8sDeleteResponse | undefined> {
+    const slug = specSlug(spec);
     let client: K8sObjectApi;
     try {
-        client = kcl().makeApiClient(K8sObjectApi);
+        const kc = loadKubeConfig();
+        client = kc.makeApiClient(K8sObjectApi);
     } catch (e) {
         e.message = `Failed to create Kubernetes client: ${errMsg(e)}`;
         logger.error(e.message);
@@ -121,9 +115,11 @@ export type K8sClusterDeleter = (
 ) => Promise<K8sDeleteResponse>;
 
 /** Arguments for [[deleteAppResources]]. */
-export interface DeleteAppResourcesArg {
+export interface DeleteAppResourcesArgBase {
     /** Resource kind, e.g., "Service". */
     kind: string;
+    /** Whether resource is cluster or namespace scoped. */
+    namespaced: boolean;
     /** Delete request object. */
     req: KubernetesDeleteResourceRequest;
     /** API object to use as `this` for lister and deleter. */
@@ -133,6 +129,17 @@ export interface DeleteAppResourcesArg {
     /** Resource collection deleting function. */
     deleter: K8sNamespacedDeleter | K8sClusterDeleter;
 }
+export interface DeleteAppResourcesArgNamespaced extends DeleteAppResourcesArgBase {
+    namespaced: true;
+    lister: K8sNamespacedLister;
+    deleter: K8sNamespacedDeleter;
+}
+export interface DeleteAppResourcesArgCluster extends DeleteAppResourcesArgBase {
+    namespaced: false;
+    lister: K8sClusterLister;
+    deleter: K8sClusterDeleter;
+}
+export type DeleteAppResourcesArg = DeleteAppResourcesArgNamespaced | DeleteAppResourcesArgCluster;
 
 /**
  * Delete resources associated with application described by `arg.req`, if
@@ -142,44 +149,46 @@ export interface DeleteAppResourcesArg {
  * @param arg Specification of what and how to delete for what application
  * @return Array of deleted resources
  */
-export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<K8sObject[]> {
+export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8s.KubernetesObject[]> {
     const slug = appName(arg.req);
     const selector = labelSelector(arg.req);
-    const clusterResource = isClusterResource("list", arg.kind);
-    const toDelete: K8sObject[] = [];
+    const toDelete: k8s.KubernetesObject[] = [];
     try {
-        let listResp: K8sListResponse;
-        const args: [string?, boolean?, string?, string?, string?] = [undefined, undefined, undefined, undefined, selector];
-        if (clusterResource) {
-            const lister = arg.lister as K8sClusterLister;
-            listResp = await lister.apply(arg.api, args);
-        } else {
-            const lister = arg.lister as K8sNamespacedLister;
-            listResp = await lister.call(arg.api, arg.req.ns, ...args);
-        }
-        toDelete.push(...listResp.body.items.map(r => {
-            r.kind = r.kind || arg.kind; // list response does not include kind
-            return r;
-        }));
+        const limit = 500;
+        let continu: string;
+        do {
+            let listResp: K8sListResponse;
+            const args: [string?, boolean?, string?, string?, string?, number?] =
+                [undefined, undefined, continu, undefined, selector, limit];
+            if (arg.namespaced) {
+                listResp = await arg.lister.call(arg.api, arg.req.ns, ...args);
+            } else if (arg.namespaced === false) {
+                listResp = await arg.lister.apply(arg.api, args);
+            }
+            toDelete.push(...listResp.body.items.map(r => {
+                r.kind = r.kind || arg.kind; // list response does not include kind
+                return r;
+            }));
+            continu = listResp.body.metadata._continue;
+        } while (!!continu);
     } catch (e) {
         e.message = `Failed to list ${arg.kind} for ${slug}: ${errMsg(e)}`;
         logger.error(e.message);
         throw e;
     }
-    const deleted: K8sObject[] = [];
+    const deleted: k8s.KubernetesObject[] = [];
     const errs: Error[] = [];
     for (const resource of toDelete) {
-        const resourceSlug = clusterResource ? `${arg.kind}/${resource.metadata.name}` :
-            `${arg.kind}/${resource.metadata.namespace}/${resource.metadata.name}`;
+        const resourceSlug = arg.namespaced ? `${arg.kind}/${resource.metadata.namespace}/${resource.metadata.name}` :
+            `${arg.kind}/${resource.metadata.name}`;
         logger.info(`Deleting ${resourceSlug} for ${slug}`);
         try {
-            const args: [string?, string?, number?, boolean?, string?] = [undefined, undefined, undefined, undefined, "Background"];
-            if (clusterResource) {
-                const deleter = arg.deleter as K8sClusterDeleter;
-                await deleter.call(arg.api, resource.metadata.name, ...args);
-            } else {
-                const deleter = arg.deleter as K8sNamespacedDeleter;
-                await deleter.call(arg.api, resource.metadata.name, resource.metadata.namespace, ...args);
+            const args: [string?, string?, number?, boolean?, string?] =
+                [undefined, undefined, undefined, undefined, "Background"];
+            if (arg.namespaced) {
+                await arg.deleter.call(arg.api, resource.metadata.name, resource.metadata.namespace, ...args);
+            } else if (arg.namespaced === false) {
+                await arg.deleter.call(arg.api, resource.metadata.name, ...args);
             }
             deleted.push(resource);
         } catch (e) {
