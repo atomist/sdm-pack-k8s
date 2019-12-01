@@ -155,6 +155,7 @@ describe("sync/change", () => {
             let origClientDelete: any;
             let origClientRead: any;
             let origPreviousSpecVersion: any;
+
             before(() => {
                 origClientDelete = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "delete");
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
@@ -197,11 +198,55 @@ describe("sync/change", () => {
         });
 
         describe("apply changes", () => {
-            it("test", async () => { });
+            let origClientPatch: any;
+            let origClientRead: any;
+            let origPreviousSpecVersion: any;
+
+            before(() => {
+
+                origClientPatch = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "patch");
+                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                    value: async (spec: api.K8sObject) => {
+                        return Promise.resolve();
+                    },
+                });
+
+                origClientRead = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "read");
+                Object.defineProperty(api.K8sObjectApi.prototype, "read", {
+                    value: async (spec: api.K8sObject) => {
+                        return Promise.resolve();
+                    },
+                });
+
+                origPreviousSpecVersion = Object.getOwnPropertyDescriptor(prv, "previousSpecVersion");
+                Object.defineProperty(prv, "previousSpecVersion", {
+                    value: (baseDir: string, specPath: string, sha: string) => {
+                        return yaml.safeDump(resource);
+                    },
+                });
+            });
+
+            after(() => {
+                Object.defineProperty(api.K8sObjectApi.prototype, "patch", origClientPatch);
+                Object.defineProperty(api.K8sObjectApi.prototype, "read", origClientRead);
+                Object.defineProperty(prv, "previousSpecVersion", origPreviousSpecVersion);
+            });
+
+            it("test", async () => {
+
+                const project: GitProject = InMemoryProject.of({
+                    path: "fake.path",
+                    content: yaml.safeDump(resource),
+                }) as any;
+                const diff: PushDiff = {
+                    change: "apply",
+                    path: "fake.path",
+                    sha: "fake.sha",
+                };
+
+                await changeResource(project, diff);
+            });
         });
 
-        describe("parseKubernetesSpecs fails to parse", () => {
-            it("test", async () => { });
-        });
     });
 });
