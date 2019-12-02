@@ -157,8 +157,8 @@ export class K8sObjectApi extends k8s.ApisApi {
      * `apiVersion` is not provided, "v1" is used.  If a `metadata.namespace`
      * is not provided for a request that requires one, "default" is used.
      *
-     * @param spec resource metadata
-     * @param appendName if `true`, append name to path
+     * @param spec resource spec which must kind and apiVersion properties
+     * @param action API action, see [[K8sApiAction]]
      * @return tail of resource-specific URI
      */
     public async specUriPath(spec: k8s.KubernetesObject, action: K8sApiAction): Promise<string> {
@@ -176,8 +176,7 @@ export class K8sObjectApi extends k8s.ApisApi {
         if (!resource) {
             throw new Error(`Unrecognized API version and kind: ${spec.apiVersion} ${spec.kind}`);
         }
-        const namespaceRequired = action !== "list" || resource.namespaced;
-        if (namespaceRequired && !spec.metadata.namespace) {
+        if (namespaceRequired(resource, action) && !spec.metadata.namespace) {
             spec.metadata.namespace = defaultNamespace;
         }
         const prefix = (spec.apiVersion.includes("/")) ? "apis" : "api";
@@ -186,8 +185,7 @@ export class K8sObjectApi extends k8s.ApisApi {
             parts.push("namespaces", spec.metadata.namespace);
         }
         parts.push(resource.name);
-        const appendName = !(action === "create" || action === "list");
-        if (appendName) {
+        if (appendName(action)) {
             if (!spec.metadata.name) {
                 throw new Error(`Spec does not contain name: ${logObject(spec)}`);
             }
@@ -236,4 +234,32 @@ export class K8sObjectApi extends k8s.ApisApi {
         });
     }
 
+}
+
+/**
+ * Return whether the name of the resource should be appended to the
+ * API URI path.  When creating and listing resources, it is not
+ * appended.
+ *
+ * @param action API action, see [[K8sApiAction]]
+ * @return true if name should be appended to URI
+ */
+export function appendName(action: K8sApiAction): boolean {
+    return !(action === "create" || action === "list");
+}
+
+/**
+ * Return whether namespace must be included in resource API URI.
+ * It returns true of the resource is namespaced and the action is
+ * not "list".  The namespace can be provided when the action is
+ * "list", but it need not be.
+ *
+ * @param resource resource metadata
+ * @param action API action, see [[K8sApiAction]]
+ * @return true is the namespace is required in the API URI path
+ */
+export function namespaceRequired(resource: k8s.V1APIResource, action: K8sApiAction): boolean {
+    // return action !== "list" || resource.namespaced;
+    // return !(action === "list" || !resource.namespaced);
+    return resource.namespaced && action !== "list";
 }

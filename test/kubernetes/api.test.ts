@@ -17,7 +17,11 @@
 import { execPromise } from "@atomist/sdm";
 import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
-import { K8sObjectApi } from "../../lib/kubernetes/api";
+import {
+    appendName,
+    K8sObjectApi,
+    namespaceRequired,
+} from "../../lib/kubernetes/api";
 import { applySpec } from "../../lib/kubernetes/apply";
 import { loadKubeConfig } from "../../lib/kubernetes/config";
 import { deleteSpec } from "../../lib/kubernetes/delete";
@@ -28,6 +32,45 @@ import {
 } from "../k8s";
 
 describe("kubernetes/api", () => {
+
+    describe("appendName", () => {
+
+        it("should return append name", () => {
+            ["delete", "patch", "read", "replace"].forEach((a: any) => {
+                assert(appendName(a));
+            });
+        });
+
+        it("should return not append name", () => {
+            ["create", "list"].forEach((a: any) => {
+                assert(!appendName(a));
+            });
+        });
+
+    });
+
+    describe("namespaceRequired", () => {
+
+        it("should return namespace required", () => {
+            const r: any = { namespaced: true };
+            ["create", "delete", "patch", "read", "replace"].forEach((a: any) => {
+                assert(namespaceRequired(r, a));
+            });
+        });
+
+        it("should return namespace not required for list", () => {
+            const r: any = { namespaced: true };
+            assert(!namespaceRequired(r, "list"));
+        });
+
+        it("should return namespace not required", () => {
+            const r: any = { namespaced: false };
+            ["create", "delete", "list", "patch", "read", "replace"].forEach((a: any) => {
+                assert(!namespaceRequired(r, a));
+            });
+        });
+
+    });
 
     describe("integration", function(): void {
 
@@ -49,7 +92,7 @@ describe("kubernetes/api", () => {
             }
         });
 
-        describe("K8sObjectApi.specUriPath", async () => {
+        describe("K8sObjectApi.specUriPath", () => {
 
             let client: K8sObjectApi;
             before(function(): void {
