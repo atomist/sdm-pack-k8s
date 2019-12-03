@@ -87,10 +87,10 @@ export function calculateChanges(
     change: changeType,
 ): SyncChanges[] {
 
-    const changes: SyncChanges[] = (after || []).filter(spec => !hasIgnoreAnnotation(spec)).map(spec => ({ change, spec }));
+    const changes: SyncChanges[] = (after || []).filter(spec => !hasMetadataAnnotation(spec, "ignore")).map(spec => ({ change, spec }));
     if (before && before.length > 0) {
         for (const spec of before) {
-            if (hasIgnoreAnnotation(spec)) {
+            if (hasMetadataAnnotation(spec, "ignore")) {
                 changes.push({ change: "ignore", spec });
             } else if ((change === "delete") || (!after.some(a => sameObject(a, spec)))) {
                 changes.push({ change: "delete", spec });
@@ -106,10 +106,10 @@ export function calculateChanges(
  * @param spec the spec to inspect
  * @returns the result of the annotation inspection
  */
-function hasIgnoreAnnotation(spec: k8s.KubernetesObject): boolean {
+function hasMetadataAnnotation(spec: k8s.KubernetesObject, annotation: string): boolean {
     const ignoreAnnotation = `atomist.com/sdm-pack-k8s:${configurationValue<string>("name")}`;
     return spec.metadata &&
         spec.metadata.annotations &&
         spec.metadata.annotations.hasOwnProperty(ignoreAnnotation) &&
-        spec.metadata.annotations[ignoreAnnotation] === "ignore";
+        spec.metadata.annotations[ignoreAnnotation] === annotation;
 }
