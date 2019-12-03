@@ -51,7 +51,20 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
     const syncOpts = configurationValue<Partial<KubernetesSyncOptions>>("sdm.k8s.options.sync", {});
 
     for (const specChange of changes) {
-        const changer = (specChange.change === "delete") ? deleteSpec : applySpec;
+        let changer;
+        switch (specChange.change) {
+            case "delete": {
+                changer = deleteSpec;
+                break;
+            }
+            case "ignore": {
+                changer = async (spec: k8s.KubernetesObject) => (Promise.resolve);
+                break;
+            }
+            default: {
+                changer = applySpec;
+            }
+        }
         _.set(specChange.spec, "metadata.annotations['atomist.com/sync-sha']", change.sha);
 
         if (specChange.change !== "delete" && specChange.spec.kind === "Secret" && syncOpts.secretKey) {
@@ -102,14 +115,11 @@ export function calculateChanges(
 }
 
 /**
- * Check if the Kubernetes Object has an ignore annotation that is relevant to the current SDM
+ * Check if the Kubernetes Object has an annotation that is relevant to the current SDM
  * @param spec the spec to inspect
+ * @param annotationValue to validate for
  * @returns the result of the annotation inspection
  */
-function hasMetadataAnnotation(spec: k8s.KubernetesObject, annotation: string): boolean {
-    const ignoreAnnotation = `atomist.com/sdm-pack-k8s:${configurationValue<string>("name")}`;
-    return spec.metadata &&
-        spec.metadata.annotations &&
-        spec.metadata.annotations.hasOwnProperty(ignoreAnnotation) &&
-        spec.metadata.annotations[ignoreAnnotation] === annotation;
+function hasMetadataAnnotation(spec: k8s.KubernetesObject, annotationValue: string): boolean {
+    return _.get(spec, `metadata.annotations['atomist.com/sdm-pack-k8s:${configurationValue<string>("name")}']`, false) === annotationValue;
 }
