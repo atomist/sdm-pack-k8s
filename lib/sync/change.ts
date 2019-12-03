@@ -26,6 +26,7 @@ import { deleteSpec } from "../kubernetes/delete";
 import { decryptSecret } from "../kubernetes/secret";
 import { parseKubernetesSpecs } from "../kubernetes/spec";
 import { sameObject } from "./application";
+import { changeType } from "./changeType";
 import { PushDiff } from "./diff";
 import { previousSpecVersion } from "./previousSpecVersion";
 
@@ -62,8 +63,8 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
 
 /** Return type from [[calculateChanges]]. */
 export interface SyncChanges {
-    /** "apply" or "delete" */
-    change: "apply" | "delete";
+    /** "apply", "delete" or "ignore" */
+    change: changeType;
     /** Spec to apply/delete. */
     spec: k8s.KubernetesObject;
 }
@@ -83,19 +84,32 @@ export interface SyncChanges {
 export function calculateChanges(
     before: k8s.KubernetesObject[],
     after: k8s.KubernetesObject[] | undefined,
-    change: "apply" | "delete",
+    change: changeType,
 ): SyncChanges[] {
 
-    if (change === "delete") {
-        return (before || []).map(spec => ({ change, spec }));
-    }
-    const changes: SyncChanges[] = (after || []).map(spec => ({ change, spec }));
+    const changes: SyncChanges[] = (after || []).filter(spec => !hasIgnoreAnnotation(spec)).map(spec => ({ change, spec }));
     if (before && before.length > 0) {
         for (const spec of before) {
-            if (!after.some(a => sameObject(a, spec))) {
+            if (hasIgnoreAnnotation(spec)) {
+                changes.push({ change: "ignore", spec });
+            } else if ((change === "delete") || (!after.some(a => sameObject(a, spec)))) {
                 changes.push({ change: "delete", spec });
             }
         }
     }
+
     return changes;
+}
+
+/**
+ * Check if the Kubernetes Object has an ignore annotation that is relevant to the current SDM
+ * @param spec the spec to inspect
+ * @returns the result of the annotation inspection
+ */
+function hasIgnoreAnnotation(spec: k8s.KubernetesObject): boolean {
+    const ignoreAnnotation = `atomist.com/sdm-pack-k8s:${configurationValue<string>("name")}`;
+    return spec.metadata &&
+        spec.metadata.annotations &&
+        spec.metadata.annotations.hasOwnProperty(ignoreAnnotation) &&
+        spec.metadata.annotations[ignoreAnnotation] === "ignore";
 }

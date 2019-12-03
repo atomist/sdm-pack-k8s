@@ -18,6 +18,7 @@ import {
     GitProject,
     InMemoryProject,
 } from "@atomist/automation-client";
+import * as acglobals from "@atomist/automation-client/lib/globals";
 import * as sdm from "@atomist/sdm";
 import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
@@ -31,6 +32,21 @@ import { PushDiff } from "../../lib/sync/diff";
 import * as prv from "../../lib/sync/previousSpecVersion";
 
 describe("sync/change", () => {
+
+    let originalAutomationClient: any;
+    before(() => {
+        originalAutomationClient = Object.getOwnPropertyDescriptor(acglobals, "automationClientInstance");
+        Object.defineProperty(acglobals, "automationClientInstance", {
+            value: () => ({
+                configuration: {
+                    name: "@joe-henry/scar",
+                },
+            }),
+        });
+    });
+    after(() => {
+        Object.defineProperty(acglobals, "automationClientInstance", originalAutomationClient);
+    });
 
     describe("calculateChanges", () => {
 
@@ -151,7 +167,7 @@ describe("sync/change", () => {
             }
         });
 
-        describe("delete changes",  () => {
+        describe("delete changes", () => {
 
             let origClientDelete: any;
             let origClientRead: any;
@@ -249,5 +265,122 @@ describe("sync/change", () => {
             });
         });
 
+    });
+
+    describe("sdm-pack-k8s annotation", () => {
+
+        it("ignore annotation value is present", () => {
+
+            const a = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "louemmy", namespace: "sirrah",
+                        annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/scar": "ignore" },
+                    },
+                },
+            ];
+            const b = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "emmylou", namespace: "harris",
+                        annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/scar": "ignore" },
+                    },
+                },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "louemmy", namespace: "sirrah",
+                        annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/scar": "ignore" },
+                    },
+                },
+            ];
+            const c = calculateChanges(b, a, "apply");
+            const e = [
+                { change: "apply", spec: { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "apply", spec: { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "apply", spec: { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "delete", spec: { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } } },
+                {
+                    change: "ignore", spec: {
+                        kind: "ConfigMap", metadata: {
+                            name: "emmylou", namespace: "harris",
+                            annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/scar": "ignore" },
+                        },
+                    },
+                },
+                {
+                    change: "ignore", spec: {
+                        kind: "ConfigMap", metadata: {
+                            name: "louemmy", namespace: "sirrah",
+                            annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/scar": "ignore" },
+                        },
+                    },
+                },
+            ];
+            assert.deepStrictEqual(c, e);
+        });
+
+        it("sdm name is not recognised", () => {
+
+            const a = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "louemmy", namespace: "sirrah",
+                        annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/with-no-scar": "ignore" },
+                    },
+                },
+            ];
+            const b = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "emmylou", namespace: "harris",
+                        annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/with-no-scar": "ignore" },
+                    },
+                },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "louemmy", namespace: "sirrah",
+                        annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/with-no-scar": "ignore" },
+                    },
+                },
+            ];
+            const c = calculateChanges(b, a, "apply");
+            const e = [
+                { change: "apply", spec: { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "apply", spec: { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "apply", spec: { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } } },
+                {
+                    change: "apply", spec: {
+                        kind: "ConfigMap", metadata: {
+                            name: "louemmy", namespace: "sirrah",
+                            annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/with-no-scar": "ignore" },
+                        },
+                    },
+                },
+                { change: "delete", spec: { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } } },
+                {
+                    change: "delete", spec: {
+                        kind: "ConfigMap", metadata: {
+                            name: "emmylou", namespace: "harris",
+                            annotations: { "atomist.com/sdm-pack-k8s:@joe-henry/with-no-scar": "ignore" },
+                        },
+                    },
+                },
+            ];
+            assert.deepStrictEqual(c, e);
+        });
     });
 });
