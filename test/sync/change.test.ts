@@ -138,19 +138,6 @@ describe("sync/change", () => {
 
     describe("changeResources", () => {
 
-        const resource = {
-            apiVersion: "v1",
-            kind: "Secret",
-            type: "Opaque",
-            metadata: {
-                name: "mysecret",
-            },
-            data: {
-                username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
-                password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
-            },
-        };
-
         it("resource file does not exist", async () => {
             const project: GitProject = InMemoryProject.of() as any;
             const diff: PushDiff = {
@@ -168,6 +155,18 @@ describe("sync/change", () => {
         });
 
         describe("spoofs", () => {
+            const resource = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "mysecret",
+                },
+                data: {
+                    username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                    password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+                },
+            };
 
             let origClientDelete: any;
             let origClientPatch: any;
