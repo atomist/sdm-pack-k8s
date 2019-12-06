@@ -167,19 +167,16 @@ describe("sync/change", () => {
             }
         });
 
-        describe("delete changes", () => {
+        describe("spoofs", () => {
 
             let origClientDelete: any;
+            let origClientPatch: any;
             let origClientRead: any;
             let origPreviousSpecVersion: any;
 
             before(() => {
                 origClientDelete = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "delete");
-                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
-                    value: async (spec: k8s.KubernetesObject, body: any) => {
-                        return Promise.resolve();
-                    },
-                });
+                origClientPatch = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "patch");
 
                 origClientRead = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "read");
                 Object.defineProperty(api.K8sObjectApi.prototype, "read", {
@@ -198,11 +195,18 @@ describe("sync/change", () => {
 
             after(() => {
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", origClientDelete);
+                Object.defineProperty(api.K8sObjectApi.prototype, "patch", origClientPatch);
                 Object.defineProperty(api.K8sObjectApi.prototype, "read", origClientRead);
                 Object.defineProperty(prv, "previousSpecVersion", origPreviousSpecVersion);
             });
 
-            it("test", async () => {
+            it("delete changes", async () => {
+                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                    value: async (spec: k8s.KubernetesObject, body: any) => {
+                        return Promise.resolve();
+                    },
+                });
+
                 const project: GitProject = InMemoryProject.of() as any;
                 const diff: PushDiff = {
                     change: "delete",
@@ -212,44 +216,13 @@ describe("sync/change", () => {
 
                 await changeResource(project, diff);
             });
-        });
 
-        describe("apply changes", () => {
-            let origClientPatch: any;
-            let origClientRead: any;
-            let origPreviousSpecVersion: any;
-
-            before(() => {
-
-                origClientPatch = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "patch");
+            it("apply changes", async () => {
                 Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
                     value: async (spec: k8s.KubernetesObject) => {
                         return Promise.resolve();
                     },
                 });
-
-                origClientRead = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "read");
-                Object.defineProperty(api.K8sObjectApi.prototype, "read", {
-                    value: async (spec: k8s.KubernetesObject) => {
-                        return Promise.resolve();
-                    },
-                });
-
-                origPreviousSpecVersion = Object.getOwnPropertyDescriptor(prv, "previousSpecVersion");
-                Object.defineProperty(prv, "previousSpecVersion", {
-                    value: (baseDir: string, specPath: string, sha: string) => {
-                        return yaml.safeDump(resource);
-                    },
-                });
-            });
-
-            after(() => {
-                Object.defineProperty(api.K8sObjectApi.prototype, "patch", origClientPatch);
-                Object.defineProperty(api.K8sObjectApi.prototype, "read", origClientRead);
-                Object.defineProperty(prv, "previousSpecVersion", origPreviousSpecVersion);
-            });
-
-            it("test", async () => {
 
                 const project: GitProject = InMemoryProject.of({
                     path: "fake.path",
@@ -264,7 +237,6 @@ describe("sync/change", () => {
                 await changeResource(project, diff);
             });
         });
-
     });
 
     describe("sdm-pack-k8s annotation", () => {
