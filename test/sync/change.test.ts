@@ -185,11 +185,6 @@ describe("sync/change", () => {
                 });
 
                 origPreviousSpecVersion = Object.getOwnPropertyDescriptor(prv, "previousSpecVersion");
-                Object.defineProperty(prv, "previousSpecVersion", {
-                    value: (baseDir: string, specPath: string, sha: string) => {
-                        return yaml.safeDump(resource);
-                    },
-                });
             });
 
             after(() => {
@@ -203,6 +198,11 @@ describe("sync/change", () => {
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
                     value: async (spec: k8s.KubernetesObject, body: any) => {
                         return Promise.resolve();
+                    },
+                });
+                Object.defineProperty(prv, "previousSpecVersion", {
+                    value: (baseDir: string, specPath: string, sha: string) => {
+                        return yaml.safeDump(resource);
                     },
                 });
 
@@ -222,6 +222,11 @@ describe("sync/change", () => {
                         return Promise.resolve();
                     },
                 });
+                Object.defineProperty(prv, "previousSpecVersion", {
+                    value: (baseDir: string, specPath: string, sha: string) => {
+                        return yaml.safeDump(resource);
+                    },
+                });
 
                 const project: GitProject = InMemoryProject.of({
                     path: "fake.path",
@@ -235,6 +240,207 @@ describe("sync/change", () => {
 
                 await changeResource(project, diff);
             });
+
+            /**
+             * expect that the patch and delete methods are not called
+             */
+            it("apply changes with ignore annotation", async () => {
+                const r = {
+                    apiVersion: "v1",
+                    kind: "Secret",
+                    type: "Opaque",
+                    metadata: {
+                        name: "mysecret",
+                        annotations: {
+                            "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore",
+                        },
+                    },
+                    data: {
+                        username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                        password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+                    },
+                };
+
+                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                    value: async (spec: k8s.KubernetesObject) => {
+                        throw new Error("patch shouldn't be called");
+                    },
+                });
+
+                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                    value: async (spec: k8s.KubernetesObject, body: any) => {
+                        throw new Error("delete shouldn't be called");
+                    },
+                });
+                Object.defineProperty(prv, "previousSpecVersion", {
+                    value: (baseDir: string, specPath: string, sha: string) => {
+                        return yaml.safeDump(r);
+                    },
+                });
+
+                const project: GitProject = InMemoryProject.of({
+                    path: "fake.path",
+                    content: yaml.safeDump(r),
+                }) as any;
+                const diff: PushDiff = {
+                    change: "apply",
+                    path: "fake.path",
+                    sha: "fake.sha",
+                };
+
+                await changeResource(project, diff);
+            });
+
+            /**
+             * expect that the delete method is not called
+             */
+            it("apply changes with ignore annotation and different sdm name", async () => {
+                const r = {
+                    apiVersion: "v1",
+                    kind: "Secret",
+                    type: "Opaque",
+                    metadata: {
+                        name: "mysecret",
+                        annotations: {
+                            "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore",
+                        },
+                    },
+                    data: {
+                        username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                        password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+                    },
+                };
+
+                Object.defineProperty(prv, "previousSpecVersion", {
+                    value: (baseDir: string, specPath: string, sha: string) => {
+                        return yaml.safeDump(r);
+                    },
+                });
+                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                    value: async (spec: k8s.KubernetesObject) => {
+                        return Promise.resolve();
+                    },
+                });
+
+                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                    value: async (spec: k8s.KubernetesObject, body: any) => {
+                        return Promise.reject(new Error("patch shouldn't be called"));
+                    },
+                });
+
+                const project: GitProject = InMemoryProject.of({
+                    path: "fake.path",
+                    content: yaml.safeDump(r),
+                }) as any;
+                const diff: PushDiff = {
+                    change: "apply",
+                    path: "fake.path",
+                    sha: "fake.sha",
+                };
+
+                await changeResource(project, diff);
+            });
+
+            /**
+             * expect that the patch and delete methods are not called
+             */
+            it("delete changes with ignore annotation", async () => {
+                const r = {
+                    apiVersion: "v1",
+                    kind: "Secret",
+                    type: "Opaque",
+                    metadata: {
+                        name: "mysecret",
+                        annotations: {
+                            "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore",
+                        },
+                    },
+                    data: {
+                        username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                        password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+                    },
+                };
+
+                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                    value: async (spec: k8s.KubernetesObject) => {
+                        throw new Error("patch shouldn't be called");
+                    },
+                });
+
+                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                    value: async (spec: k8s.KubernetesObject, body: any) => {
+                        throw new Error("delete shouldn't be called");
+                    },
+                });
+                Object.defineProperty(prv, "previousSpecVersion", {
+                    value: (baseDir: string, specPath: string, sha: string) => {
+                        return yaml.safeDump(r);
+                    },
+                });
+
+                const project: GitProject = InMemoryProject.of({
+                    path: "fake.path",
+                    content: yaml.safeDump(r),
+                }) as any;
+                const diff: PushDiff = {
+                    change: "delete",
+                    path: "fake.path",
+                    sha: "fake.sha",
+                };
+
+                await changeResource(project, diff);
+            });
+
+            /**
+             * expect that the patch method is not called
+             */
+            it("delete changes with ignore annotation and different sdm name", async () => {
+                const r = {
+                    apiVersion: "v1",
+                    kind: "Secret",
+                    type: "Opaque",
+                    metadata: {
+                        name: "mysecret",
+                        annotations: {
+                            "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore",
+                        },
+                    },
+                    data: {
+                        username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                        password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+                    },
+                };
+
+                Object.defineProperty(prv, "previousSpecVersion", {
+                    value: (baseDir: string, specPath: string, sha: string) => {
+                        return yaml.safeDump(r);
+                    },
+                });
+                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                    value: async (spec: k8s.KubernetesObject) => {
+                        return Promise.reject(new Error("patch shouldn't be called"));
+                    },
+                });
+
+                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                    value: async (spec: k8s.KubernetesObject, body: any) => {
+                        return Promise.resolve();
+                    },
+                });
+
+                const project: GitProject = InMemoryProject.of({
+                    path: "fake.path",
+                    content: yaml.safeDump(r),
+                }) as any;
+                const diff: PushDiff = {
+                    change: "delete",
+                    path: "fake.path",
+                    sha: "fake.sha",
+                };
+
+                await changeResource(project, diff);
+            });
+
         });
     });
 
