@@ -194,6 +194,9 @@ describe("sync/change", () => {
                 Object.defineProperty(prv, "previousSpecVersion", origPreviousSpecVersion);
             });
 
+            /**
+             * expect that the patch method is not called
+             */
             it("delete changes", async () => {
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
                     value: async (spec: k8s.KubernetesObject, body: any) => {
@@ -203,6 +206,11 @@ describe("sync/change", () => {
                 Object.defineProperty(prv, "previousSpecVersion", {
                     value: (baseDir: string, specPath: string, sha: string) => {
                         return yaml.safeDump(resource);
+                    },
+                });
+                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                    value: async (spec: k8s.KubernetesObject) => {
+                        throw new Error("patch shouldn't be called");
                     },
                 });
 
@@ -216,6 +224,9 @@ describe("sync/change", () => {
                 await changeResource(project, diff);
             });
 
+            /**
+             * expect that the delete method is not called
+             */
             it("apply changes", async () => {
                 Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
                     value: async (spec: k8s.KubernetesObject) => {
@@ -225,6 +236,11 @@ describe("sync/change", () => {
                 Object.defineProperty(prv, "previousSpecVersion", {
                     value: (baseDir: string, specPath: string, sha: string) => {
                         return yaml.safeDump(resource);
+                    },
+                });
+                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                    value: async (spec: k8s.KubernetesObject, body: any) => {
+                        return Promise.reject(new Error("delete shouldn't be called"));
                     },
                 });
 
@@ -324,7 +340,7 @@ describe("sync/change", () => {
 
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
                     value: async (spec: k8s.KubernetesObject, body: any) => {
-                        return Promise.reject(new Error("patch shouldn't be called"));
+                        return Promise.reject(new Error("delete shouldn't be called"));
                     },
                 });
 
