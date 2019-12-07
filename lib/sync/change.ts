@@ -52,19 +52,14 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
 
     for (const specChange of changes) {
         let changer;
-        switch (specChange.change) {
-            case "delete": {
-                changer = deleteSpec;
-                break;
-            }
-            case "ignore": {
-                changer = async (spec: k8s.KubernetesObject) => (Promise.resolve);
-                break;
-            }
-            default: {
-                changer = applySpec;
-            }
+        if (specChange.change === "delete") {
+            changer = deleteSpec;
+        } else if (specChange.change === "ignore") {
+            changer = async (spec: k8s.KubernetesObject) => (Promise.resolve);
+        } else {
+            changer = applySpec;
         }
+
         _.set(specChange.spec, "metadata.annotations['atomist.com/sync-sha']", change.sha);
 
         if (specChange.change !== "delete" && specChange.spec.kind === "Secret" && syncOpts.secretKey) {
