@@ -30,7 +30,7 @@ import { deleteSpec } from "../kubernetes/delete";
 import { decryptSecret } from "../kubernetes/secret";
 import { parseKubernetesSpecs } from "../kubernetes/spec";
 import { sameObject } from "./application";
-import { changeType } from "./changeType";
+import { ChangeType } from "./changeType";
 import { PushDiff } from "./diff";
 import { previousSpecVersion } from "./previousSpecVersion";
 
@@ -76,7 +76,7 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
 /** Return type from [[calculateChanges]]. */
 export interface SyncChanges {
     /** "apply", "delete" or "ignore" */
-    change: changeType;
+    change: ChangeType;
     /** Spec to apply/delete. */
     spec: k8s.KubernetesObject;
 }
@@ -96,7 +96,7 @@ export interface SyncChanges {
 export function calculateChanges(
     before: k8s.KubernetesObject[],
     after: k8s.KubernetesObject[] | undefined,
-    change: changeType,
+    change: ChangeType,
 ): SyncChanges[] {
 
     const changes: SyncChanges[] = (after || []).filter(spec => !hasMetadataAnnotation(spec, "ignore")).map(spec => ({ change, spec }));

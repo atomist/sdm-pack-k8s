@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export type changeType = "apply" | "delete" | "ignore";
+export type ChangeType = "apply" | "delete" | "ignore";
