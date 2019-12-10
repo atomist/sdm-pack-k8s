@@ -21,6 +21,10 @@ import {
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";
+import {
+    K8sDeleteResponse,
+    K8sObjectResponse,
+} from "../kubernetes/api";
 import { applySpec } from "../kubernetes/apply";
 import { deleteSpec } from "../kubernetes/delete";
 import { decryptSecret } from "../kubernetes/secret";
@@ -51,11 +55,11 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
     const syncOpts = configurationValue<Partial<KubernetesSyncOptions>>("sdm.k8s.options.sync", {});
 
     for (const specChange of changes) {
-        let changer;
+        let changer: (spec: k8s.KubernetesObject) => Promise<K8sDeleteResponse | K8sObjectResponse | undefined>;
         if (specChange.change === "delete") {
             changer = deleteSpec;
         } else if (specChange.change === "ignore") {
-            changer = async (spec: k8s.KubernetesObject) => (Promise.resolve);
+            changer = async (spec: k8s.KubernetesObject) => (Promise.resolve(undefined));
         } else {
             changer = applySpec;
         }
