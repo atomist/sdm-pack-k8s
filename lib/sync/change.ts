@@ -120,5 +120,8 @@ export function calculateChanges(
  * @returns the result of the annotation inspection
  */
 function hasMetadataAnnotation(spec: k8s.KubernetesObject, annotationValue: string): boolean {
-    return _.get(spec, `metadata.annotations['atomist.com/sdm-pack-k8s/${configurationValue<string>("name")}']`, false) === annotationValue;
+    const sdmName = configurationValue<string>("name");
+    const specValue = _.get(spec, `metadata.annotations["atomist.com/sdm-pack-k8s/${sdmName}"]`);
+
+    return specValue && specValue === annotationValue;
 }
