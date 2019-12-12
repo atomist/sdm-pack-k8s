@@ -20,6 +20,7 @@ import {
     deleteApplication,
     upsertApplication,
 } from "../../lib/kubernetes/application";
+import { KubernetesApplication } from "../../lib/kubernetes/request";
 import { DefaultLogRetryOptions } from "../../lib/support/retry";
 import {
     k8sAvailable,
@@ -28,7 +29,30 @@ import {
 
 describe("kubernetes/application", () => {
 
-    describe("upsertApplication & deleteApplication", function(): void {
+    describe("upsertApplication", () => {
+
+        it("should use no-op client to do nothing", async () => {
+            const a: KubernetesApplication = {
+                workspaceId: "TH340111NG5T0N35",
+                name: "street-fighting-man",
+                ns: "beggars-banquest",
+                image: "rolling-stones/street-fighting-man:1968",
+                mode: "sync",
+                port: 3944,
+                path: "/6",
+            };
+            const f = "@atomist/k8s-sdm";
+            const r = await upsertApplication(a, f);
+            assert(r.length === 4);
+            assert(r.some(s => s.kind === "Namespace"));
+            assert(r.some(s => s.kind === "Deployment"));
+            assert(r.some(s => s.kind === "Service"));
+            assert(r.some(s => s.kind === "Ingress"));
+        });
+
+    });
+
+    describe.skip("upsertApplication & deleteApplication", function(): void {
 
         // tslint:disable-next-line:no-invalid-this
         this.timeout(5000);

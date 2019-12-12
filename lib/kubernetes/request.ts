@@ -42,13 +42,23 @@ export interface KubernetesApplication {
     /** Full image name and tag for deployment pod template container. */
     image: string;
     /**
+     * Mode of operation.  If not provided, the "full" mode is used,
+     * making calls to the Kubernetes API and, if configured,
+     * persisting changes to the sync/GitOps repo.  If set to "sync",
+     * it will only persist changes to the configured sync/GitOps
+     * repo, making no calls to the Kubernetes API.
+     */
+    mode?: "full" | "sync";
+    /**
      * Name of image pull secret for container image, if not provided
      * no image pull secret is provided in the pod spec.
+     * Prefer deploymentSpec.
      */
     imagePullSecret?: string;
     /**
      * Number of replicas in deployment.  May be overridden by
      * deploymentSpec.
+     * Prefer deploymentSpec
      */
     replicas?: number;
     /**
@@ -66,14 +76,19 @@ export interface KubernetesApplication {
      * Ingress rule hostname, if not provided none is used in the
      * ingress rule, meaning it will apply to the wildcard host, and
      * "localhost" is used when constructing the service endpoint URL.
+     * Prefer ingressSpec
      */
     host?: string;
     /**
      * Ingress protocol, "http" or "https".  If tslSecret is provided,
      * the default is "https", otherwise "http".
+     * Prefer ingressSpec
      */
     protocol?: "http" | "https";
-    /** Name of TLS secret for host */
+    /**
+     * Name of TLS secret for host
+     * Prefer ingressSpec
+     */
     tlsSecret?: string;
     /**
      * Partial deployment spec for this application that is overlaid
@@ -131,7 +146,7 @@ export interface KubernetesApplication {
  * Information needed to delete resources related to an application in
  * a Kubernetes cluster.
  */
-export type KubernetesDelete = Pick<KubernetesApplication, "name" | "ns" | "workspaceId">;
+export type KubernetesDelete = Pick<KubernetesApplication, "name" | "ns" | "workspaceId" | "mode">;
 
 /**
  * Intermediate interface for use in combination with other

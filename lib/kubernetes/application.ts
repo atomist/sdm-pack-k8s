@@ -17,7 +17,11 @@
 import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
-import { makeApiClients } from "./clients";
+import {
+    KubernetesClients,
+    makeApiClients,
+    makeNoOpApiClients,
+} from "./clients";
 import { loadKubeConfig } from "./config";
 import {
     deleteAppResources,
@@ -45,15 +49,20 @@ import { upsertService } from "./service";
  * @return Array of resource specs upserted
  */
 export async function upsertApplication(app: KubernetesApplication, sdmFulfiller: string): Promise<k8s.KubernetesObject[]> {
-    let config: k8s.KubeConfig;
-    try {
-        config = loadKubeConfig();
-    } catch (e) {
-        e.message = `Failed to load Kubernetes config to deploy ${app.ns}/${app.name}: ${e.message}`;
-        logger.error(e.message);
-        throw e;
+    let clients: KubernetesClients;
+    if (app.mode === "sync") {
+        clients = makeNoOpApiClients();
+    } else {
+        let config: k8s.KubeConfig;
+        try {
+            config = loadKubeConfig();
+        } catch (e) {
+            e.message = `Failed to load Kubernetes config to deploy ${app.ns}/${app.name}: ${e.message}`;
+            logger.error(e.message);
+            throw e;
+        }
+        clients = makeApiClients(config);
     }
-    const clients = makeApiClients(config);
     const req = { ...app, sdmFulfiller, clients };
 
     try {

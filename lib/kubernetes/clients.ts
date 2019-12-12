@@ -41,3 +41,60 @@ export function makeApiClients(kc: k8s.KubeConfig): KubernetesClients {
     const ext = kc.makeApiClient(k8s.ExtensionsV1beta1Api);
     return { core, apps, rbac, ext };
 }
+
+/**
+ * Provide no-op client when only want changes persisted to the GitOps
+ * sync repo.
+ */
+export function makeNoOpApiClients(): KubernetesClients {
+    const noop = async () => { };
+    const core: any = {
+        createNamespace: noop,
+        deleteNamespace: noop,
+        patchNamespace: noop,
+        readNamespace: noop,
+        createNamespacedSecret: noop,
+        deleteNamespacedSecret: noop,
+        patchNamespacedSecret: noop,
+        readNamespacedSecret: noop,
+        createNamespacedService: noop,
+        deleteNamespacedService: noop,
+        patchNamespacedService: noop,
+        readNamespacedService: noop,
+        createNamespacedServiceAccount: noop,
+        deleteNamespacedServiceAccount: noop,
+        patchNamespacedServiceAccount: noop,
+        readNamespacedServiceAccount: noop,
+    };
+    const apps: any = {
+        createNamespacedDeployment: noop,
+        deleteNamespacedDeployment: noop,
+        patchNamespacedDeployment: noop,
+        readNamespacedDeployment: noop,
+    };
+    const rbac: any = {
+        createClusterRole: noop,
+        deleteClusterRole: noop,
+        patchClusterRole: noop,
+        readClusterRole: noop,
+        createClusterRoleBinding: noop,
+        deleteClusterRoleBinding: noop,
+        patchClusterRoleBinding: noop,
+        readClusterRoleBinding: noop,
+        createNamespacedRole: noop,
+        deleteNamespacedRole: noop,
+        patchNamespacedRole: noop,
+        readNamespacedRole: noop,
+        createNamespacedRoleBinding: noop,
+        deleteNamespacedRoleBinding: noop,
+        patchNamespacedRoleBinding: noop,
+        readNamespacedRoleBinding: noop,
+    };
+    const ext: any = {
+        createNamespacedIngress: noop,
+        deleteNamespacedIngress: noop,
+        patchNamespacedIngress: noop,
+        readNamespacedIngress: noop,
+    };
+    return { core, apps, rbac, ext };
+}
