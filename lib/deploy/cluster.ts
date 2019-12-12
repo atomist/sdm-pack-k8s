@@ -38,23 +38,12 @@ import {
  * @return cluster name
  */
 export function getCluster(environment: string, fulfillment?: string): string {
-    if (fulfillment) {
-        return fulfillment.replace(/^@.*?\//, "").replace(/^.*?_/, "");
+    if (fulfillment && environment) {
+        return cleanFulfillment(fulfillment) + " " + envString(environment);
+    } else if (fulfillment) {
+        return cleanFulfillment(fulfillment);
     } else if (environment) {
-        const geRegExp = /^\d+-(\w+)\/$/;
-        // GoalEnvironments are strings, so check if string matches pattern
-        if (geRegExp.test(environment)) {
-            switch (environment) {
-                case StagingEnvironment:
-                    return "testing";
-                case ProductionEnvironment:
-                    return "production";
-                default:
-                    return environment.replace(geRegExp, "$1");
-            }
-        } else {
-            return environment;
-        }
+        return envString(environment);
     } else {
         return "";
     }
@@ -76,5 +65,26 @@ export function getClusterLabel(environment: string, fulfillment?: string): stri
         return ` to \`${cluster}\``;
     } else {
         return "";
+    }
+}
+
+function cleanFulfillment(fulfillment: string): string {
+    return fulfillment.replace(/^@.*?\//, "").replace(/^.*?_/, "");
+}
+
+function envString(environment: string): string {
+    const geRegExp = /^\d+-(\w+)\/$/;
+    // GoalEnvironments are strings, so check if string matches pattern
+    if (geRegExp.test(environment)) {
+        switch (environment) {
+            case StagingEnvironment:
+                return "testing";
+            case ProductionEnvironment:
+                return "production";
+            default:
+                return environment.replace(geRegExp, "$1");
+        }
+    } else {
+        return environment;
     }
 }

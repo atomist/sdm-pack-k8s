@@ -30,39 +30,46 @@ describe("deploy/cluster", () => {
 
     describe("getCluster", () => {
 
-        it("should return the fulfillment", () => {
+        it("should return the fulfillment and environment", () => {
             const e = "messiaen";
             const f = "gbv";
             const l = getCluster(e, f);
-            assert(l === f);
+            assert(l === "gbv messiaen");
+        });
+
+        it("should return the fulfillment", () => {
+            const e = "";
+            const f = "gbv";
+            const l = getCluster(e, f);
+            assert(l === "gbv");
         });
 
         it("should return remove package scope from fulfillment", () => {
             const e = "messiaen";
             const f = "@gbv/alien-lanes";
             const l = getCluster(e, f);
-            assert(l === "alien-lanes");
+            assert(l === "alien-lanes messiaen");
         });
 
         it("should parse the cluster from fulfillment", () => {
             const e = "messiaen";
             const f = "@gbv/alien-lanes_motor-away";
             const l = getCluster(e, f);
-            assert(l === "motor-away");
+            assert(l === "motor-away messiaen");
         });
 
         it("should only match up to the first /", () => {
             const e = "messiaen";
             const f = "@gbv/alien-lanes_motor/away";
             const l = getCluster(e, f);
-            assert(l === "motor/away");
+            assert(l === "motor/away messiaen");
         });
 
         it("should not remove leading @ if no /", () => {
             const e = "messiaen";
             const f = "@gbv-alien-lanes-motor-away";
             const l = getCluster(e, f);
-            assert(l === f);
+            assert(l === "@gbv-alien-lanes-motor-away messiaen");
         });
 
         it("should handle an environment string", () => {
@@ -111,8 +118,15 @@ describe("deploy/cluster", () => {
 
     describe("getClusterLabel", () => {
 
-        it("should return the fulfillment", () => {
+        it("should return the fulfillment and environment", () => {
             const e = "messiaen";
+            const f = "gbv";
+            const l = getClusterLabel(e, f);
+            assert(l === " to `gbv messiaen`");
+        });
+
+        it("should return the fulfillment", () => {
+            const e: string = undefined;
             const f = "gbv";
             const l = getClusterLabel(e, f);
             assert(l === " to `gbv`");
@@ -122,14 +136,14 @@ describe("deploy/cluster", () => {
             const e = "messiaen";
             const f = "@gbv/alien-lanes";
             const l = getClusterLabel(e, f);
-            assert(l === " to `alien-lanes`");
+            assert(l === " to `alien-lanes messiaen`");
         });
 
         it("should parse the cluster from fulfillment", () => {
             const e = "messiaen";
             const f = "@gbv/alien-lanes_motor-away";
             const l = getClusterLabel(e, f);
-            assert(l === " to `motor-away`");
+            assert(l === " to `motor-away messiaen`");
         });
 
         it("should handle an environment string", () => {
