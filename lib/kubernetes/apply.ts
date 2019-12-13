@@ -55,5 +55,10 @@ export async function applySpec(spec: k8s.KubernetesObject): Promise<K8sObjectRe
         return logRetry(() => client.create(spec), `create resource ${slug}`);
     }
     logger.info(`Patching resource ${slug} using '${logObject(spec)}'`);
-    return logRetry(() => client.patch(spec), `patch resource ${slug}`);
+    const options = {
+        headers: {
+            "Content-Type": "application/merge-patch+json",
+        },
+    };
+    return logRetry(() => client.patch(spec, options), `patch resource ${slug}`);
 }
