@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -   Remove patch header patch. [bd9aedd](https://github.com/atomist/sdm-pack-k8s/commit/bd9aedd5865607fc95ee5d839718b721a90ccfcc)
 -   Add environment to display name. [949b583](https://github.com/atomist/sdm-pack-k8s/commit/949b5836c611f888e8664fc69e5b833354bd36e1)
 -   Add headers argument to K8sObjectApi methods. [2f20455](https://github.com/atomist/sdm-pack-k8s/commit/2f204555549264b1a64903ebff3e059c2102f37a)
+-   Change sync patch strategy to JSON merge patch. [04032e9](https://github.com/atomist/sdm-pack-k8s/commit/04032e9bd018ca088d6179637d5bb0741a2c5dc7)
 
 ### Deprecated
 
