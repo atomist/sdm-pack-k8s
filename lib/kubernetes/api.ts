@@ -20,7 +20,6 @@ import * as http from "http";
 import * as request from "request";
 import { requestError } from "../support/error";
 import { defaultNamespace } from "./namespace";
-import { patchHeaders } from "./patch";
 import { logObject } from "./resource";
 
 /** Response from methods that operate on an resource. */
@@ -53,12 +52,22 @@ type K8sRequestResponse = K8sObjectResponse | K8sDeleteResponse | K8sListRespons
 /** Kubernetes API verbs. */
 export type K8sApiAction = "create" | "delete" | "list" | "patch" | "read" | "replace";
 
+/** Type of option argument for object API requests. */
+export interface K8sObjectRequestOptions { headers: { [name: string]: string; }; }
+
 /**
- * Since https://github.com/kubernetes-client/javascript/issues/52
- * is fixed, this is no longer necessary.
- * @deprecated use k8s.KubernetesObject
+ * Valid Content-Type header values for patch operations.  See
+ * https://kubernetes.io/docs/tasks/run-application/update-api-object-kubectl-patch/
+ * for details.
  */
-export type K8sObject = k8s.KubernetesObject;
+export enum K8sPatchStrategies {
+    /** Diff-like JSON format. */
+    JsonPatch = "application/json-patch+json",
+    /** Simple merge. */
+    MergePatch = "application/merge-patch+json",
+    /** Merge with different strategies depending on field metadata. */
+    StrategicMergePatch = "application/strategic-merge-patch+json",
+}
 
 /**
  * Dynamically construct Kubernetes API request URIs so client does
@@ -67,13 +76,13 @@ export type K8sObject = k8s.KubernetesObject;
  */
 export class K8sObjectApi extends k8s.ApisApi {
 
-    private readonly defaultDeleteBody: any = { propagationPolicy: "Background" };
+    private static readonly defaultDeleteBody: k8s.V1DeleteOptions = { propagationPolicy: "Background" };
 
     /**
      * Read any Kubernetes resource.
      */
-    public async create(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
-        const requestOptions = this.baseRequestOptions("POST");
+    public async create(spec: k8s.KubernetesObject, options?: K8sObjectRequestOptions): Promise<K8sObjectResponse> {
+        const requestOptions = this.baseRequestOptions("POST", options);
         requestOptions.uri += await this.specUriPath(spec, "create");
         requestOptions.body = spec;
         return this.requestPromise(requestOptions) as unknown as K8sObjectResponse;
@@ -82,18 +91,18 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Delete any Kubernetes resource.
      */
-    public async delete(spec: k8s.KubernetesObject, body: any = this.defaultDeleteBody): Promise<K8sDeleteResponse> {
-        const requestOptions = this.baseRequestOptions("DELETE");
+    public async delete(spec: k8s.KubernetesObject, body?: k8s.V1DeleteOptions, options?: K8sObjectRequestOptions): Promise<K8sDeleteResponse> {
+        const requestOptions = this.baseRequestOptions("DELETE", options);
         requestOptions.uri += await this.specUriPath(spec, "delete");
-        requestOptions.body = body;
+        requestOptions.body = body || K8sObjectApi.defaultDeleteBody;
         return this.requestPromise(requestOptions) as unknown as K8sDeleteResponse;
     }
 
     /**
      * List any Kubernetes resource.
      */
-    public async list(spec: k8s.KubernetesObject): Promise<K8sListResponse> {
-        const requestOptions = this.baseRequestOptions();
+    public async list(spec: k8s.KubernetesObject, options?: K8sObjectRequestOptions): Promise<K8sListResponse> {
+        const requestOptions = this.baseRequestOptions("GET", options);
         requestOptions.uri += await this.specUriPath(spec, "list");
         return this.requestPromise(requestOptions) as unknown as K8sListResponse;
     }
@@ -101,22 +110,18 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Patch any Kubernetes resource.
      */
-    public async patch(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
-        const requestOptions = this.baseRequestOptions("PATCH");
+    public async patch(spec: k8s.KubernetesObject, options?: K8sObjectRequestOptions): Promise<K8sObjectResponse> {
+        const requestOptions = this.baseRequestOptions("PATCH", options);
         requestOptions.uri += await this.specUriPath(spec, "patch");
         requestOptions.body = spec;
-        requestOptions.headers = {
-            ...requestOptions.headers,
-            ...patchHeaders(),
-        };
         return this.requestPromise(requestOptions) as unknown as K8sObjectResponse;
     }
 
     /**
      * Read any Kubernetes resource.
      */
-    public async read(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
-        const requestOptions = this.baseRequestOptions();
+    public async read(spec: k8s.KubernetesObject, options?: K8sObjectRequestOptions): Promise<K8sObjectResponse> {
+        const requestOptions = this.baseRequestOptions("GET", options);
         requestOptions.uri += await this.specUriPath(spec, "read");
         return this.requestPromise(requestOptions) as unknown as K8sObjectResponse;
     }
@@ -124,8 +129,8 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Replace any Kubernetes resource.
      */
-    public async replace(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
-        const requestOptions = this.baseRequestOptions("PUT");
+    public async replace(spec: k8s.KubernetesObject, options?: K8sObjectRequestOptions): Promise<K8sObjectResponse> {
+        const requestOptions = this.baseRequestOptions("PUT", options);
         requestOptions.uri += await this.specUriPath(spec, "replace");
         requestOptions.body = spec;
         return this.requestPromise(requestOptions) as unknown as K8sObjectResponse;
@@ -149,6 +154,27 @@ export class K8sObjectApi extends k8s.ApisApi {
             logger.error(`Failed to fetch resource metadata for ${apiVersion}/${kind}: ${e.message}`);
             return undefined;
         }
+    }
+
+    /**
+     * Generate request options.  Largely copied from the common
+     * elements of @kubernetes/client-node action methods.
+     */
+    public baseRequestOptions(method: string = "GET", options?: K8sObjectRequestOptions): request.UriOptions & request.CoreOptions {
+        const localVarPath = this.basePath + "/";
+        const queryParameters = {};
+        const headerParams = Object.assign({}, this.defaultHeaders, K8sObjectApi.methodHeaders(method), options?.headers || {});
+        const requestOptions = {
+            method,
+            qs: queryParameters,
+            headers: headerParams,
+            uri: localVarPath,
+            useQuerystring: this._useQuerystring,
+            json: true,
+        };
+        this.authentications.BearerToken.applyToRequest(requestOptions);
+        this.authentications.default.applyToRequest(requestOptions);
+        return requestOptions;
     }
 
     /**
@@ -195,27 +221,6 @@ export class K8sObjectApi extends k8s.ApisApi {
     }
 
     /**
-     * Generate request options.  Largely copied from @kubernetes/client-node/dist/api.js.
-     */
-    private baseRequestOptions(method: string = "GET"): request.UriOptions & request.CoreOptions {
-        const localVarPath = this.basePath + "/";
-        const queryParameters = {};
-        const localHeaders = (method === "PATCH") ? patchHeaders().headers : {};
-        const headerParams = Object.assign({}, this.defaultHeaders, localHeaders);
-        const requestOptions = {
-            method,
-            qs: queryParameters,
-            headers: headerParams,
-            uri: localVarPath,
-            useQuerystring: this._useQuerystring,
-            json: true,
-        };
-        this.authentications.BearerToken.applyToRequest(requestOptions);
-        this.authentications.default.applyToRequest(requestOptions);
-        return requestOptions;
-    }
-
-    /**
      * Wrap request in a Promise.  Largely copied from @kubernetes/client-node/dist/api.js.
      */
     private requestPromise(requestOptions: request.UriOptions & request.CoreOptions): Promise<K8sRequestResponse> {
@@ -234,6 +239,12 @@ export class K8sObjectApi extends k8s.ApisApi {
         });
     }
 
+    /**
+     * Return default headers based on action.
+     */
+    private static methodHeaders(method: string): { [name: string]: string } {
+        return (method === "PATCH") ? { "Content-Type": K8sPatchStrategies.StrategicMergePatch } : {};
+    }
 }
 
 /**

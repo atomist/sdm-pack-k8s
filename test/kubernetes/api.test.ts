@@ -31,6 +31,8 @@ import {
     rng,
 } from "../k8s";
 
+/* tslint:disable:max-file-line-count */
+
 describe("kubernetes/api", () => {
 
     describe("appendName", () => {
@@ -316,6 +318,56 @@ describe("kubernetes/api", () => {
                 } catch (e) {
                     assert(e.message === "Unrecognized API version and kind: v1 Ingress");
                 }
+            });
+
+        });
+
+        describe("baseRequestOptions", () => {
+
+            let client: K8sObjectApi;
+            before(function(): void {
+                try {
+                    const kc = loadKubeConfig();
+                    client = kc.makeApiClient(K8sObjectApi);
+                } catch (e) {
+                    // tslint:disable-next-line:no-invalid-this
+                    this.skip();
+                }
+            });
+
+            it("should return default request options", async () => {
+                const o = client.baseRequestOptions();
+                assert(o.method === "GET");
+                assert((o.uri as string).endsWith("/"));
+            });
+
+            it("should return patch request options", async () => {
+                const o = client.baseRequestOptions("PATCH");
+                assert(o.method === "PATCH");
+                assert((o.uri as string).endsWith("/"));
+                assert(o.headers["Content-Type"] === "application/strategic-merge-patch+json");
+            });
+
+            it("should return provided header", async () => {
+                const o = client.baseRequestOptions("POST", { headers: { Accept: "application/json" } });
+                assert(o.method === "POST");
+                assert((o.uri as string).endsWith("/"));
+                assert(o.headers.Accept === "application/json");
+            });
+
+            it("should return all headers when patching", async () => {
+                const o = client.baseRequestOptions("PATCH", { headers: { Accept: "application/json" } });
+                assert(o.method === "PATCH");
+                assert((o.uri as string).endsWith("/"));
+                assert(o.headers["Content-Type"] === "application/strategic-merge-patch+json");
+                assert(o.headers.Accept === "application/json");
+            });
+
+            it("should override patch content-type header", async () => {
+                const o = client.baseRequestOptions("PATCH", { headers: { "Content-Type": "application/merge-patch+json" } });
+                assert(o.method === "PATCH");
+                assert((o.uri as string).endsWith("/"));
+                assert(o.headers["Content-Type"] === "application/merge-patch+json");
             });
 
         });
