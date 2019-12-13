@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+ /* tslint:disable:max-file-line-count */
 import {
     GitProject,
     InMemoryProject,
@@ -198,8 +199,10 @@ describe("sync/change", () => {
              * expect that the patch method is not called
              */
             it("delete changes", async () => {
+                let deleteCalled = false;
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
                     value: async (spec: k8s.KubernetesObject, body: any) => {
+                        deleteCalled = true;
                         return Promise.resolve();
                     },
                 });
@@ -222,14 +225,18 @@ describe("sync/change", () => {
                 };
 
                 await changeResource(project, diff);
+
+                assert(deleteCalled, "delete was never called");
             });
 
             /**
              * expect that the delete method is not called
              */
             it("apply changes", async () => {
+                let patchCalled = false;
                 Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
                     value: async (spec: k8s.KubernetesObject) => {
+                        patchCalled = true;
                         return Promise.resolve();
                     },
                 });
@@ -255,6 +262,8 @@ describe("sync/change", () => {
                 };
 
                 await changeResource(project, diff);
+
+                assert(patchCalled, "patch was never called");
             });
 
             /**
@@ -332,12 +341,13 @@ describe("sync/change", () => {
                         return yaml.safeDump(r);
                     },
                 });
+                let patchCalled = false;
                 Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
                     value: async (spec: k8s.KubernetesObject) => {
+                        patchCalled = true;
                         return Promise.resolve();
                     },
                 });
-
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
                     value: async (spec: k8s.KubernetesObject, body: any) => {
                         return Promise.reject(new Error("delete shouldn't be called"));
@@ -355,6 +365,8 @@ describe("sync/change", () => {
                 };
 
                 await changeResource(project, diff);
+
+                assert(patchCalled, "patch was never called");
             });
 
             /**
@@ -438,8 +450,10 @@ describe("sync/change", () => {
                     },
                 });
 
+                let deleteCalled = false;
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
                     value: async (spec: k8s.KubernetesObject, body: any) => {
+                        deleteCalled = true;
                         return Promise.resolve();
                     },
                 });
@@ -455,6 +469,8 @@ describe("sync/change", () => {
                 };
 
                 await changeResource(project, diff);
+
+                assert(deleteCalled, "delete was never called");
             });
 
         });
