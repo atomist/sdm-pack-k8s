@@ -88,7 +88,7 @@ describe("sync/repo", () => {
                     },
                 },
             } as any;
-            const s: ScmProviders.ScmProvider = {};
+            const s: ScmProviders.ScmProvider = {} as any;
             const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
@@ -115,7 +115,7 @@ describe("sync/repo", () => {
                 credential: {
                     secret: "m@n-0n-th3-m00n",
                 },
-            };
+            } as any;
             const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
@@ -140,7 +140,7 @@ describe("sync/repo", () => {
             } as any;
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
-            };
+            } as any;
             const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
@@ -166,7 +166,7 @@ describe("sync/repo", () => {
             const s: ScmProviders.ScmProvider = {
                 apiUrl: "https://api.github.com",
                 credential: {} as any,
-            };
+            } as any;
             const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
@@ -194,7 +194,7 @@ describe("sync/repo", () => {
                 credential: {
                     secret: "m@n-0n-th3-m00n",
                 },
-            };
+            } as any;
             const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
@@ -222,7 +222,7 @@ describe("sync/repo", () => {
                 credential: {
                     secret: "m@n-0n-th3-m00n",
                 },
-            };
+            } as any;
             const rc = scmCredentials(m, s);
             assert(rc === undefined);
         });
@@ -252,7 +252,7 @@ describe("sync/repo", () => {
                 },
                 providerType: "ghe" as any,
                 url: "https://ghe.sugar.com/",
-            };
+            } as any;
             const rc = scmCredentials(m, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "m@n-0n-th3-m00n");
@@ -291,7 +291,7 @@ describe("sync/repo", () => {
                 credential: {
                     secret: "m@n-0n-th3-m00n",
                 },
-            };
+            } as any;
             const rc = scmCredentials(m, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "tilted");
@@ -330,7 +330,7 @@ describe("sync/repo", () => {
                     secret: "1w@nn@b3y0u4d0g",
                 },
                 providerType: "bitbucket" as any,
-            };
+            } as any;
             const rc = scmCredentials(m, s);
             assert(rc, "no RepoCredentials returned");
             assert((rc.credentials as TokenCredentials).token === "1w@nn@b3y0u4d0g");
@@ -415,7 +415,7 @@ describe("sync/repo", () => {
             } as any;
             const s: RepoScmProvider.Repo = {
                 org: {
-                    scmProvider: {},
+                    scmProvider: {} as any,
                 },
             };
             const rc = repoCredentials(m, s);
@@ -447,7 +447,7 @@ describe("sync/repo", () => {
                         credential: {
                             secret: "m@n-0n-th3-m00n",
                         },
-                    },
+                    } as any,
                 },
             };
             const rc = repoCredentials(m, s);
@@ -492,7 +492,7 @@ describe("sync/repo", () => {
                         },
                         providerType: "gitlab" as any,
                         url: "http://gitlab.nydolls.com/",
-                    },
+                    } as any,
                 },
             };
             const rc = repoCredentials(m, s);

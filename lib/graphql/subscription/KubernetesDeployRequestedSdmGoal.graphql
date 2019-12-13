@@ -55,13 +55,26 @@ subscription KubernetesDeployRequestedSdmGoal($fulfillmentName: String!) {
     fulfillment(name: [$fulfillmentName]) @required {
       method
       name
+      registration
     }
     description
+    descriptions {
+      canceled
+      completed
+      failed
+      inProcess
+      requested
+      skipped
+      stopped
+      waitingForApproval
+      waitingForPreApproval
+    }
     url
     externalUrl
     state
     externalKey
     goalSet
+    registration
     goalSetId
     phase
     ts
@@ -92,6 +105,7 @@ subscription KubernetesDeployRequestedSdmGoal($fulfillmentName: String!) {
     }
     preApprovalRequired
     data
+    parameters
     version
   }
 }
