@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -   Do not terminate app deployment if namespace patching fails. [#79](https://github.com/atomist/sdm-pack-k8s/issues/79)
 -   Shorten k8s object spec strings when logged. [52f16bb](https://github.com/atomist/sdm-pack-k8s/commit/52f16bb1722ec7771fe54cae66005497bb0d2428)
 -   Remove patch header patch. [bd9aedd](https://github.com/atomist/sdm-pack-k8s/commit/bd9aedd5865607fc95ee5d839718b721a90ccfcc)
+-   Add environment to display name. [949b583](https://github.com/atomist/sdm-pack-k8s/commit/949b5836c611f888e8664fc69e5b833354bd36e1)
 
 ### Deprecated
 
