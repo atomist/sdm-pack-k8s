@@ -49,7 +49,7 @@
     "@atomist/sdm-core": ">=1.7.0"
   },
   "devDependencies": {
-    "@atomist/automation-client": "^2.0.0-master.20191212203327",
+    "@atomist/automation-client": "^2.0.0-master.20191213133922",
     "@atomist/sdm": "^2.0.0-master.20191212173159",
     "@atomist/sdm-core": "^2.0.0-master.20191212171845",
     "@types/mocha": "^5.2.7",
