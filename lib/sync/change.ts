@@ -59,7 +59,7 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
         if (specChange.change === "delete") {
             changer = deleteSpec;
         } else if (specChange.change === "ignore") {
-            changer = async (spec: k8s.KubernetesObject) => (Promise.resolve(undefined));
+            changer = async (spec: k8s.KubernetesObject) => { };
         } else {
             changer = applySpec;
         }
