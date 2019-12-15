@@ -123,7 +123,7 @@ describe("sync/change", () => {
                     {
                         kind: "ConfigMap", metadata: {
                             name: "louemmy", namespace: "sirrah",
-                            annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore" },
+                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
                         },
                     },
                 ];
@@ -135,13 +135,13 @@ describe("sync/change", () => {
                     {
                         kind: "ConfigMap", metadata: {
                             name: "emmylou", namespace: "harris",
-                            annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore" },
+                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
                         },
                     },
                     {
                         kind: "ConfigMap", metadata: {
                             name: "louemmy", namespace: "sirrah",
-                            annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore" },
+                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
                         },
                     },
                 ];
@@ -155,7 +155,7 @@ describe("sync/change", () => {
                         change: "ignore", spec: {
                             kind: "ConfigMap", metadata: {
                                 name: "emmylou", namespace: "harris",
-                                annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore" },
+                                annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
                             },
                         },
                     },
@@ -163,7 +163,7 @@ describe("sync/change", () => {
                         change: "ignore", spec: {
                             kind: "ConfigMap", metadata: {
                                 name: "louemmy", namespace: "sirrah",
-                                annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore" },
+                                annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
                             },
                         },
                     },
@@ -180,7 +180,7 @@ describe("sync/change", () => {
                     {
                         kind: "ConfigMap", metadata: {
                             name: "louemmy", namespace: "sirrah",
-                            annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore" },
+                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
                         },
                     },
                 ];
@@ -192,13 +192,13 @@ describe("sync/change", () => {
                     {
                         kind: "ConfigMap", metadata: {
                             name: "emmylou", namespace: "harris",
-                            annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore" },
+                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
                         },
                     },
                     {
                         kind: "ConfigMap", metadata: {
                             name: "louemmy", namespace: "sirrah",
-                            annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore" },
+                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
                         },
                     },
                 ];
@@ -211,7 +211,7 @@ describe("sync/change", () => {
                         change: "apply", spec: {
                             kind: "ConfigMap", metadata: {
                                 name: "louemmy", namespace: "sirrah",
-                                annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore" },
+                                annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
                             },
                         },
                     },
@@ -220,7 +220,7 @@ describe("sync/change", () => {
                         change: "delete", spec: {
                             kind: "ConfigMap", metadata: {
                                 name: "emmylou", namespace: "harris",
-                                annotations: { "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore" },
+                                annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
                             },
                         },
                     },
@@ -380,7 +380,7 @@ describe("sync/change", () => {
                     metadata: {
                         name: "mysecret",
                         annotations: {
-                            "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore",
+                            "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore",
                         },
                     },
                     data: {
@@ -483,7 +483,7 @@ describe("sync/change", () => {
                     metadata: {
                         name: "mysecret",
                         annotations: {
-                            "atomist.com/sdm-pack-k8s/@joe-henry/scar": "ignore",
+                            "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore",
                         },
                     },
                     data: {
