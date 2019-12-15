@@ -55,7 +55,7 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
     const syncOpts = configurationValue<Partial<KubernetesSyncOptions>>("sdm.k8s.options.sync", {});
 
     for (const specChange of changes) {
-        let changer: (spec: k8s.KubernetesObject) => Promise<K8sDeleteResponse | K8sObjectResponse | undefined>;
+        let changer: (spec: k8s.KubernetesObject) => Promise<K8sDeleteResponse | K8sObjectResponse | void>;
         if (specChange.change === "delete") {
             changer = deleteSpec;
         } else if (specChange.change === "ignore") {
