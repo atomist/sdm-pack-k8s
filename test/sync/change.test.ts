@@ -20,7 +20,6 @@ import {
     InMemoryProject,
 } from "@atomist/automation-client";
 import * as acglobals from "@atomist/automation-client/lib/globals";
-import * as sdm from "@atomist/sdm";
 import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as assert from "power-assert";
@@ -113,28 +112,6 @@ describe("sync/change", () => {
             assert.deepStrictEqual(c, e);
         });
 
-    });
-
-    describe("previousSpecVersion", () => {
-
-        let originalExecPromise: any;
-        before(() => {
-            originalExecPromise = Object.getOwnPropertyDescriptor(sdm, "execPromise");
-            Object.defineProperty(sdm, "execPromise", {
-                value: async () => {
-                    throw new Error("git show failure");
-                },
-            });
-        });
-
-        after(() => {
-            Object.defineProperty(sdm, "execPromise", originalExecPromise);
-        });
-
-        it("git show throws on delete", async () => {
-            const fileContents = await prv.previousSpecVersion("", "", "");
-            assert.equal(fileContents, "");
-        });
     });
 
     describe("changeResources", () => {
