@@ -99,10 +99,10 @@ export function calculateChanges(
     change: ChangeType,
 ): SyncChanges[] {
 
-    const changes: SyncChanges[] = (after || []).filter(spec => !hasMetadataAnnotation(spec, "ignore")).map(spec => ({ change, spec }));
+    const changes: SyncChanges[] = (after || []).filter(spec => !hasMetadataAnnotation(spec, "sync", "ignore")).map(spec => ({ change, spec }));
     if (before && before.length > 0) {
         for (const spec of before) {
-            if (hasMetadataAnnotation(spec, "ignore")) {
+            if (hasMetadataAnnotation(spec, "sync", "ignore")) {
                 changes.push({ change: "ignore", spec });
             } else if ((change === "delete") || (!after.some(a => sameObject(a, spec)))) {
                 changes.push({ change: "delete", spec });
@@ -116,12 +116,14 @@ export function calculateChanges(
 /**
  * Check if the Kubernetes Object has an annotation that is relevant to the current SDM
  * @param spec the spec to inspect
- * @param annotationValue to validate for
+ * @param annotationKey the key to validate for
+ * @param annotationValue the value validate for
  * @returns the result of the annotation inspection
  */
-function hasMetadataAnnotation(spec: k8s.KubernetesObject, annotationValue: string): boolean {
+export function hasMetadataAnnotation(spec: k8s.KubernetesObject, annotationKey: string, annotationValue: string): boolean {
     const sdmName = configurationValue<string>("name");
-    const specValue = _.get(spec, `metadata.annotations["atomist.com/sdm-pack-k8s/sync/${sdmName}"]`);
+    const nameKey = `atomist.com/sdm-pack-k8s/${annotationKey}/${sdmName}`;
+    const specValue = _.get(spec, `metadata.annotations['${nameKey}']`);
 
-    return specValue && specValue === annotationValue;
+    return !!specValue && specValue === annotationValue;
 }

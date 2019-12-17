@@ -27,28 +27,29 @@ import * as api from "../../lib/kubernetes/api";
 import {
     calculateChanges,
     changeResource,
+    hasMetadataAnnotation,
 } from "../../lib/sync/change";
 import { PushDiff } from "../../lib/sync/diff";
 import * as prv from "../../lib/sync/previousSpecVersion";
 
 describe("sync/change", () => {
 
-    describe("calculateChanges", () => {
+    let originalAutomationClient: any;
+    before(() => {
+        originalAutomationClient = Object.getOwnPropertyDescriptor(acglobals, "automationClientInstance");
+        Object.defineProperty(acglobals, "automationClientInstance", {
+            value: () => ({
+                configuration: {
+                    name: "@joe-henry/scar",
+                },
+            }),
+        });
+    });
+    after(() => {
+        Object.defineProperty(acglobals, "automationClientInstance", originalAutomationClient);
+    });
 
-        let originalAutomationClient: any;
-        before(() => {
-            originalAutomationClient = Object.getOwnPropertyDescriptor(acglobals, "automationClientInstance");
-            Object.defineProperty(acglobals, "automationClientInstance", {
-                value: () => ({
-                    configuration: {
-                        name: "@joe-henry/scar",
-                    },
-                }),
-            });
-        });
-        after(() => {
-            Object.defineProperty(acglobals, "automationClientInstance", originalAutomationClient);
-        });
+    describe("calculateChanges", () => {
 
         it("should delete everything", () => {
             const b = [
@@ -262,21 +263,12 @@ describe("sync/change", () => {
                 },
             };
 
-            let originalAutomationClient: any;
             let origClientDelete: any;
             let origClientPatch: any;
             let origClientRead: any;
             let origPreviousSpecVersion: any;
 
             before(() => {
-                originalAutomationClient = Object.getOwnPropertyDescriptor(acglobals, "automationClientInstance");
-                Object.defineProperty(acglobals, "automationClientInstance", {
-                    value: () => ({
-                        configuration: {
-                            name: "@joe-henry/scar",
-                        },
-                    }),
-                });
                 origClientDelete = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "delete");
                 origClientPatch = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "patch");
 
@@ -291,7 +283,6 @@ describe("sync/change", () => {
             });
 
             after(() => {
-                Object.defineProperty(acglobals, "automationClientInstance", originalAutomationClient);
                 Object.defineProperty(api.K8sObjectApi.prototype, "delete", origClientDelete);
                 Object.defineProperty(api.K8sObjectApi.prototype, "patch", origClientPatch);
                 Object.defineProperty(api.K8sObjectApi.prototype, "read", origClientRead);
@@ -430,7 +421,7 @@ describe("sync/change", () => {
                     metadata: {
                         name: "mysecret",
                         annotations: {
-                            "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore",
+                            "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore",
                         },
                     },
                     data: {
@@ -533,7 +524,7 @@ describe("sync/change", () => {
                     metadata: {
                         name: "mysecret",
                         annotations: {
-                            "atomist.com/sdm-pack-k8s/@joe-henry/with-no-scar": "ignore",
+                            "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore",
                         },
                     },
                     data: {
@@ -575,7 +566,94 @@ describe("sync/change", () => {
 
                 assert(deleteCalled, "delete was never called");
             });
+        });
+    });
 
+    describe("hasMetadataAnnotation", () => {
+        it("all present",  () => {
+            const r = {
+                apiVersion: "v1",
+                kind: "ConfigMap",
+                metadata: {
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore",
+                    },
+                },
+                data: {
+                    color: "obtuse vermilion",
+                },
+            };
+
+            const result = hasMetadataAnnotation(r, "sync", "ignore");
+            assert.ok(result);
+        });
+        it("SDM not found, key and value found",  () => {
+            const r = {
+                apiVersion: "v1",
+                kind: "ConfigMap",
+                metadata: {
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore",
+                    },
+                },
+                data: {
+                    color: "obtuse vermilion",
+                },
+            };
+
+            const result = hasMetadataAnnotation(r, "sync", "ignore");
+            assert.ok(result === false);
+        });
+        it("key not found, SDM and value found",  () => {
+            const r = {
+                apiVersion: "v1",
+                kind: "ConfigMap",
+                metadata: {
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/invalid-key/@joe-henry/scar": "ignore",
+                    },
+                },
+                data: {
+                    color: "obtuse vermilion",
+                },
+            };
+
+            const result = hasMetadataAnnotation(r, "sync", "ignore");
+            assert.ok(result === false);
+        });
+        it("value not found, SDM and key found",  () => {
+            const r = {
+                apiVersion: "v1",
+                kind: "ConfigMap",
+                metadata: {
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "Rolling stones",
+                    },
+                },
+                data: {
+                    color: "obtuse vermilion",
+                },
+            };
+
+            const result = hasMetadataAnnotation(r, "sync", "ignore");
+            assert.ok(result === false);
+        });
+        it("none present",  () => {
+            const r = {
+                apiVersion: "v1",
+                kind: "ConfigMap",
+                metadata: {
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/invalid-key/@joe-henry/with-no-scar": "Rolling stones",
+                    },
+                },
+                data: {
+                    color: "obtuse vermilion",
+                },
+            };
+
+            const result = hasMetadataAnnotation(r, "sync", "ignore");
+            assert.ok(result === false);
         });
     });
 });
