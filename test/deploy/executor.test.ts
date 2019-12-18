@@ -16,12 +16,9 @@
 
 import { SdmGoalEvent } from "@atomist/sdm";
 import * as assert from "power-assert";
-import {
-    eligibleDeployGoal,
-    KubernetesDeployParameters,
-} from "../../lib/events/kubernetesDeploy";
+import { eligibleDeployGoal } from "../../lib/deploy/executor";
 
-describe("events/kubernetesDeploy", () => {
+describe("deploy/executor", () => {
 
     describe("eligibleDeployGoal", () => {
 
@@ -29,13 +26,11 @@ describe("events/kubernetesDeploy", () => {
             const g: SdmGoalEvent = {
                 state: "in_process",
             } as any;
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    name: "@bowie/spiders-from-mars",
-                    environment: "stardust",
-                } as any,
+            const c: any = {
+                name: "@bowie/spiders-from-mars",
+                environment: "stardust",
             };
-            assert(!await eligibleDeployGoal(g, p));
+            assert(!await eligibleDeployGoal(g, c));
         });
 
         it("should reject a goal for someone else", async () => {
@@ -45,13 +40,11 @@ describe("events/kubernetesDeploy", () => {
                 },
                 state: "in_process",
             } as any;
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    name: "@bowie/spiders-from-mars",
-                    environment: "stardust",
-                } as any,
+            const c: any = {
+                name: "@bowie/spiders-from-mars",
+                environment: "stardust",
             };
-            assert(!await eligibleDeployGoal(g, p));
+            assert(!await eligibleDeployGoal(g, c));
         });
 
         it("should reject a goal with non-in_process state", async () => {
@@ -61,13 +54,11 @@ describe("events/kubernetesDeploy", () => {
                 },
                 state: "skipped",
             } as any;
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    name: "@bowie/spiders-from-mars",
-                    environment: "stardust",
-                } as any,
+            const c: any = {
+                name: "@bowie/spiders-from-mars",
+                environment: "stardust",
             };
-            assert(!await eligibleDeployGoal(g, p));
+            assert(!await eligibleDeployGoal(g, c));
         });
 
         it("should accept a goal fulfillment with same name", async () => {
@@ -77,13 +68,11 @@ describe("events/kubernetesDeploy", () => {
                 },
                 state: "in_process",
             } as any;
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    name: "@bowie/spiders-from-mars",
-                    environment: "stardust",
-                } as any,
+            const c: any = {
+                name: "@bowie/spiders-from-mars",
+                environment: "stardust",
             };
-            assert(await eligibleDeployGoal(g, p));
+            assert(await eligibleDeployGoal(g, c));
         });
 
         it("should accept a goal fulfillment when no environment", async () => {
@@ -93,12 +82,10 @@ describe("events/kubernetesDeploy", () => {
                 },
                 state: "in_process",
             } as any;
-            const p: KubernetesDeployParameters = {
-                configuration: {
-                    name: "@bowie/spiders-from-mars",
-                } as any,
+            const c: any = {
+                name: "@bowie/spiders-from-mars",
             };
-            assert(await eligibleDeployGoal(g, p));
+            assert(await eligibleDeployGoal(g, c));
         });
 
     });
