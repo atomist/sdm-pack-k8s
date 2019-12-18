@@ -416,11 +416,12 @@ describe("deploy/data", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeployRegistration = { dataSources: [] };
+            const r: KubernetesDeployRegistration = { dataSources: [], name: "@warhol/vu" };
             const sge = await generateKubernetesGoalEventData(k, r, g);
-            assert(Object.keys(sge).length === 3);
+            assert(Object.keys(sge).length === 4);
             assert.deepStrictEqual(sge.push, { after: {} });
             assert.deepStrictEqual(sge.repo, { name: "new-york", owner: "loureed" });
+            assert.deepStrictEqual(sge.fulfillment, { method: "sdm", name: "kubernetes-deploy-fulfill", registration: "@warhol/vu" });
             assert(sge.data);
             const gd = JSON.parse(sge.data);
             const exp = {
@@ -463,11 +464,12 @@ describe("deploy/data", () => {
                     },
                 },
             } as any;
-            const r: KubernetesDeployRegistration = { dataSources: [] };
+            const r: KubernetesDeployRegistration = { dataSources: [], name: "@warhol/vu" };
             const sge = await generateKubernetesGoalEventData(k, r, g);
-            assert(Object.keys(sge).length === 3);
+            assert(Object.keys(sge).length === 4);
             assert.deepStrictEqual(sge.push, { after: {} });
             assert.deepStrictEqual(sge.repo, { name: "new-york", owner: "loureed" });
+            assert.deepStrictEqual(sge.fulfillment, { method: "sdm", name: "kubernetes-deploy-fulfill", registration: "@warhol/vu" });
             assert(sge.data);
             const gd = JSON.parse(sge.data);
             const exp = {
@@ -579,13 +581,15 @@ describe("deploy/data", () => {
                     KubernetesDeployDataSources.ServiceAccountSpec,
                     KubernetesDeployDataSources.RoleBindingSpec,
                 ],
+                name: "@warhol/vu",
             };
             const sge = await generateKubernetesGoalEventData(k, r, g);
-            assert(Object.keys(sge).length === 5);
+            assert(Object.keys(sge).length === 6);
             assert(sge.branch === "rock");
             assert(sge.sha === "ca19881989");
             assert.deepStrictEqual(sge.push, { after: { images: [{ imageName: "docker.lou-reed.com/newyork:1989" }] } });
             assert.deepStrictEqual(sge.repo, { name: "new-york", owner: "loureed", providerId: "sire" });
+            assert.deepStrictEqual(sge.fulfillment, { method: "sdm", name: "kubernetes-deploy-fulfill", registration: "@warhol/vu" });
             assert(sge.data);
             const gd = JSON.parse(sge.data);
             assert(gd.Xmas === "in February");

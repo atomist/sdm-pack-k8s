@@ -32,6 +32,7 @@ import { DeepPartial } from "ts-essentials";
 import { validName } from "../kubernetes/name";
 import { defaultNamespace } from "../kubernetes/namespace";
 import { KubernetesApplication } from "../kubernetes/request";
+import { KubernetesDeployFulfillerGoalName } from "./fulfiller";
 import {
     goalEventSlug,
     KubernetesDeploy,
@@ -111,6 +112,11 @@ export function generateKubernetesGoalEventData(
         }
 
         goalEvent.data = JSON.stringify(eventAppData);
+        goalEvent.fulfillment = {
+            method: "sdm",
+            name: KubernetesDeployFulfillerGoalName,
+            registration: registration.name,
+        };
         return goalEvent;
     });
 }

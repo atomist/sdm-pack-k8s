@@ -15,6 +15,9 @@
  */
 
 export {
+    kubernetesDeployFulfiller,
+} from "./lib/deploy/fulfiller";
+export {
     KubernetesApplicationDataCallback,
     KubernetesDeploy,
     KubernetesDeployDataSources,
