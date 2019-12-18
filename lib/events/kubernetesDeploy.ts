@@ -39,13 +39,7 @@ import {
     WriteToAllProgressLog,
 } from "@atomist/sdm";
 import * as stringify from "json-stringify-safe";
-import { getKubernetesGoalEventData } from "../deploy/data";
-import {
-    deployAppId,
-    deployApplication,
-    llog,
-} from "../deploy/deploy";
-import { KubernetesApplication } from "../kubernetes/request";
+import { executeKubernetesDeploy } from "../deploy/executor";
 import { KubernetesDeployRequestedSdmGoal } from "../typings/types";
 
 /**
@@ -89,32 +83,10 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
 
     return Promise.all(ef.data.SdmGoal.map(async g => {
         const goalEvent = g as SdmGoalEvent;
-
         const progressLog = new WriteToAllProgressLog(goalEvent.name, new LoggingProgressLog(goalEvent.name, "debug"),
             await params.configuration.sdm.logFactory(context, goalEvent));
-
-        const eligible = await eligibleDeployGoal(goalEvent, params);
-        if (!eligible) {
-            llog("SDM goal event is not eligible for Kubernetes deploy", logger.info, progressLog);
-            return Success;
-        }
-
-        let app: KubernetesApplication;
         try {
-            app = getKubernetesGoalEventData(goalEvent);
-        } catch (e) {
-            e.message = `Invalid SDM goal event data: ${e.message}`;
-            llog(e.message, logger.error, progressLog);
-            throw e;
-        }
-        if (!app) {
-            llog("SDM goal event has no Kubernetes application data", logger.info, progressLog);
-            return Success;
-        }
-        const appId = deployAppId(goalEvent, context, app);
-
-        try {
-            const result = await deployApplication(goalEvent, context, progressLog);
+            const result = await executeKubernetesDeploy({ context, goalEvent, progressLog });
 
             const updateParams: UpdateSdmGoalParams = {
                 state: (result.code) ? SdmGoalState.failure : SdmGoalState.success,
@@ -126,7 +98,7 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
                 await updateGoal(context, goalEvent, updateParams);
             } catch (e) {
                 const msg = `Failed to update SDM goal ${goalEventString(goalEvent)} with params '${stringify(updateParams)}': ${e.message}`;
-                llog(msg, logger.error, progressLog);
+                progressLog.write(msg);
                 result.message = `${e.message}; ${msg}`;
             }
             if (!result.code) {
@@ -134,8 +106,7 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
             }
             return result as ExecuteGoalResult & HandlerResult;
         } catch (e) {
-            const msg = `Failed to deploy ${appId}: ${e.message}`;
-            return failGoal(context, goalEvent, msg, progressLog);
+            return failGoal(context, goalEvent, e.message, progressLog);
         }
     }))
         .then(reduceResults);
@@ -158,34 +129,6 @@ export function kubernetesDeployHandler(self: string)
 }
 
 /**
- * Determine if SDM goal event should trigger a deployment to
- * Kubernetes.  Specifically, is the name of the goal fulfillment
- * equal to the name of this SDM and is the goal in the "in_process"
- * state.  Since we have improved the subscription to select for all
- * of these values, these checks should no longer be necessary.
- *
- * @param goalEvent SDM goal event
- * @param params information about this SDM
- * @return `true` if goal is eligible, `false` otherwise
- */
-export async function eligibleDeployGoal(goalEvent: SdmGoalEvent, params: KubernetesDeployParameters): Promise<boolean> {
-    if (!goalEvent.fulfillment) {
-        logger.debug(`SDM goal contains no fulfillment: ${goalEventString(goalEvent)}`);
-        return false;
-    }
-    if (goalEvent.state !== SdmGoalState.in_process) {
-        logger.debug(`SDM goal state '${goalEvent.state}' is not 'in_process'`);
-        return false;
-    }
-    const name = params.configuration.name;
-    if (goalEvent.fulfillment.name !== name) {
-        logger.debug(`SDM goal fulfillment name '${goalEvent.fulfillment.name}' is not '${name}'`);
-        return false;
-    }
-    return true;
-}
-
-/**
  * Fail the provided goal using the message to set the description and
  * error message.
  *
@@ -195,7 +138,7 @@ export async function eligibleDeployGoal(goalEvent: SdmGoalEvent, params: Kubern
  * @return a failure handler result using the provided error message
  */
 async function failGoal(context: HandlerContext, goalEvent: SdmGoalEvent, message: string, log: ProgressLog): Promise<HandlerResult> {
-    llog(message, logger.error, log);
+    log.write(message);
     const params: UpdateSdmGoalParams = {
         state: SdmGoalState.failure,
         description: message,
@@ -205,7 +148,7 @@ async function failGoal(context: HandlerContext, goalEvent: SdmGoalEvent, messag
         await updateGoal(context, goalEvent, params);
     } catch (e) {
         const msg = `Failed to update SDM goal '${goalEventString(goalEvent)}' with params '${stringify(params)}': ${e.message}`;
-        llog(msg, logger.error, log);
+        log.write(msg);
         return { code: 2, message: `${message}; ${msg}` };
     }
     return { code: 1, message };

@@ -15,6 +15,9 @@
  */
 
 export {
+    kubernetesDeployExecutor,
+} from "./lib/deploy/executor";
+export {
     KubernetesApplicationDataCallback,
     KubernetesDeploy,
     KubernetesDeployDataSources,
