@@ -39,10 +39,7 @@ import {
     WriteToAllProgressLog,
 } from "@atomist/sdm";
 import * as stringify from "json-stringify-safe";
-import {
-    executeKubernetesDeploy,
-    goalEventString,
-} from "../deploy/executor";
+import { executeKubernetesDeploy } from "../deploy/executor";
 import { KubernetesDeployRequestedSdmGoal } from "../typings/types";
 
 /**
@@ -86,11 +83,10 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
 
     return Promise.all(ef.data.SdmGoal.map(async g => {
         const goalEvent = g as SdmGoalEvent;
-        const configuration = params.configuration;
         const progressLog = new WriteToAllProgressLog(goalEvent.name, new LoggingProgressLog(goalEvent.name, "debug"),
             await params.configuration.sdm.logFactory(context, goalEvent));
         try {
-            const result = await executeKubernetesDeploy({ configuration, context, goalEvent, progressLog });
+            const result = await executeKubernetesDeploy({ context, goalEvent, progressLog });
 
             const updateParams: UpdateSdmGoalParams = {
                 state: (result.code) ? SdmGoalState.failure : SdmGoalState.success,
@@ -156,4 +152,9 @@ async function failGoal(context: HandlerContext, goalEvent: SdmGoalEvent, messag
         return { code: 2, message: `${message}; ${msg}` };
     }
     return { code: 1, message };
+}
+
+/** Unique string for goal event. */
+function goalEventString(goalEvent: SdmGoalEvent): string {
+    return `${goalEvent.goalSetId}/${goalEvent.uniqueName}`;
 }

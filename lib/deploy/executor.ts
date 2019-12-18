@@ -15,16 +15,9 @@
  */
 
 import {
-    Configuration,
-    logger,
-    Success,
-} from "@atomist/automation-client";
-import {
     ExecuteGoalResult,
     GoalInvocation,
     GoalWithFulfillment,
-    SdmGoalEvent,
-    SdmGoalState,
 } from "@atomist/sdm";
 import { KubernetesApplication } from "../kubernetes/request";
 import { getKubernetesGoalEventData } from "./data";
@@ -33,8 +26,14 @@ import {
     deployApplication,
 } from "./deploy";
 
+/** Standard name for Kubernetes deployment execution goal. */
 export const KubernetesDeployExecutorGoalName = "kubernetes-deploy";
 
+/**
+ * Return a goal with a standard name,
+ * [[KubernetesDeployExecutorGoalName]], that will fulfill a
+ * [[KubernetesDeploy]] goal by executing [[executeKubernetesDeploy]].
+ */
 export function kubernetesDeployExecutor(): GoalWithFulfillment {
     const goalName = KubernetesDeployExecutorGoalName;
     return new GoalWithFulfillment({ displayName: goalName, uniqueName: goalName })
@@ -44,17 +43,19 @@ export function kubernetesDeployExecutor(): GoalWithFulfillment {
         });
 }
 
-export type KubernetesDeployExecutor = (gi: Pick<GoalInvocation, "configuration" | "context" | "goalEvent" | "progressLog">)
-    => Promise<ExecuteGoalResult>;
+/**
+ * Type for [[executeKubernetesDeploy]] which is compatible with
+ * [[ExecuteGoal]].
+ */
+export type KubernetesDeployExecutor = (gi: Pick<GoalInvocation, "context" | "goalEvent" | "progressLog">) => Promise<ExecuteGoalResult>;
 
+/**
+ * Extract [[KubernetesApplication]] from goal event data property and
+ * deploy the application to the Kubernetes cluster using
+ * [[deployApplication]].
+ */
 export const executeKubernetesDeploy: KubernetesDeployExecutor = async gi => {
-    const { configuration, context, goalEvent, progressLog } = gi;
-
-    const eligible = await eligibleDeployGoal(goalEvent, configuration);
-    if (!eligible) {
-        progressLog.write("SDM goal event is not eligible for Kubernetes deploy");
-        return Success;
-    }
+    const { context, goalEvent, progressLog } = gi;
 
     let app: KubernetesApplication;
     try {
@@ -65,8 +66,9 @@ export const executeKubernetesDeploy: KubernetesDeployExecutor = async gi => {
         throw e;
     }
     if (!app) {
-        progressLog.write("SDM goal event has no Kubernetes application data");
-        return Success;
+        const message = "SDM goal event has no Kubernetes application data";
+        progressLog.write(message);
+        return { code: 0, message };
     }
     const appId = deployAppId(goalEvent, context, app);
 
@@ -77,36 +79,3 @@ export const executeKubernetesDeploy: KubernetesDeployExecutor = async gi => {
         return { code: 1, message };
     }
 };
-
-/**
- * Determine if SDM goal event should trigger a deployment to
- * Kubernetes.  Specifically, is the name of the goal fulfillment
- * equal to the name of this SDM and is the goal in the "in_process"
- * state.  Since we have improved the subscription to select for all
- * of these values, these checks should no longer be necessary.
- *
- * @param goalEvent SDM goal event
- * @param params information about this SDM
- * @return `true` if goal is eligible, `false` otherwise
- */
-export async function eligibleDeployGoal(goalEvent: SdmGoalEvent, configuration: Configuration): Promise<boolean> {
-    if (!goalEvent.fulfillment) {
-        logger.debug(`SDM goal contains no fulfillment: ${goalEventString(goalEvent)}`);
-        return false;
-    }
-    if (goalEvent.state !== SdmGoalState.in_process) {
-        logger.debug(`SDM goal state '${goalEvent.state}' is not 'in_process'`);
-        return false;
-    }
-    const name = configuration.name;
-    if (goalEvent.fulfillment.name !== name) {
-        logger.debug(`SDM goal fulfillment name '${goalEvent.fulfillment.name}' is not '${name}'`);
-        return false;
-    }
-    return true;
-}
-
-/** Unique string for goal event. */
-export function goalEventString(goalEvent: SdmGoalEvent): string {
-    return `${goalEvent.goalSetId}/${goalEvent.uniqueName}`;
-}
