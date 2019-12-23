@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 -   `encryptSecret` function supports `stringData` elements. [#80](https://github.com/atomist/sdm-pack-k8s/issues/80)
 -   Support overriding resource name in partial specs. [#81](https://github.com/atomist/sdm-pack-k8s/issues/81)
 -   Support disabling sync mode for Kubernetes resources. [#83](https://github.com/atomist/sdm-pack-k8s/issues/83)
+-   Provide Kubernetes deploy goal fulfiller. [69032d4](https://github.com/atomist/sdm-pack-k8s/commit/69032d47259edc6473bf8b10efcd40472c03fa5d)
 
 ### Changed
 
