@@ -27,6 +27,7 @@ import * as api from "../../lib/kubernetes/api";
 import {
     calculateChanges,
     changeResource,
+    filterIgnoredSpecs,
     hasMetadataAnnotation,
 } from "../../lib/sync/change";
 import { PushDiff } from "../../lib/sync/diff";
@@ -113,127 +114,224 @@ describe("sync/change", () => {
             assert.deepStrictEqual(c, e);
         });
 
-        describe("sdm-pack-k8s annotation", () => {
+        it("should ignore changes with ignore annotation", () => {
+            const a = [
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "joe",
+                        namespace: "henry",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
+                    },
+                },
+            ];
+            const c = calculateChanges([], a, "apply");
+            assert.deepStrictEqual(c, []);
+        });
 
-            it("ignore annotation value is present", () => {
+        it("should include changes with wrong ignore annotation", () => {
+            const a = [
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "joe",
+                        namespace: "henry",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/trampoline": "ignore" },
+                    },
+                },
+            ];
+            const c = calculateChanges([], a, "apply");
+            const e = [{
+                change: "apply",
+                spec: {
+                    kind: "ConfigMap", metadata: {
+                        name: "joe",
+                        namespace: "henry",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/trampoline": "ignore" },
+                    },
+                },
+            }];
+            assert.deepStrictEqual(c, e);
+        });
 
-                const a = [
-                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
-                    {
-                        kind: "ConfigMap", metadata: {
-                            name: "louemmy", namespace: "sirrah",
-                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
-                        },
+        it("should include changes when ignore annotation removed", () => {
+            const a = [
+                { kind: "ConfigMap", metadata: { name: "joe", namespace: "henry" } },
+            ];
+            const b = [
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "joe",
+                        namespace: "henry",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
                     },
-                ];
-                const b = [
-                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
-                    {
-                        kind: "ConfigMap", metadata: {
-                            name: "emmylou", namespace: "harris",
-                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
-                        },
+                },
+            ];
+            const c = calculateChanges(b, a, "apply");
+            const e = [{
+                change: "apply",
+                spec: { kind: "ConfigMap", metadata: { name: "joe", namespace: "henry" } },
+            }];
+            assert.deepStrictEqual(c, e);
+        });
+
+        it("should return no change when ignore annotation added", () => {
+            const a = [
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "joe",
+                        namespace: "henry",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
                     },
-                    {
-                        kind: "ConfigMap", metadata: {
-                            name: "louemmy", namespace: "sirrah",
-                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
-                        },
-                    },
-                ];
+                },
+            ];
+            [
+                undefined,
+                [],
+                [{ kind: "ConfigMap", metadata: { name: "joe", namespace: "henry" } }],
+            ].forEach(b => {
                 const c = calculateChanges(b, a, "apply");
-                const e = [
-                    { change: "apply", spec: { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } } },
-                    { change: "apply", spec: { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } } },
-                    { change: "apply", spec: { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } } },
-                    { change: "delete", spec: { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } } },
-                    {
-                        change: "ignore", spec: {
-                            kind: "ConfigMap", metadata: {
-                                name: "emmylou", namespace: "harris",
-                                annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
-                            },
-                        },
-                    },
-                    {
-                        change: "ignore", spec: {
-                            kind: "ConfigMap", metadata: {
-                                name: "louemmy", namespace: "sirrah",
-                                annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
-                            },
-                        },
-                    },
-                ];
-                assert.deepStrictEqual(c, e);
-            });
-
-            it("sdm name is not recognised", () => {
-
-                const a = [
-                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
-                    {
-                        kind: "ConfigMap", metadata: {
-                            name: "louemmy", namespace: "sirrah",
-                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
-                        },
-                    },
-                ];
-                const b = [
-                    { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
-                    { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
-                    {
-                        kind: "ConfigMap", metadata: {
-                            name: "emmylou", namespace: "harris",
-                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
-                        },
-                    },
-                    {
-                        kind: "ConfigMap", metadata: {
-                            name: "louemmy", namespace: "sirrah",
-                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
-                        },
-                    },
-                ];
-                const c = calculateChanges(b, a, "apply");
-                const e = [
-                    { change: "apply", spec: { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } } },
-                    { change: "apply", spec: { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } } },
-                    { change: "apply", spec: { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } } },
-                    {
-                        change: "apply", spec: {
-                            kind: "ConfigMap", metadata: {
-                                name: "louemmy", namespace: "sirrah",
-                                annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
-                            },
-                        },
-                    },
-                    { change: "delete", spec: { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } } },
-                    {
-                        change: "delete", spec: {
-                            kind: "ConfigMap", metadata: {
-                                name: "emmylou", namespace: "harris",
-                                annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
-                            },
-                        },
-                    },
-                ];
-                assert.deepStrictEqual(c, e);
+                assert.deepStrictEqual(c, []);
             });
         });
+
+        it("should respect ignore annotation", () => {
+            const a = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "louemmy", namespace: "sirrah",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
+                    },
+                },
+            ];
+            const b = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "emmylou", namespace: "harris",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
+                    },
+                },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "louemmy", namespace: "sirrah",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" },
+                    },
+                },
+            ];
+            const c = calculateChanges(b, a, "apply");
+            const e = [
+                { change: "apply", spec: { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "apply", spec: { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "apply", spec: { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "delete", spec: { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } } },
+            ];
+            assert.deepStrictEqual(c, e);
+        });
+
+        it("should ignore ignore annotation for different sdm name", () => {
+
+            const a = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "louemmy", namespace: "sirrah",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
+                    },
+                },
+            ];
+            const b = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "emmylou", namespace: "harris",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
+                    },
+                },
+                {
+                    kind: "ConfigMap", metadata: {
+                        name: "louemmy", namespace: "sirrah",
+                        annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
+                    },
+                },
+            ];
+            const c = calculateChanges(b, a, "apply");
+            const e = [
+                { change: "apply", spec: { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "apply", spec: { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } } },
+                { change: "apply", spec: { kind: "Role", metadata: { name: "emmylou", namespace: "harris" } } },
+                {
+                    change: "apply", spec: {
+                        kind: "ConfigMap", metadata: {
+                            name: "louemmy", namespace: "sirrah",
+                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
+                        },
+                    },
+                },
+                { change: "delete", spec: { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris" } } },
+                {
+                    change: "delete", spec: {
+                        kind: "ConfigMap", metadata: {
+                            name: "emmylou", namespace: "harris",
+                            annotations: { "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore" },
+                        },
+                    },
+                },
+            ];
+            assert.deepStrictEqual(c, e);
+        });
+
     });
 
     describe("changeResources", () => {
 
-        it("resource file does not exist", async () => {
+        const resource = {
+            apiVersion: "v1",
+            kind: "Secret",
+            type: "Opaque",
+            metadata: {
+                name: "mysecret",
+                namespace: "mynamespace",
+            },
+            data: {
+                username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+            },
+        };
+
+        let origClientDelete: any;
+        let origClientPatch: any;
+        let origClientRead: any;
+        let origPreviousSpecVersion: any;
+
+        before(() => {
+            origClientDelete = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "delete");
+            origClientPatch = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "patch");
+            origClientRead = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "read");
+            origPreviousSpecVersion = Object.getOwnPropertyDescriptor(prv, "previousSpecVersion");
+
+            Object.defineProperty(api.K8sObjectApi.prototype, "read", {
+                value: async (s: k8s.KubernetesObject) => s,
+            });
+        });
+
+        after(() => {
+            Object.defineProperty(api.K8sObjectApi.prototype, "delete", origClientDelete);
+            Object.defineProperty(api.K8sObjectApi.prototype, "patch", origClientPatch);
+            Object.defineProperty(api.K8sObjectApi.prototype, "read", origClientRead);
+            Object.defineProperty(prv, "previousSpecVersion", origPreviousSpecVersion);
+        });
+
+        it("should throw error if resource file does not exist", async () => {
             const project: GitProject = InMemoryProject.of() as any;
             const diff: PushDiff = {
                 change: "apply",
@@ -243,19 +341,83 @@ describe("sync/change", () => {
 
             try {
                 await changeResource(project, diff);
-                assert.fail("should not", "get here");
+                assert.fail("should not get here");
             } catch (e) {
-                assert.equal(e.message, "Resource spec file 'fake.path' does not exist in project");
+                assert(e.message === "Resource spec file 'fake.path' does not exist in project");
             }
         });
 
-        describe("spoofs", () => {
-            const resource = {
+        it("should delete resource", async () => {
+            let deleteCalled = false;
+            Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                value: async (spec: k8s.KubernetesObject, body: any) => {
+                    deleteCalled = true;
+                    assert(spec.apiVersion === "v1");
+                    assert(spec.kind === "Secret");
+                    assert(spec.metadata.name === "mysecret");
+                    assert(spec.metadata.namespace === "mynamespace");
+                    return spec;
+                },
+            });
+            Object.defineProperty(prv, "previousSpecVersion", {
+                value: async () => yaml.safeDump(resource),
+            });
+            Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                value: async () => { throw new Error("patch shouldn't be called"); },
+            });
+
+            const project: GitProject = InMemoryProject.of() as any;
+            const diff: PushDiff = {
+                change: "delete",
+                path: "secret.yaml",
+                sha: "abcdef01234567890",
+            };
+            await changeResource(project, diff);
+            assert(deleteCalled, "delete was never called");
+        });
+
+        it("should patch resource", async () => {
+            let patchCalled = false;
+            Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                value: async (spec: k8s.KubernetesObject) => {
+                    patchCalled = true;
+                    assert(spec.apiVersion === "v1");
+                    assert(spec.kind === "Secret");
+                    assert(spec.metadata.name === "mysecret");
+                    assert(spec.metadata.namespace === "mynamespace");
+                    return spec;
+                },
+            });
+            Object.defineProperty(prv, "previousSpecVersion", {
+                value: async () => yaml.safeDump(resource),
+            });
+            Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                value: async () => { throw new Error("delete shouldn't be called"); },
+            });
+
+            const project: GitProject = InMemoryProject.of({
+                path: "secret.yaml",
+                content: yaml.safeDump(resource),
+            }) as any;
+            const diff: PushDiff = {
+                change: "apply",
+                path: "secret.yaml",
+                sha: "abcdef0123456789",
+            };
+            await changeResource(project, diff);
+            assert(patchCalled, "patch was never called");
+        });
+
+        it("should not patch spec with ignore annotation", async () => {
+            const r = {
                 apiVersion: "v1",
                 kind: "Secret",
                 type: "Opaque",
                 metadata: {
                     name: "mysecret",
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore",
+                    },
                 },
                 data: {
                     username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
@@ -263,314 +425,194 @@ describe("sync/change", () => {
                 },
             };
 
-            let origClientDelete: any;
-            let origClientPatch: any;
-            let origClientRead: any;
-            let origPreviousSpecVersion: any;
-
-            before(() => {
-                origClientDelete = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "delete");
-                origClientPatch = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "patch");
-
-                origClientRead = Object.getOwnPropertyDescriptor(api.K8sObjectApi.prototype, "read");
-                Object.defineProperty(api.K8sObjectApi.prototype, "read", {
-                    value: async (spec: k8s.KubernetesObject) => {
-                        return Promise.resolve();
-                    },
-                });
-
-                origPreviousSpecVersion = Object.getOwnPropertyDescriptor(prv, "previousSpecVersion");
+            Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                value: async () => { throw new Error("patch shouldn't be called"); },
+            });
+            Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                value: async () => { throw new Error("delete shouldn't be called"); },
+            });
+            Object.defineProperty(prv, "previousSpecVersion", {
+                value: async () => JSON.stringify(r),
             });
 
-            after(() => {
-                Object.defineProperty(api.K8sObjectApi.prototype, "delete", origClientDelete);
-                Object.defineProperty(api.K8sObjectApi.prototype, "patch", origClientPatch);
-                Object.defineProperty(api.K8sObjectApi.prototype, "read", origClientRead);
-                Object.defineProperty(prv, "previousSpecVersion", origPreviousSpecVersion);
+            const project: GitProject = InMemoryProject.of({
+                path: "secret.json",
+                content: JSON.stringify(r),
+            }) as any;
+            const diff: PushDiff = {
+                change: "apply",
+                path: "secret.json",
+                sha: "abcdef0123456789",
+            };
+            await changeResource(project, diff);
+        });
+
+        it("should patch resources with ignore annotation for different sdm name", async () => {
+            const r = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "mysecret",
+                    namespace: "ignorenamespace",
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore",
+                    },
+                },
+                data: {
+                    username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                    password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+                },
+            };
+
+            Object.defineProperty(prv, "previousSpecVersion", {
+                value: async () => JSON.stringify(r),
+            });
+            let patchCalled = false;
+            Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                value: async (spec: k8s.KubernetesObject) => {
+                    patchCalled = true;
+                    assert(spec.apiVersion === "v1");
+                    assert(spec.kind === "Secret");
+                    assert(spec.metadata.name === "mysecret");
+                    assert(spec.metadata.namespace === "ignorenamespace");
+                    return spec;
+                },
+            });
+            Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                value: async () => { throw new Error("delete shouldn't be called"); },
             });
 
-            /**
-             * expect that the patch method is not called
-             */
-            it("delete changes", async () => {
-                let deleteCalled = false;
-                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
-                    value: async (spec: k8s.KubernetesObject, body: any) => {
-                        deleteCalled = true;
-                        return Promise.resolve();
-                    },
-                });
-                Object.defineProperty(prv, "previousSpecVersion", {
-                    value: (baseDir: string, specPath: string, sha: string) => {
-                        return yaml.safeDump(resource);
-                    },
-                });
-                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
-                    value: async (spec: k8s.KubernetesObject) => {
-                        throw new Error("patch shouldn't be called");
-                    },
-                });
+            const project: GitProject = InMemoryProject.of({
+                path: "secret.json",
+                content: yaml.safeDump(r),
+            }) as any;
+            const diff: PushDiff = {
+                change: "apply",
+                path: "secret.json",
+                sha: "0123456789abcdef",
+            };
+            await changeResource(project, diff);
+            assert(patchCalled, "patch was never called");
+        });
 
-                const project: GitProject = InMemoryProject.of() as any;
-                const diff: PushDiff = {
-                    change: "delete",
-                    path: "fake.path",
-                    sha: "fake.sha",
-                };
+        it("should not delete spec with ignore annotation", async () => {
+            const r = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "mysecret",
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore",
+                    },
+                },
+                data: {
+                    username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                    password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+                },
+            };
 
-                await changeResource(project, diff);
-
-                assert(deleteCalled, "delete was never called");
+            Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                value: async () => { throw new Error("patch shouldn't be called"); },
             });
 
-            /**
-             * expect that the delete method is not called
-             */
-            it("apply changes", async () => {
-                let patchCalled = false;
-                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
-                    value: async (spec: k8s.KubernetesObject) => {
-                        patchCalled = true;
-                        return Promise.resolve();
-                    },
-                });
-                Object.defineProperty(prv, "previousSpecVersion", {
-                    value: (baseDir: string, specPath: string, sha: string) => {
-                        return yaml.safeDump(resource);
-                    },
-                });
-                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
-                    value: async (spec: k8s.KubernetesObject, body: any) => {
-                        return Promise.reject(new Error("delete shouldn't be called"));
-                    },
-                });
-
-                const project: GitProject = InMemoryProject.of({
-                    path: "fake.path",
-                    content: yaml.safeDump(resource),
-                }) as any;
-                const diff: PushDiff = {
-                    change: "apply",
-                    path: "fake.path",
-                    sha: "fake.sha",
-                };
-
-                await changeResource(project, diff);
-
-                assert(patchCalled, "patch was never called");
+            Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                value: async () => { throw new Error("delete shouldn't be called"); },
+            });
+            Object.defineProperty(prv, "previousSpecVersion", {
+                value: async () => yaml.safeDump(r),
             });
 
-            /**
-             * expect that the patch and delete methods are not called
-             */
-            it("apply changes with ignore annotation", async () => {
-                const r = {
-                    apiVersion: "v1",
-                    kind: "Secret",
-                    type: "Opaque",
-                    metadata: {
-                        name: "mysecret",
-                        annotations: {
-                            "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore",
-                        },
-                    },
-                    data: {
-                        username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
-                        password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
-                    },
-                };
+            const project: GitProject = InMemoryProject.of() as any;
+            const diff: PushDiff = {
+                change: "delete",
+                path: "secret.yaml",
+                sha: "01234abc56789def",
+            };
+            await changeResource(project, diff);
+        });
 
-                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
-                    value: async (spec: k8s.KubernetesObject) => {
-                        throw new Error("patch shouldn't be called");
+        it("should delete spec with ignore annotation for different sdm name", async () => {
+            const r = {
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                metadata: {
+                    name: "mysecret",
+                    namespace: "ignorenamespace",
+                    annotations: {
+                        "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore",
                     },
-                });
+                },
+                data: {
+                    username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
+                    password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
+                },
+            };
 
-                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
-                    value: async (spec: k8s.KubernetesObject, body: any) => {
-                        throw new Error("delete shouldn't be called");
-                    },
-                });
-                Object.defineProperty(prv, "previousSpecVersion", {
-                    value: (baseDir: string, specPath: string, sha: string) => {
-                        return yaml.safeDump(r);
-                    },
-                });
-
-                const project: GitProject = InMemoryProject.of({
-                    path: "fake.path",
-                    content: yaml.safeDump(r),
-                }) as any;
-                const diff: PushDiff = {
-                    change: "apply",
-                    path: "fake.path",
-                    sha: "fake.sha",
-                };
-
-                await changeResource(project, diff);
+            Object.defineProperty(prv, "previousSpecVersion", {
+                value: async (baseDir: string, specPath: string, sha: string) => yaml.safeDump(r),
+            });
+            Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
+                value: async (spec: k8s.KubernetesObject) => { throw new Error("patch shouldn't be called"); },
+            });
+            let deleteCalled = false;
+            Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
+                value: async (spec: k8s.KubernetesObject, body: any) => {
+                    deleteCalled = true;
+                    assert(spec.apiVersion === "v1");
+                    assert(spec.kind === "Secret");
+                    assert(spec.metadata.name === "mysecret");
+                    assert(spec.metadata.namespace === "ignorenamespace");
+                    return spec;
+                },
             });
 
-            /**
-             * expect that the delete method is not called
-             */
-            it("apply changes with ignore annotation and different sdm name", async () => {
-                const r = {
-                    apiVersion: "v1",
-                    kind: "Secret",
-                    type: "Opaque",
-                    metadata: {
-                        name: "mysecret",
-                        annotations: {
-                            "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore",
-                        },
-                    },
-                    data: {
-                        username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
-                        password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
-                    },
-                };
+            const project: GitProject = InMemoryProject.of() as any;
+            const diff: PushDiff = {
+                change: "delete",
+                path: "secret.yaml",
+                sha: "a01b23c45d67e89f",
+            };
+            await changeResource(project, diff);
+            assert(deleteCalled, "delete was never called");
+        });
 
-                Object.defineProperty(prv, "previousSpecVersion", {
-                    value: (baseDir: string, specPath: string, sha: string) => {
-                        return yaml.safeDump(r);
-                    },
-                });
-                let patchCalled = false;
-                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
-                    value: async (spec: k8s.KubernetesObject) => {
-                        patchCalled = true;
-                        return Promise.resolve();
-                    },
-                });
-                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
-                    value: async (spec: k8s.KubernetesObject, body: any) => {
-                        return Promise.reject(new Error("delete shouldn't be called"));
-                    },
-                });
+    });
 
-                const project: GitProject = InMemoryProject.of({
-                    path: "fake.path",
-                    content: yaml.safeDump(r),
-                }) as any;
-                const diff: PushDiff = {
-                    change: "apply",
-                    path: "fake.path",
-                    sha: "fake.sha",
-                };
+    describe("filterIgnoredSpecs", () => {
 
-                await changeResource(project, diff);
-
-                assert(patchCalled, "patch was never called");
-            });
-
-            /**
-             * expect that the patch and delete methods are not called
-             */
-            it("delete changes with ignore annotation", async () => {
-                const r = {
-                    apiVersion: "v1",
-                    kind: "Secret",
-                    type: "Opaque",
-                    metadata: {
-                        name: "mysecret",
-                        annotations: {
-                            "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore",
-                        },
-                    },
-                    data: {
-                        username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
-                        password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
-                    },
-                };
-
-                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
-                    value: async (spec: k8s.KubernetesObject) => {
-                        throw new Error("patch shouldn't be called");
-                    },
-                });
-
-                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
-                    value: async (spec: k8s.KubernetesObject, body: any) => {
-                        throw new Error("delete shouldn't be called");
-                    },
-                });
-                Object.defineProperty(prv, "previousSpecVersion", {
-                    value: (baseDir: string, specPath: string, sha: string) => {
-                        return yaml.safeDump(r);
-                    },
-                });
-
-                const project: GitProject = InMemoryProject.of({
-                    path: "fake.path",
-                    content: yaml.safeDump(r),
-                }) as any;
-                const diff: PushDiff = {
-                    change: "delete",
-                    path: "fake.path",
-                    sha: "fake.sha",
-                };
-
-                await changeResource(project, diff);
-            });
-
-            /**
-             * expect that the patch method is not called
-             */
-            it("delete changes with ignore annotation and different sdm name", async () => {
-                const r = {
-                    apiVersion: "v1",
-                    kind: "Secret",
-                    type: "Opaque",
-                    metadata: {
-                        name: "mysecret",
-                        annotations: {
-                            "atomist.com/sdm-pack-k8s/sync/@joe-henry/with-no-scar": "ignore",
-                        },
-                    },
-                    data: {
-                        username: "dGhlIHJvb3RtaW5pc3RyYXRvcg==",
-                        password: "Y29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZQ==",
-                    },
-                };
-
-                Object.defineProperty(prv, "previousSpecVersion", {
-                    value: (baseDir: string, specPath: string, sha: string) => {
-                        return yaml.safeDump(r);
-                    },
-                });
-                Object.defineProperty(api.K8sObjectApi.prototype, "patch", {
-                    value: async (spec: k8s.KubernetesObject) => {
-                        return Promise.reject(new Error("patch shouldn't be called"));
-                    },
-                });
-
-                let deleteCalled = false;
-                Object.defineProperty(api.K8sObjectApi.prototype, "delete", {
-                    value: async (spec: k8s.KubernetesObject, body: any) => {
-                        deleteCalled = true;
-                        return Promise.resolve();
-                    },
-                });
-
-                const project: GitProject = InMemoryProject.of({
-                    path: "fake.path",
-                    content: yaml.safeDump(r),
-                }) as any;
-                const diff: PushDiff = {
-                    change: "delete",
-                    path: "fake.path",
-                    sha: "fake.sha",
-                };
-
-                await changeResource(project, diff);
-
-                assert(deleteCalled, "delete was never called");
+        it("should do nothing successfully", () => {
+            [undefined, []].forEach(s => {
+                const f = filterIgnoredSpecs(s);
+                assert.deepStrictEqual(f, []);
             });
         });
+
+        it("should filter out ignored specs", () => {
+            const a = { "atomist.com/sdm-pack-k8s/sync/@joe-henry/scar": "ignore" };
+            const s = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Deployment", metadata: { name: "emmylou", namespace: "harris", annotations: a } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Role", metadata: { name: "emmylou", namespace: "harris", annotations: a } },
+                { kind: "ConfigMap", metadata: { name: "emmylou", namespace: "harris", annotations: { foo: "ignore" } } },
+            ];
+            const f = filterIgnoredSpecs(s);
+            const e = [
+                { kind: "Service", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "Secret", metadata: { name: "emmylou", namespace: "harris" } },
+                { kind: "ConfigMap", metadata: { name: "emmylou", namespace: "harris", annotations: { foo: "ignore" } } },
+            ];
+            assert.deepStrictEqual(f, e);
+        });
+
     });
 
     describe("hasMetadataAnnotation", () => {
-        it("all present",  () => {
+
+        it("all present", () => {
             const r = {
                 apiVersion: "v1",
                 kind: "ConfigMap",
@@ -583,11 +625,11 @@ describe("sync/change", () => {
                     color: "obtuse vermilion",
                 },
             };
-
             const result = hasMetadataAnnotation(r, "sync", "ignore");
-            assert.ok(result);
+            assert(result);
         });
-        it("SDM not found, key and value found",  () => {
+
+        it("SDM not found, key and value found", () => {
             const r = {
                 apiVersion: "v1",
                 kind: "ConfigMap",
@@ -600,11 +642,11 @@ describe("sync/change", () => {
                     color: "obtuse vermilion",
                 },
             };
-
             const result = hasMetadataAnnotation(r, "sync", "ignore");
-            assert.ok(result === false);
+            assert(result === false);
         });
-        it("key not found, SDM and value found",  () => {
+
+        it("key not found, SDM and value found", () => {
             const r = {
                 apiVersion: "v1",
                 kind: "ConfigMap",
@@ -617,11 +659,11 @@ describe("sync/change", () => {
                     color: "obtuse vermilion",
                 },
             };
-
             const result = hasMetadataAnnotation(r, "sync", "ignore");
-            assert.ok(result === false);
+            assert(result === false);
         });
-        it("value not found, SDM and key found",  () => {
+
+        it("value not found, SDM and key found", () => {
             const r = {
                 apiVersion: "v1",
                 kind: "ConfigMap",
@@ -634,11 +676,11 @@ describe("sync/change", () => {
                     color: "obtuse vermilion",
                 },
             };
-
             const result = hasMetadataAnnotation(r, "sync", "ignore");
-            assert.ok(result === false);
+            assert(result === false);
         });
-        it("none present",  () => {
+
+        it("none present", () => {
             const r = {
                 apiVersion: "v1",
                 kind: "ConfigMap",
@@ -651,9 +693,10 @@ describe("sync/change", () => {
                     color: "obtuse vermilion",
                 },
             };
-
             const result = hasMetadataAnnotation(r, "sync", "ignore");
-            assert.ok(result === false);
+            assert(result === false);
         });
+
     });
+
 });

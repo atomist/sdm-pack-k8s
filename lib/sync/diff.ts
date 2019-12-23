@@ -23,16 +23,24 @@ import {
     ProgressLog,
     PushFields,
 } from "@atomist/sdm";
-import { ChangeType } from "./changeType";
+import { ChangeType } from "./change";
 
-/** Glob pattern used to identify Kubernetes spec files in a repository. */
+/**
+ * Glob pattern used to identify Kubernetes spec files in a
+ * repository.  It only matched JSON and YAML files at the root of the
+ * repository.
+ */
 export const k8sSpecGlob = "*.@(json|yaml|yml)";
-/** Regular expression used to identify Kubernetes spec files in a repository. */
+/**
+ * Regular expression used to identify Kubernetes spec files in a
+ * repository.  It only matched JSON and YAML files at the root of the
+ * repository.
+ */
 export const k8sSpecRegExp = /^[^/]+\.(?:json|ya?ml)$/;
 
 /** Container for changes in a commit. */
 export interface PushDiff {
-    /** Whether to apply, delete or Ignore the change. */
+    /** Whether to apply or delete the change. */
     change: ChangeType;
     /** Path to spec relative to the project base directory. */
     path: string;

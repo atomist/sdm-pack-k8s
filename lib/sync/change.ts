@@ -30,9 +30,11 @@ import { deleteSpec } from "../kubernetes/delete";
 import { decryptSecret } from "../kubernetes/secret";
 import { parseKubernetesSpecs } from "../kubernetes/spec";
 import { sameObject } from "./application";
-import { ChangeType } from "./changeType";
 import { PushDiff } from "./diff";
 import { previousSpecVersion } from "./previousSpecVersion";
+
+/** Whether a spec should be applied or deleted. */
+export type ChangeType = "apply" | "delete";
 
 /**
  * Delete/apply resources in change.  The spec file provided by the
@@ -58,8 +60,6 @@ export async function changeResource(p: GitProject, change: PushDiff): Promise<v
         let changer: (spec: k8s.KubernetesObject) => Promise<K8sDeleteResponse | K8sObjectResponse | void>;
         if (specChange.change === "delete") {
             changer = deleteSpec;
-        } else if (specChange.change === "ignore") {
-            changer = async (spec: k8s.KubernetesObject) => { };
         } else {
             changer = applySpec;
         }
@@ -82,11 +82,21 @@ export interface SyncChanges {
 }
 
 /**
- * Inspect before and after specs to determine actions.  If the action
- * is "delete", return delete actions for all specs in `before`.  If
- * the action is "apply", add apply actions for all specs in `after`
- * and delete actions for all specs in `before` that are not in
- * `after`.
+ * Inspect before and after specs to determine actions.
+ *
+ * If the action is "delete", return delete actions for all specs in
+ * `before` that do not have an ignore annotation for the current SDM,
+ * as the "delete" action implies there are no `after` specs.
+ *
+ * If the action is "apply", return apply actions for all specs in
+ * `after` and delete actions for all specs in `before` that are not
+ * in `after` that do not have an ignore annotation for the current
+ * SDM.  If a `before` spec contains a sync ignore annotation for the
+ * current SDM and the `after` annotation does not, the `after` spec
+ * with an "apply" action is included in the returned changes.  If an
+ * `after` spec contains a sync ignore annotation for the current SDM,
+ * then it is omitted from the returned changes, regardless of whether
+ * it appears in the `before` specs or not.
  *
  * @param before The specs before the change
  * @param after The specs after the change
@@ -99,18 +109,33 @@ export function calculateChanges(
     change: ChangeType,
 ): SyncChanges[] {
 
-    const changes: SyncChanges[] = (after || []).filter(spec => !hasMetadataAnnotation(spec, "sync", "ignore")).map(spec => ({ change, spec }));
-    if (before && before.length > 0) {
-        for (const spec of before) {
-            if (hasMetadataAnnotation(spec, "sync", "ignore")) {
-                changes.push({ change: "ignore", spec });
-            } else if ((change === "delete") || (!after.some(a => sameObject(a, spec)))) {
-                changes.push({ change: "delete", spec });
-            }
+    const beforeFiltered = filterIgnoredSpecs(before);
+    if (change === "delete") {
+        return beforeFiltered.map(spec => ({ change, spec }));
+    }
+
+    const changes: SyncChanges[] = filterIgnoredSpecs(after).map(spec => ({ change, spec }));
+    for (const spec of beforeFiltered) {
+        if (!after.some(a => sameObject(a, spec))) {
+            changes.push({ change: "delete", spec });
         }
     }
 
     return changes;
+}
+
+/**
+ * Returned array of specs with those that should be ignored filtered
+ * out.
+ *
+ * @param specs Array of specs to check
+ * @return Array of not ignored specs.
+ */
+export function filterIgnoredSpecs(specs: k8s.KubernetesObject[] | undefined): k8s.KubernetesObject[] {
+    if (!specs) {
+        return [];
+    }
+    return specs.filter(spec => !hasMetadataAnnotation(spec, "sync", "ignore"));
 }
 
 /**
