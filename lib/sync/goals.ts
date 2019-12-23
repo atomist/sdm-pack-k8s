@@ -32,6 +32,7 @@ import {
     SoftwareDeliveryMachine,
     whenPushSatisfies,
 } from "@atomist/sdm";
+import { isInLocalMode } from "@atomist/sdm-core";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import {
@@ -52,10 +53,11 @@ export function isSyncRepoCommit(sdm: SoftwareDeliveryMachine): PushTest | undef
     }
     return pushTest("IsSyncRepoCommit", async p => {
         const repo: SyncRepoRef | RemoteRepoRef = _.get(sdm, "configuration.sdm.k8s.options.sync.repo");
-        if (!isRemoteRepo(repo)) {
+        if (!isRemoteRepo(repo) && !isInLocalMode()) {
             throw new Error(`SyncRepoRef did not get converted to proper RemoteRepoRef at startup: ${stringify(repo)}`);
         }
-        if (p.id.providerType === repo.providerType && p.id.owner === repo.owner &&
+        if (isInLocalMode() || (p.id.providerType === (repo as RemoteRepoRef).providerType) &&
+            p.id.owner === repo.owner &&
             p.id.repo === repo.repo && p.id.branch === repo.branch) {
             const tag = commitTag(sdm.configuration);
             return p.push.commits.some(c => !c.message.includes(tag));

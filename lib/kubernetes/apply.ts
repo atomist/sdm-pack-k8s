@@ -28,12 +28,12 @@ import { specSlug } from "./spec";
 
 /**
  * Create or replace a Kubernetes resource using the provided spec.
- * This implmentation uses read, patch, and create, but may switch to
+ * This implementation uses read, patch, and create, but may switch to
  * [server-side
  * apply](https://github.com/kubernetes/enhancements/issues/555) when
  * it is available.
  *
- * @param spec Kuberenetes resource spec sufficient to identify and create the resource
+ * @param spec Kubernetes resource spec sufficient to identify and create the resource
  * @return response from the Kubernetes API.
  */
 export async function applySpec(spec: k8s.KubernetesObject): Promise<K8sObjectResponse> {
