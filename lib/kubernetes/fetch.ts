@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import { errMsg } from "../support/error";
@@ -174,7 +173,6 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
         clients = makeApiClients(kc);
     } catch (e) {
         e.message = `Failed to create Kubernetes client: ${errMsg(e)}`;
-        logger.error(e.message);
         throw e;
     }
 
@@ -189,7 +187,6 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
             specs.push(...listResponse.body.items.map(s => cleanKubernetesSpec(s, apiKind)));
         } catch (e) {
             e.message = `Failed to list cluster resources ${apiKind.apiVersion}/${apiKind.kind}: ${e.message}`;
-            logger.error(e.message);
             throw e;
         }
     }
@@ -200,7 +197,6 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
         namespaces = nsResponse.body.items;
     } catch (e) {
         e.message = `Failed to list namespaces: ${e.message}`;
-        logger.error(e.message);
         throw e;
     }
     for (const nsObj of namespaces) {
@@ -214,7 +210,6 @@ export async function kubernetesFetch(options: KubernetesFetchOptions = defaultK
                 specs.push(...listResponse.body.items.map(s => cleanKubernetesSpec(s, apiKind)));
             } catch (e) {
                 e.message = `Failed to list resources ${apiKind.apiVersion}/${apiKind.kind} in namespace ${ns}: ${e.message}`;
-                logger.error(e.message);
                 throw e;
             }
         }
@@ -278,9 +273,13 @@ export async function clusterResourceKinds(selectors: KubernetesResourceSelector
     const included = includedResourceKinds(selectors);
     const apiKinds: KubernetesResourceKind[] = [];
     for (const apiKind of included) {
-        const resource = await client.resource(apiKind.apiVersion, apiKind.kind);
-        if (resource && !resource.namespaced) {
-            apiKinds.push(apiKind);
+        try {
+            const resource = await client.resource(apiKind.apiVersion, apiKind.kind);
+            if (resource && !resource.namespaced) {
+                apiKinds.push(apiKind);
+            }
+        } catch (e) {
+            // ignore
         }
     }
     return apiKinds;
@@ -304,9 +303,13 @@ export async function namespaceResourceKinds(
     for (const selector of selectors.filter(s => s.action === "include")) {
         if (nameMatch(ns, selector.namespace)) {
             for (const apiKind of selector.kinds) {
-                const resource = await client.resource(apiKind.apiVersion, apiKind.kind);
-                if (resource && resource.namespaced) {
-                    apiKinds.push(apiKind);
+                try {
+                    const resource = await client.resource(apiKind.apiVersion, apiKind.kind);
+                    if (resource && resource.namespaced) {
+                        apiKinds.push(apiKind);
+                    }
+                } catch (e) {
+                    // ignore
                 }
             }
         }

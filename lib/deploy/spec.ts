@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-import {
-    logger,
-    Project,
-    ProjectFile,
-} from "@atomist/automation-client";
+import { File as ProjectFile } from "@atomist/automation-client/lib/project/File";
+import { Project } from "@atomist/automation-client/lib/project/Project";
+import { logger } from "@atomist/automation-client/lib/util/logger";
 import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as path from "path";

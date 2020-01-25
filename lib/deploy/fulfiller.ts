@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-import {
-    ExecuteGoalResult,
-    GoalInvocation,
-    GoalWithFulfillment,
-} from "@atomist/sdm";
+import { ExecuteGoalResult } from "@atomist/sdm/lib/api/goal/ExecuteGoalResult";
+import { GoalInvocation } from "@atomist/sdm/lib/api/goal/GoalInvocation";
+import { GoalWithFulfillment } from "@atomist/sdm/lib/api/goal/GoalWithFulfillment";
 import { KubernetesApplication } from "../kubernetes/request";
 import { getKubernetesGoalEventData } from "./data";
 import {

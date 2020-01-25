@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,31 @@
  * limitations under the License.
  */
 
+import { HandlerContext } from "@atomist/automation-client/lib/HandlerContext";
+import { GitProject } from "@atomist/automation-client/lib/project/git/GitProject";
+import { isInLocalMode } from "@atomist/sdm-core/lib/internal/machine/modes";
+import { ExecuteGoalResult } from "@atomist/sdm/lib/api/goal/ExecuteGoalResult";
 import {
-    GitProject,
-    HandlerContext,
-} from "@atomist/automation-client";
+    Goal,
+    GoalDefinition,
+} from "@atomist/sdm/lib/api/goal/Goal";
 import {
-    AnyPush,
-    DefaultGoalNameGenerator,
     ExecuteGoal,
-    ExecuteGoalResult,
+    GoalInvocation,
+} from "@atomist/sdm/lib/api/goal/GoalInvocation";
+import { DefaultGoalNameGenerator } from "@atomist/sdm/lib/api/goal/GoalNameGenerator";
+import {
     FulfillableGoalDetails,
     FulfillableGoalWithRegistrations,
     getGoalDefinitionFrom,
-    Goal,
-    GoalDefinition,
-    GoalInvocation,
-    PushTest,
-    SdmGoalEvent,
-    SdmGoalState,
-    SoftwareDeliveryMachine,
-} from "@atomist/sdm";
-import { isInLocalMode } from "@atomist/sdm-core";
+} from "@atomist/sdm/lib/api/goal/GoalWithFulfillment";
+import { SdmGoalEvent } from "@atomist/sdm/lib/api/goal/SdmGoalEvent";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
+import { PushTest } from "@atomist/sdm/lib/api/mapping/PushTest";
+import { AnyPush } from "@atomist/sdm/lib/api/mapping/support/commonPushTests";
 import * as _ from "lodash";
 import { KubernetesApplication } from "../kubernetes/request";
+import { SdmGoalState } from "../typings/types";
 import { getClusterLabel } from "./cluster";
 import { generateKubernetesGoalEventData } from "./data";
 import { deployApplication } from "./deploy";

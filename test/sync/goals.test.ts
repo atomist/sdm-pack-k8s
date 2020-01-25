@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-import { ScmProviderType } from "@atomist/automation-client";
-import {
-    PushListenerInvocation,
-    SoftwareDeliveryMachine,
-} from "@atomist/sdm";
+import { ProviderType as ScmProviderType } from "@atomist/automation-client/lib/operations/common/RepoId";
+import { PushListenerInvocation } from "@atomist/sdm/lib/api/listener/PushListener";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
 import * as _ from "lodash";
 import * as assert from "power-assert";
 import { isSyncRepoCommit } from "../../lib/sync/goals";
