@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-import {
-    configurationValue,
-    GitProject,
-} from "@atomist/automation-client";
+import { configurationValue } from "@atomist/automation-client/lib/configuration";
+import { GitProject } from "@atomist/automation-client/lib/project/git/GitProject";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";

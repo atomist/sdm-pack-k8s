@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
+import { RemoteRepoRef } from "@atomist/automation-client/lib/operations/common/RepoId";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import { isInLocalMode } from "@atomist/sdm-core/lib/internal/machine/modes";
+import { minimalClone } from "@atomist/sdm/lib/api-helper/goal/minimalClone";
+import { LogSuppressor } from "@atomist/sdm/lib/api-helper/log/logInterpreters";
+import { whenPushSatisfies } from "@atomist/sdm/lib/api/dsl/goalDsl";
+import { ExecuteGoalResult } from "@atomist/sdm/lib/api/goal/ExecuteGoalResult";
+import { ExecuteGoal } from "@atomist/sdm/lib/api/goal/GoalInvocation";
+import { goals } from "@atomist/sdm/lib/api/goal/Goals";
+import { GoalWithFulfillment } from "@atomist/sdm/lib/api/goal/GoalWithFulfillment";
+import { IndependentOfEnvironment } from "@atomist/sdm/lib/api/goal/support/environment";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
 import {
-    logger,
-    RemoteRepoRef,
-} from "@atomist/automation-client";
-import {
-    execPromise,
-    ExecuteGoal,
-    ExecuteGoalResult,
-    goals,
-    GoalWithFulfillment,
-    IndependentOfEnvironment,
-    LogSuppressor,
-    minimalClone,
     pushTest,
     PushTest,
-    SoftwareDeliveryMachine,
-    whenPushSatisfies,
-} from "@atomist/sdm";
-import { isInLocalMode } from "@atomist/sdm-core";
+} from "@atomist/sdm/lib/api/mapping/PushTest";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";
 import {
@@ -127,7 +125,6 @@ export const K8sSync: ExecuteGoal = async gi => {
                 await changeResource(p, change);
             } catch (e) {
                 e.message = `Failed to ${change.change} '${change.path}' resource for commit ${change.sha}: ${errMsg(e)}`;
-                logger.error(e.message);
                 log.write(e.message);
                 errs.push(e);
             }

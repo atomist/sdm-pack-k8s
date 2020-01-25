@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
-import {
-    execPromise,
-    SdmGoalEvent,
-} from "@atomist/sdm";
-import { isInLocalMode } from "@atomist/sdm-core";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import { isInLocalMode } from "@atomist/sdm-core/lib/internal/machine/modes";
+import { SdmGoalEvent } from "@atomist/sdm/lib/api/goal/SdmGoalEvent";
 import { KubernetesApplication } from "../kubernetes/request";
 
 export type ExternalUrls = Array<{ label?: string, url: string }>;

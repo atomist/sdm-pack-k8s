@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { execPromise } from "@atomist/sdm";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
 import * as k8s from "@kubernetes/client-node";
 import * as _ from "lodash";
 import * as assert from "power-assert";

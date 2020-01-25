@@ -19,7 +19,7 @@ import {
     ProductionEnvironment,
     ProjectDisposalEnvironment,
     StagingEnvironment,
-} from "@atomist/sdm";
+} from "@atomist/sdm/lib/api/goal/support/environment";
 import * as assert from "power-assert";
 import {
     getCluster,

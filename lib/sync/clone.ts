@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CloneOptions } from "@atomist/automation-client";
+import { CloneOptions } from "@atomist/automation-client/lib/spi/clone/DirectoryManager";
 
 export const defaultCloneOptions: CloneOptions = {
     alwaysDeep: false,

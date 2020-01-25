@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-import {
-    ProjectOperationCredentials,
-    RemoteRepoRef,
-} from "@atomist/automation-client";
-import { SoftwareDeliveryMachine } from "@atomist/sdm";
+import { ProjectOperationCredentials } from "@atomist/automation-client/lib/operations/common/ProjectOperationCredentials";
+import { RemoteRepoRef } from "@atomist/automation-client/lib/operations/common/RepoId";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
 import * as _ from "lodash";
 
 /**

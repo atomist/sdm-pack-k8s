@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
 import {
@@ -58,7 +57,6 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
             config = loadKubeConfig();
         } catch (e) {
             e.message = `Failed to load Kubernetes config to deploy ${app.ns}/${app.name}: ${e.message}`;
-            logger.error(e.message);
             throw e;
         }
         clients = makeApiClients(config);
@@ -76,7 +74,6 @@ export async function upsertApplication(app: KubernetesApplication, sdmFulfiller
         return k8sResources.filter(r => !!r);
     } catch (e) {
         e.message = `Failed to upsert '${reqString(req)}': ${errMsg(e)}`;
-        logger.error(e.message);
         throw e;
     }
 }
@@ -96,7 +93,6 @@ export async function deleteApplication(del: KubernetesDelete): Promise<k8s.Kube
         config = loadKubeConfig();
     } catch (e) {
         e.message(`Failed to load Kubernetes config to delete ${slug}: ${e.message}`);
-        logger.error(e.message);
         throw e;
     }
     const clients = makeApiClients(config);
@@ -179,9 +175,7 @@ export async function deleteApplication(del: KubernetesDelete): Promise<k8s.Kube
         }
     }
     if (errs.length > 0) {
-        const msg = `Failed to delete application '${reqString(req)}': ${errs.map(e => e.message).join("; ")}`;
-        logger.error(msg);
-        throw new Error(msg);
+        throw new Error(`Failed to delete application '${reqString(req)}': ${errs.map(e => e.message).join("; ")}`);
     }
     return deleted;
 }

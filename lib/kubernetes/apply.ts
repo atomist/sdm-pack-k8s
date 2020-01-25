@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
+import { logger } from "@atomist/automation-client/lib/util/logger";
 import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
@@ -44,7 +44,6 @@ export async function applySpec(spec: k8s.KubernetesObject): Promise<K8sObjectRe
         client = kc.makeApiClient(K8sObjectApi);
     } catch (e) {
         e.message = `Failed to create Kubernetes client: ${errMsg(e)}`;
-        logger.error(e.message);
         throw e;
     }
     try {

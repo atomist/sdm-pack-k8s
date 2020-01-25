@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-import {
-    logger,
-    webhookBaseUrl,
-} from "@atomist/automation-client";
+import { webhookBaseUrl } from "@atomist/automation-client/lib/atomistWebhook";
+import { logger } from "@atomist/automation-client/lib/util/logger";
 import * as k8s from "@kubernetes/client-node";
 import * as stringify from "json-stringify-safe";
 import * as _ from "lodash";

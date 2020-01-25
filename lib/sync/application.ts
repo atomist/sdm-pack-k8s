@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-import {
-    configurationValue,
-    GitProject,
-    guid,
-    logger,
-    Project,
-    ProjectFile,
-    projectUtils,
-    RemoteRepoRef,
-} from "@atomist/automation-client";
-import {
-    CachingProjectLoader,
-    execPromise,
-    ProjectLoader,
-    ProjectLoadingParameters,
-} from "@atomist/sdm";
+import { configurationValue } from "@atomist/automation-client/lib/configuration";
+import { guid } from "@atomist/automation-client/lib/internal/util/string";
+import { RemoteRepoRef } from "@atomist/automation-client/lib/operations/common/RepoId";
+import { File as ProjectFile } from "@atomist/automation-client/lib/project/File";
+import { GitProject } from "@atomist/automation-client/lib/project/git/GitProject";
+import { Project } from "@atomist/automation-client/lib/project/Project";
+import * as projectUtils from "@atomist/automation-client/lib/project/util/projectUtils";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import { CachingProjectLoader } from "@atomist/sdm/lib/api-helper/project/CachingProjectLoader";
+import { ProjectLoader, ProjectLoadingParameters } from "@atomist/sdm/lib/spi/project/ProjectLoader";
 import * as k8s from "@kubernetes/client-node";
 import {
     KubernetesSyncOptions,

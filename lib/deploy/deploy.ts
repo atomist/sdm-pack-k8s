@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
+import { HandlerContext } from "@atomist/automation-client/lib/HandlerContext";
 import {
-    HandlerContext,
     LeveledLogMethod,
     logger,
-} from "@atomist/automation-client";
-import {
-    ExecuteGoalResult,
-    ProgressLog,
-    SdmGoalEvent,
-} from "@atomist/sdm";
+} from "@atomist/automation-client/lib/util/logger";
+import { ExecuteGoalResult } from "@atomist/sdm/lib/api/goal/ExecuteGoalResult";
+import { SdmGoalEvent } from "@atomist/sdm/lib/api/goal/SdmGoalEvent";
+import { ProgressLog } from "@atomist/sdm/lib/spi/log/ProgressLog";
 import * as k8s from "@kubernetes/client-node";
 import { upsertApplication } from "../kubernetes/application";
 import {

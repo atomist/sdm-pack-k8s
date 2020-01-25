@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-import {
-    GitProject,
-    HandlerResult,
-    logger,
-    ProjectFile,
-} from "@atomist/automation-client";
-import {
-    CommandHandlerRegistration,
-    CommandListenerInvocation,
-    ProjectLoadingParameters,
-    slackSuccessMessage,
-    SoftwareDeliveryMachine,
-} from "@atomist/sdm";
+import { HandlerResult } from "@atomist/automation-client/lib/HandlerResult";
+import { File as ProjectFile } from "@atomist/automation-client/lib/project/File";
+import { GitProject } from "@atomist/automation-client/lib/project/git/GitProject";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import { slackSuccessMessage } from "@atomist/sdm/lib/api-helper/misc/slack/messages";
+import { CommandListenerInvocation } from "@atomist/sdm/lib/api/listener/CommandListener";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
+import { CommandHandlerRegistration } from "@atomist/sdm/lib/api/registration/CommandHandlerRegistration";
+import { ProjectLoadingParameters } from "@atomist/sdm/lib/spi/project/ProjectLoader";
 import * as _ from "lodash";
 import { KubernetesSyncOptions } from "../config";
 import { applySpec } from "../kubernetes/apply";

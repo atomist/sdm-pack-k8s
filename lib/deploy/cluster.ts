@@ -17,7 +17,7 @@
 import {
     ProductionEnvironment,
     StagingEnvironment,
-} from "@atomist/sdm";
+} from "@atomist/sdm/lib/api/goal/support/environment";
 
 /**
  * Determine cluster name from goal environment and fulfillment.  If

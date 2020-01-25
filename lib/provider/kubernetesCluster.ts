@@ -16,11 +16,11 @@
 
 import {
     GraphClient,
-    logger,
     QueryNoCacheOptions,
-} from "@atomist/automation-client";
-import { StartupListener } from "@atomist/sdm";
-import { isInLocalMode } from "@atomist/sdm-core";
+} from "@atomist/automation-client/lib/spi/graph/GraphClient";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import { isInLocalMode } from "@atomist/sdm-core/lib/internal/machine/modes";
+import { StartupListener } from "@atomist/sdm/lib/api/listener/StartupListener";
 import * as cluster from "cluster";
 import * as _ from "lodash";
 import {

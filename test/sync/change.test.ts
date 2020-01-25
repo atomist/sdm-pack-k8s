@@ -15,11 +15,10 @@
  */
 
 /* tslint:disable:max-file-line-count */
-import {
-    GitProject,
-    InMemoryProject,
-} from "@atomist/automation-client";
+
 import * as acglobals from "@atomist/automation-client/lib/globals";
+import { GitProject } from "@atomist/automation-client/lib/project/git/GitProject";
+import { InMemoryProject } from "@atomist/automation-client/lib/project/mem/InMemoryProject";
 import * as k8s from "@kubernetes/client-node";
 import * as yaml from "js-yaml";
 import * as assert from "power-assert";

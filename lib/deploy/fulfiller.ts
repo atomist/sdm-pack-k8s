@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-import {
-    ExecuteGoalResult,
-    GoalInvocation,
-    GoalWithFulfillment,
-} from "@atomist/sdm";
+import { ExecuteGoalResult } from "@atomist/sdm/lib/api/goal/ExecuteGoalResult";
+import { GoalInvocation } from "@atomist/sdm/lib/api/goal/GoalInvocation";
+import { GoalWithFulfillment } from "@atomist/sdm/lib/api/goal/GoalWithFulfillment";
 import { KubernetesApplication } from "../kubernetes/request";
 import { getKubernetesGoalEventData } from "./data";
 import {

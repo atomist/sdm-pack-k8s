@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
-import {
-    createJob,
-    fakeContext,
-    SoftwareDeliveryMachine,
-    StartupListener,
-} from "@atomist/sdm";
-import { isInLocalMode } from "@atomist/sdm-core";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import { isInLocalMode } from "@atomist/sdm-core/lib/internal/machine/modes";
+import { createJob } from "@atomist/sdm/lib/api-helper/misc/job/createJob";
+import { fakeContext } from "@atomist/sdm/lib/api-helper/testsupport/fakeContext";
+import { StartupListener } from "@atomist/sdm/lib/api/listener/StartupListener";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
 import * as cluster from "cluster";
 import * as _ from "lodash";
 import { queryForScmProvider } from "./repo";

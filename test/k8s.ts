@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { execPromise } from "@atomist/sdm";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
 
 let minikube: boolean;
 /** See if a local Kubernetes cluster is available. */

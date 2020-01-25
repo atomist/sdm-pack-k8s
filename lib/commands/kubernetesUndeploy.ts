@@ -15,17 +15,15 @@
  */
 
 import {
-    HandlerResult,
-    logger,
     Parameter,
     Parameters,
-} from "@atomist/automation-client";
-import {
-    CommandHandlerRegistration,
-    CommandListenerInvocation,
-    slackSuccessMessage,
-    SoftwareDeliveryMachine,
-} from "@atomist/sdm";
+} from "@atomist/automation-client/lib/decorators";
+import { HandlerResult } from "@atomist/automation-client/lib/HandlerResult";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import { slackSuccessMessage } from "@atomist/sdm/lib/api-helper/misc/slack/messages";
+import { CommandListenerInvocation } from "@atomist/sdm/lib/api/listener/CommandListener";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
+import { CommandHandlerRegistration } from "@atomist/sdm/lib/api/registration/CommandHandlerRegistration";
 import * as _ from "lodash";
 import { deleteApplication } from "../kubernetes/application";
 import { defaultNamespace } from "../kubernetes/namespace";

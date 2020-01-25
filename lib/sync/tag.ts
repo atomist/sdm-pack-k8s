@@ -17,7 +17,7 @@
 import {
     Configuration,
     configurationValue,
-} from "@atomist/automation-client";
+} from "@atomist/automation-client/lib/configuration";
 
 /**
  * Unique tag to include in sync commits made by this SDM.

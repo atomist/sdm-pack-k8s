@@ -16,12 +16,10 @@
 
 /* tslint:disable:max-file-line-count */
 
-import {
-    GitProject,
-    InMemoryProject,
-    InMemoryProjectFile,
-    projectUtils,
-} from "@atomist/automation-client";
+import { GitProject } from "@atomist/automation-client/lib/project/git/GitProject";
+import { InMemoryFile as InMemoryProjectFile } from "@atomist/automation-client/lib/project/mem/InMemoryFile";
+import { InMemoryProject } from "@atomist/automation-client/lib/project/mem/InMemoryProject";
+import * as projectUtils from "@atomist/automation-client/lib/project/util/projectUtils";
 import * as assert from "power-assert";
 import { KubernetesSyncOptions } from "../../lib/config";
 import {

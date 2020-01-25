@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { execPromise } from "@atomist/sdm";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
 import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
 import {
@@ -279,12 +279,15 @@ describe("kubernetes/api", () => {
                         namespace: "fugazi",
                     },
                 };
+                let thrown = false;
                 try {
                     await client.specUriPath(o, "create");
                     assert.fail("should have thrown error");
                 } catch (e) {
+                    thrown = true;
                     assert(/Spec does not contain kind:/.test(e.message));
                 }
+                assert(thrown, "no error thrown");
             });
 
             it("should throw an error if name required and missing", async () => {
@@ -295,12 +298,15 @@ describe("kubernetes/api", () => {
                         namespace: "fugazi",
                     },
                 };
+                let thrown = false;
                 try {
                     await client.specUriPath(o, "read");
                     assert.fail("should have thrown error");
                 } catch (e) {
+                    thrown = true;
                     assert(/Spec does not contain name:/.test(e.message));
                 }
+                assert(thrown, "no error thrown");
             });
 
             it("should throw an error if resource is not valid", async () => {
@@ -312,12 +318,15 @@ describe("kubernetes/api", () => {
                         namespace: "fugazi",
                     },
                 };
+                let thrown = false;
                 try {
                     await client.specUriPath(o, "create");
                     assert.fail("should have thrown error");
                 } catch (e) {
+                    thrown = true;
                     assert(e.message === "Unrecognized API version and kind: v1 Ingress");
                 }
+                assert(thrown, "no error thrown");
             });
 
         });
@@ -515,7 +524,7 @@ describe("kubernetes/api", () => {
                     await applySpec(d);
                 } catch (e) {
                     thrown = true;
-                    assert(e.message === "Unrecognized API version and kind: applications/v1 Deployment");
+                    assert((e.message as string).startsWith("Failed to fetch resource metadata for applications/v1/Deployment: "));
                 }
                 assert(thrown, "error not thrown");
             });

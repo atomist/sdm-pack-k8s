@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-import {
-    GitProject,
-    HandlerContext,
-    InMemoryProject,
-    Project,
-} from "@atomist/automation-client";
-import {
-    GoalInvocation,
-    SdmGoalEvent,
-} from "@atomist/sdm";
+import { HandlerContext } from "@atomist/automation-client/lib/HandlerContext";
+import { GitProject } from "@atomist/automation-client/lib/project/git/GitProject";
+import { InMemoryProject } from "@atomist/automation-client/lib/project/mem/InMemoryProject";
+import { Project } from "@atomist/automation-client/lib/project/Project";
+import { GoalInvocation } from "@atomist/sdm/lib/api/goal/GoalInvocation";
+import { SdmGoalEvent } from "@atomist/sdm/lib/api/goal/SdmGoalEvent";
 import * as assert from "power-assert";
 import {
     defaultImage,
