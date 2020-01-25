@@ -24,7 +24,10 @@ import * as projectUtils from "@atomist/automation-client/lib/project/util/proje
 import { execPromise } from "@atomist/automation-client/lib/util/child_process";
 import { logger } from "@atomist/automation-client/lib/util/logger";
 import { CachingProjectLoader } from "@atomist/sdm/lib/api-helper/project/CachingProjectLoader";
-import { ProjectLoader, ProjectLoadingParameters } from "@atomist/sdm/lib/spi/project/ProjectLoader";
+import {
+    ProjectLoader,
+    ProjectLoadingParameters,
+} from "@atomist/sdm/lib/spi/project/ProjectLoader";
 import * as k8s from "@kubernetes/client-node";
 import {
     KubernetesSyncOptions,
