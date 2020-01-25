@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-import { LocalProject } from "@atomist/automation-client";
-import {
-    execPromise,
-    ProgressLog,
-    PushFields,
-} from "@atomist/sdm";
+import { LocalProject } from "@atomist/automation-client/lib/project/local/LocalProject";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
+import { SdmGoalEvent } from "@atomist/sdm/lib/api/goal/SdmGoalEvent";
+import { ProgressLog } from "@atomist/sdm/lib/spi/log/ProgressLog";
 import * as assert from "power-assert";
 import {
     diffPush,
@@ -97,7 +95,7 @@ describe("sync/diff", () => {
             const p: LocalProject = {
                 baseDir: process.cwd(),
             } as any;
-            const push: PushFields.Fragment = {
+            const push: SdmGoalEvent["push"] = {
                 commits: [
                     {
                         sha: "958c655ef5b6436fbe5ae430a878ff14b75d39ce",

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-    logger,
-} from "@atomist/automation-client";
-import { execPromise } from "@atomist/sdm";
+
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
 
 /**
- * Use the Git CLI to fetch the previous version of the spec.
+ * Use the Git CLI to fetch the previous version of the spec.  If the
+ * previous does not exist or an error occurs fetching it, an empty
+ * string is returned.
  *
  * @param baseDir Project repository base directory
  * @param specPath Path to spec file relative to `baseDir`
@@ -29,7 +29,6 @@ export async function previousSpecVersion(baseDir: string, specPath: string, sha
         const showResult = await execPromise("git", ["show", `${sha}~1:${specPath}`], { cwd: baseDir });
         return showResult.stdout;
     } catch (e) {
-        logger.debug(`Failed to git show '${specPath}' from ${sha.substring(0, 7)}~1, returning empty string: ${e.message}`);
         return "";
     }
 }

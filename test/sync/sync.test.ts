@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-import {
-    GitHubRepoRef,
-    GitProject,
-    InMemoryProject,
-} from "@atomist/automation-client";
 import * as acglobals from "@atomist/automation-client/lib/globals";
-import { fakeContext } from "@atomist/sdm";
+import { GitHubRepoRef } from "@atomist/automation-client/lib/operations/common/GitHubRepoRef";
+import { GitProject } from "@atomist/automation-client/lib/project/git/GitProject";
+import { InMemoryProject } from "@atomist/automation-client/lib/project/mem/InMemoryProject";
+import { fakeContext } from "@atomist/sdm/lib/api-helper/testsupport/fakeContext";
 import * as k8s from "@kubernetes/client-node";
 import * as assert from "power-assert";
 import * as apply from "../../lib/kubernetes/apply";

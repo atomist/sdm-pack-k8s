@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { execPromise } from "@atomist/sdm";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
 import * as assert from "power-assert";
 import {
     deleteApplication,
@@ -52,7 +52,7 @@ describe("kubernetes/application", () => {
 
     });
 
-    describe.skip("upsertApplication & deleteApplication", function(): void {
+    describe("upsertApplication & deleteApplication", function(): void {
 
         // tslint:disable-next-line:no-invalid-this
         this.timeout(5000);

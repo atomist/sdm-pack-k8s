@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 /* tslint:disable:max-file-line-count */
 
-import {
-    BitBucketServerRepoRef,
-    GitCommandGitProject,
-    GitHubRepoRef,
-    GitlabRepoRef,
-    ScmProviderType,
-    TokenCredentials,
-} from "@atomist/automation-client";
-import { SoftwareDeliveryMachine } from "@atomist/sdm";
-import { DefaultRepoRefResolver } from "@atomist/sdm-core";
+import { BitBucketServerRepoRef } from "@atomist/automation-client/lib/operations/common/BitBucketServerRepoRef";
+import { GitHubRepoRef } from "@atomist/automation-client/lib/operations/common/GitHubRepoRef";
+import { GitlabRepoRef } from "@atomist/automation-client/lib/operations/common/GitlabRepoRef";
+import { TokenCredentials } from "@atomist/automation-client/lib/operations/common/ProjectOperationCredentials";
+import { ProviderType as ScmProviderType } from "@atomist/automation-client/lib/operations/common/RepoId";
+import { GitCommandGitProject } from "@atomist/automation-client/lib/project/git/GitCommandGitProject";
+import { DefaultRepoRefResolver } from "@atomist/sdm-core/lib/handlers/common/DefaultRepoRefResolver";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
 import * as assert from "power-assert";
 import {
     isRemoteRepo,

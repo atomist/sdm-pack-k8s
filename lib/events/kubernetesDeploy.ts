@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,35 @@
  */
 
 import {
-    EventFired,
-    GraphQL,
-    HandlerContext,
-    HandlerResult,
-    logger,
-    OnEvent,
     Parameters,
-    reduceResults,
-    Success,
     Value,
-} from "@atomist/automation-client";
+} from "@atomist/automation-client/lib/decorators";
+import * as GraphQL from "@atomist/automation-client/lib/graph/graphQL";
+import { EventFired } from "@atomist/automation-client/lib/HandleEvent";
+import { HandlerContext } from "@atomist/automation-client/lib/HandlerContext";
 import {
-    EventHandlerRegistration,
-    ExecuteGoalResult,
-    LoggingProgressLog,
-    ProgressLog,
-    SdmGoalEvent,
-    SdmGoalState,
-    SoftwareDeliveryMachineConfiguration,
+    HandlerResult,
+    reduceResults,
+} from "@atomist/automation-client/lib/HandlerResult";
+import { OnEvent } from "@atomist/automation-client/lib/onEvent";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import {
     updateGoal,
     UpdateSdmGoalParams,
-    WriteToAllProgressLog,
-} from "@atomist/sdm";
+} from "@atomist/sdm/lib/api-helper/goal/storeGoals";
+import { LoggingProgressLog } from "@atomist/sdm/lib/api-helper/log/LoggingProgressLog";
+import { WriteToAllProgressLog } from "@atomist/sdm/lib/api-helper/log/WriteToAllProgressLog";
+import { ExecuteGoalResult } from "@atomist/sdm/lib/api/goal/ExecuteGoalResult";
+import { SdmGoalEvent } from "@atomist/sdm/lib/api/goal/SdmGoalEvent";
+import { SoftwareDeliveryMachineConfiguration } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachineOptions";
+import { EventHandlerRegistration } from "@atomist/sdm/lib/api/registration/EventHandlerRegistration";
+import { ProgressLog } from "@atomist/sdm/lib/spi/log/ProgressLog";
 import * as stringify from "json-stringify-safe";
 import { executeKubernetesDeployFulfill } from "../deploy/fulfiller";
-import { KubernetesDeployRequestedSdmGoal } from "../typings/types";
+import {
+    KubernetesDeployRequestedSdmGoal,
+    SdmGoalState,
+} from "../typings/types";
 
 /**
  * Parameters for the deploying an application to a Kubernetes cluster
@@ -77,8 +80,9 @@ export const HandleKubernetesDeploy: OnEvent<KubernetesDeployRequestedSdmGoal.Su
 ): Promise<HandlerResult> => {
 
     if (!ef || !ef.data || !ef.data.SdmGoal) {
-        logger.warn(`Received event had no SdmGoal`);
-        return Success;
+        const message = "Received event had no SdmGoal";
+        logger.warn(message);
+        return { code: 0, message };
     }
 
     return Promise.all(ef.data.SdmGoal.map(async g => {
