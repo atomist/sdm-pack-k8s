@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-import {
-    HandlerContext,
-    logger,
-    Project,
-} from "@atomist/automation-client";
-import {
-    GoalInvocation,
-    SdmGoalEvent,
-} from "@atomist/sdm";
-import { readSdmVersion } from "@atomist/sdm-core";
+import { HandlerContext } from "@atomist/automation-client/lib/HandlerContext";
+import { Project } from "@atomist/automation-client/lib/project/Project";
+import { logger } from "@atomist/automation-client/lib/util/logger";
+import { readSdmVersion } from "@atomist/sdm-core//lib/internal/delivery/build/local/projectVersioner";
+import { GoalInvocation } from "@atomist/sdm/lib/api/goal/GoalInvocation";
+import { SdmGoalEvent } from "@atomist/sdm/lib/api/goal/SdmGoalEvent";
 import * as k8s from "@kubernetes/client-node";
 import * as dockerfileParser from "docker-file-parser";
 import * as stringify from "json-stringify-safe";

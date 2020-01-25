@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
-import { SoftwareDeliveryMachine } from "@atomist/sdm";
+import { SoftwareDeliveryMachine } from "@atomist/sdm/lib/api/machine/SoftwareDeliveryMachine";
 import * as k8s from "@kubernetes/client-node";
 
 /**
@@ -29,7 +28,6 @@ export function loadKubeConfig(): k8s.KubeConfig {
     try {
         kc.loadFromDefault();
     } catch (e) {
-        logger.debug(`Failed to to load default config, attempting in-cluster`);
         kc.loadFromCluster();
     }
     return kc;
@@ -57,15 +55,13 @@ export function kubeConfigContext(sdm: SoftwareDeliveryMachine): string | undefi
         kc.loadFromDefault();
     } catch (e) {
         e.message = `Failed to to load default Kubernetes config: ${e.message}`;
-        logger.error(e.message);
         throw e;
     }
 
     if (sdm.configuration.sdm.k8s.options.context) {
         if (!kc.contexts.some(c => c.name === sdm.configuration.sdm.k8s.options.context)) {
-            const msg = `Kubernetes config context in SDM configuration does not exist in default Kubernetes config`;
-            logger.error(msg);
-            logger.error(`Available Kubernetes config contexts: ${kc.contexts.map(c => c.name).join(",")}`);
+            const msg = "Kubernetes config context in SDM configuration does not exist in default Kubernetes config" +
+                `Available Kubernetes config contexts: ${kc.contexts.map(c => c.name).join(",")}`;
             throw new Error(msg);
         }
     } else if (kc.currentContext) {

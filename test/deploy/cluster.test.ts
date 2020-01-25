@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import {
     ProductionEnvironment,
     ProjectDisposalEnvironment,
     StagingEnvironment,
-} from "@atomist/sdm";
+} from "@atomist/sdm/lib/api/goal/support/environment";
 import * as assert from "power-assert";
 import {
     getCluster,

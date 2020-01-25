@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
+import { logger } from "@atomist/automation-client/lib/util/logger";
 import * as k8s from "@kubernetes/client-node";
 import { errMsg } from "../support/error";
 import { logRetry } from "../support/retry";
@@ -47,7 +47,6 @@ export async function deleteSpec(spec: k8s.KubernetesObject): Promise<K8sDeleteR
         client = kc.makeApiClient(K8sObjectApi);
     } catch (e) {
         e.message = `Failed to create Kubernetes client: ${errMsg(e)}`;
-        logger.error(e.message);
         throw e;
     }
     try {
@@ -173,7 +172,6 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8
         } while (!!continu);
     } catch (e) {
         e.message = `Failed to list ${arg.kind} for ${slug}: ${errMsg(e)}`;
-        logger.error(e.message);
         throw e;
     }
     const deleted: k8s.KubernetesObject[] = [];
@@ -197,9 +195,7 @@ export async function deleteAppResources(arg: DeleteAppResourcesArg): Promise<k8
         }
     }
     if (errs.length > 0) {
-        const msg = `Failed to delete ${arg.kind} resources for ${slug}: ${errs.map(e => e.message).join("; ")}`;
-        logger.error(msg);
-        throw new Error(msg);
+        throw new Error(`Failed to delete ${arg.kind} resources for ${slug}: ${errs.map(e => e.message).join("; ")}`);
     }
     return deleted;
 }

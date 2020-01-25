@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
 import * as k8s from "@kubernetes/client-node";
 import * as http from "http";
 import * as request from "request";
@@ -139,8 +138,8 @@ export class K8sObjectApi extends k8s.ApisApi {
     /**
      * Get metadata from Kubernetes API for resources described by
      * `kind` and `apiVersion`.  If it is unable to find the resource
-     * `kind` under the provided `apiVersion` or an error occurs,
-     * `undefined` is returned.
+     * `kind` under the provided `apiVersion`, `undefined` is
+     * returned.
      */
     public async resource(apiVersion: string, kind: string): Promise<k8s.V1APIResource | undefined> {
         try {
@@ -151,8 +150,8 @@ export class K8sObjectApi extends k8s.ApisApi {
             const apiResourceList = getApiResponse.body as unknown as k8s.V1APIResourceList;
             return apiResourceList.resources.find(r => r.kind === kind);
         } catch (e) {
-            logger.error(`Failed to fetch resource metadata for ${apiVersion}/${kind}: ${e.message}`);
-            return undefined;
+            e.message = `Failed to fetch resource metadata for ${apiVersion}/${kind}: ${e.message}`;
+            throw e;
         }
     }
 
@@ -193,7 +192,6 @@ export class K8sObjectApi extends k8s.ApisApi {
         }
         if (!spec.apiVersion) {
             spec.apiVersion = "v1";
-            logger.info(`Spec does not contain apiVersion, using "${spec.apiVersion}"`);
         }
         if (!spec.metadata) {
             spec.metadata = {};

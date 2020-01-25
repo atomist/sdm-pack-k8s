@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as sdm from "@atomist/sdm";
+import * as cp from "@atomist/automation-client/lib/util/child_process";
 import * as assert from "power-assert";
 import * as prv from "../../lib/sync/previousSpecVersion";
 
@@ -22,15 +22,15 @@ describe("previousSpecVersion", () => {
 
     let originalExecPromise: any;
     before(() => {
-        originalExecPromise = Object.getOwnPropertyDescriptor(sdm, "execPromise");
+        originalExecPromise = Object.getOwnPropertyDescriptor(cp, "execPromise");
     });
 
     after(() => {
-        Object.defineProperty(sdm, "execPromise", originalExecPromise);
+        Object.defineProperty(cp, "execPromise", originalExecPromise);
     });
 
     it("git show throws on delete", async () => {
-        Object.defineProperty(sdm, "execPromise", {
+        Object.defineProperty(cp, "execPromise", {
             value: async () => {
                 throw new Error("git show failure");
             },
@@ -40,7 +40,7 @@ describe("previousSpecVersion", () => {
     });
 
     it("git show returns the file contents", async () => {
-        Object.defineProperty(sdm, "execPromise", {
+        Object.defineProperty(cp, "execPromise", {
             value: async () => {
                 return {
                     stdout: "<file contents>",

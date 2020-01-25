@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-import {
-    LocalProject,
-    logger,
-} from "@atomist/automation-client";
-import {
-    execPromise,
-    ProgressLog,
-    PushFields,
-} from "@atomist/sdm";
+import { LocalProject } from "@atomist/automation-client/lib/project/local/LocalProject";
+import { execPromise } from "@atomist/automation-client/lib/util/child_process";
+import { SdmGoalEvent } from "@atomist/sdm/lib/api/goal/SdmGoalEvent";
+import { ProgressLog } from "@atomist/sdm/lib/spi/log/ProgressLog";
 import { ChangeType } from "./change";
 
 /**
@@ -67,7 +62,7 @@ export interface PushDiff {
  * @param log goal execution progress log
  * @return sorted resource spec changes
  */
-export async function diffPush(project: LocalProject, push: PushFields.Fragment, tag: string, log: ProgressLog): Promise<PushDiff[]> {
+export async function diffPush(project: LocalProject, push: SdmGoalEvent["push"], tag: string, log: ProgressLog): Promise<PushDiff[]> {
     const changes: PushDiff[] = [];
     const commits = push.commits.filter(c => !c.message.includes(tag));
     for (const commit of commits) {
@@ -80,7 +75,6 @@ export async function diffPush(project: LocalProject, push: PushFields.Fragment,
             changes.push(...newChanges);
         } catch (e) {
             e.message = `Failed to diff commit ${commit.sha}, skipping: ${e.message}`;
-            logger.warn(e.message);
             log.write(e.message);
         }
     }
