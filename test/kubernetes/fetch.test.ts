@@ -1392,7 +1392,7 @@ describe("kubernetes/fetch", () => {
     describe("kubernetesFetch", function(): void {
 
         // tslint:disable-next-line:no-invalid-this
-        this.timeout(5000);
+        this.timeout(10000);
 
         let defaultRetries: number;
         before(async function(): Promise<void> {
