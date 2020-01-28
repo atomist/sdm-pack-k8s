@@ -217,7 +217,7 @@ export function defaultDataSources(registration: KubernetesDeployRegistration): 
  * Kubernetes application data for deploying an application to
  * Kubernetes.  It returns the augmented SdmGoalEvent with the
  * Kubernetes application information in the `data` property and the
- * state of the SdmGoalEvent set to "in_process".  The actual
+ * state of the SdmGoalEvent set to "requested".  The actual
  * deployment is done by the [[kubernetesDeployHandler]] event
  * handler.
  *
@@ -238,7 +238,7 @@ export function initiateKubernetesDeploy(k8Deploy: KubernetesDeploy, registratio
         if (isInLocalMode()) {
             return deployApplication(goalEvent, goalInvocation.context, goalInvocation.progressLog);
         } else {
-            goalEvent.state = SdmGoalState.in_process;
+            goalEvent.state = SdmGoalState.requested;
             return goalEvent;
         }
     };
