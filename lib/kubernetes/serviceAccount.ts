@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ export async function upsertServiceAccount(req: KubernetesResourceRequest): Prom
     }
     logger.info(`Service account ${slug} exists, patching using '${logObject(spec)}'`);
     await logRetry(() => req.clients.core.patchNamespacedServiceAccount(spec.metadata.name, spec.metadata.namespace, spec,
-        undefined, undefined, undefined, undefined, patchHeaders()), `patch service account ${slug}`);
+        undefined, undefined, undefined, undefined, patchHeaders(req)), `patch service account ${slug}`);
     return spec;
 }
 

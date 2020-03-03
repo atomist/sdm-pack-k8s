@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ export async function upsertSecrets(req: KubernetesResourceRequest): Promise<k8s
         }
         logger.info(`Secret ${secretName} exists, patching using '${logObject(spec)}'`);
         await logRetry(() => req.clients.core.patchNamespacedSecret(secret.metadata.name, spec.metadata.namespace, spec,
-            undefined, undefined, undefined, undefined, patchHeaders()), `patch secret ${secretName} for ${slug}`);
+            undefined, undefined, undefined, undefined, patchHeaders(req)), `patch secret ${secretName} for ${slug}`);
         return spec;
     }));
     return ss;
