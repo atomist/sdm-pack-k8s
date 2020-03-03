@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,6 +140,15 @@ export interface KubernetesApplication {
      * also provided.
      */
     roleBindingSpec?: DeepPartial<k8s.V1RoleBinding> | DeepPartial<k8s.V1ClusterRoleBinding>;
+    /**
+     * Strategy to use when patching resources for this application.
+     * Supported values are "application/merge-patch+json" and
+     * "application/strategic-merge-patch+json".  The default is
+     * "application/strategic-merge-patch+json".  See
+     * https://kubernetes.io/docs/tasks/run-application/update-api-object-kubectl-patch/
+     * for details.
+     */
+    patchStrategy?: "application/merge-patch+json" | "application/strategic-merge-patch+json";
 }
 
 /**

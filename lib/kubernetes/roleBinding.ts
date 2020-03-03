@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
         }
         logger.info(`Cluster role binding ${slug} exists, patching using '${logObject(spec)}'`);
         await logRetry(() => req.clients.rbac.patchClusterRoleBinding(spec.metadata.name, spec,
-            undefined, undefined, undefined, undefined, patchHeaders()), `patch cluster role binding ${slug}`);
+            undefined, undefined, undefined, undefined, patchHeaders(req)), `patch cluster role binding ${slug}`);
         return spec;
     } else {
         const spec = await roleBindingTemplate(req);
@@ -66,7 +66,7 @@ export async function upsertRoleBinding(req: KubernetesResourceRequest): Promise
         }
         logger.info(`Role binding ${slug} exists, patching using '${logObject(spec)}'`);
         await logRetry(() => req.clients.rbac.patchNamespacedRoleBinding(spec.metadata.name, spec.metadata.namespace, spec,
-            undefined, undefined, undefined, undefined, patchHeaders()), `patch role binding ${slug}`);
+            undefined, undefined, undefined, undefined, patchHeaders(req)), `patch role binding ${slug}`);
         return spec;
     }
 }

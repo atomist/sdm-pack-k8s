@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ export async function upsertNamespace(req: KubernetesResourceRequest): Promise<k
     logger.info(`Namespace ${slug} exists, patching using '${logObject(spec)}'`);
     try {
         await logRetry(() => req.clients.core.patchNamespace(spec.metadata.name, spec,
-            undefined, undefined, undefined, undefined, patchHeaders()), `patch namespace ${slug}`);
+            undefined, undefined, undefined, undefined, patchHeaders(req)), `patch namespace ${slug}`);
     } catch (e) {
         logger.warn(`Failed to patch existing namespace ${slug}, ignoring: ${errMsg(e)}`);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ export async function upsertDeployment(req: KubernetesResourceRequest): Promise<
     }
     logger.info(`Updating deployment ${slug} using '${logObject(spec)}'`);
     await logRetry(() => req.clients.apps.patchNamespacedDeployment(spec.metadata.name, spec.metadata.namespace, spec,
-        undefined, undefined, undefined, undefined, patchHeaders()), `patch deployment ${slug}`);
+        undefined, undefined, undefined, undefined, patchHeaders(req)), `patch deployment ${slug}`);
     return spec;
 }
 

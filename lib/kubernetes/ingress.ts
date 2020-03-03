@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Atomist, Inc.
+ * Copyright © 2020 Atomist, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ export async function upsertIngress(req: KubernetesResourceRequest): Promise<k8s
     }
     logger.info(`Ingress ${slug} exists, patching using '${logObject(spec)}'`);
     await logRetry(() => req.clients.ext.patchNamespacedIngress(spec.metadata.name, spec.metadata.namespace, spec,
-        undefined, undefined, undefined, undefined, patchHeaders()), `patch ingress ${slug}`);
+        undefined, undefined, undefined, undefined, patchHeaders(req)), `patch ingress ${slug}`);
     return spec;
 }
 
