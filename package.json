@@ -1,6 +1,6 @@
 {
   "name": "@atomist/sdm-pack-k8s",
-  "version": "1.9.0",
+  "version": "1.11.0",
   "description": "Extension Pack for an Atomist SDM to integrate Kubernetes deployments",
   "author": {
     "name": "Atomist",
